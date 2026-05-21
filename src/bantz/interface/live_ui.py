@@ -41,6 +41,7 @@ from enum import Enum
 from typing import Any
 
 try:
+    import fcntl
     import select as _select_mod
     import termios
     import tty
@@ -281,6 +282,28 @@ class LiveUI:
         else:
             self._chat_scroll_offset = max(self._chat_scroll_offset - 3, 0)
 
+    # ── I/O safety ───────────────────────────────────────────────
+
+    @staticmethod
+    def _restore_blocking_io() -> None:
+        """Clear O_NONBLOCK on stdout and stderr before re-entering Live.
+
+        aioconsole.ainput() triggers asyncio's connect_read_pipe() on stdin,
+        which calls fcntl(0, F_SETFL, O_NONBLOCK).  In a PTY, fd 0/1/2 are
+        all dup()'d from the same file description, so the flag propagates to
+        stdout and stderr too.  Rich's Live then hits BlockingIOError when
+        writing a full-screen refresh.  Clearing the flag here fixes it.
+        """
+        if not _HAS_TERMIOS:
+            return
+        try:
+            for fd in (1, 2):
+                flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+                if flags & os.O_NONBLOCK:
+                    fcntl.fcntl(fd, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
+        except OSError:
+            pass
+
     # ── Layout ────────────────────────────────────────────────────
 
     def _build_layout(self) -> Layout:
@@ -510,59 +533,55 @@ class LiveUI:
             await asyncio.sleep(1 / self.REFRESH_FPS)
 
     async def _probe_services(self) -> None:
-        """One-shot health probes for all monitored services."""
+        """One-shot health probes for all monitored services, run concurrently."""
         import httpx
 
-        # ── Ollama ────────────────────────────────────────────────
-        try:
-            async with httpx.AsyncClient(timeout=3.0) as c:
-                r = await c.get(f"{config.ollama_base_url}/api/tags")
+        async def check_ollama(client: httpx.AsyncClient) -> None:
+            try:
+                r = await client.get(f"{config.ollama_base_url}/api/tags")
                 self._services["Ollama"] = (
                     ServiceDot.UP if r.status_code == 200
                     else ServiceDot.DEGRADED
                 )
-                self.add_log(
-                    f"✓ Ollama connected → {config.ollama_model}"
-                )
-        except Exception:
-            self._services["Ollama"] = ServiceDot.DOWN
-            self.add_log(f"✗ Ollama unreachable: {config.ollama_base_url}")
+                self.add_log(f"✓ Ollama connected → {config.ollama_model}")
+            except Exception:
+                self._services["Ollama"] = ServiceDot.DOWN
+                self.add_log(f"✗ Ollama unreachable: {config.ollama_base_url}")
 
-        # ── Neo4j / Palace ────────────────────────────────────────
-        try:
-            if getattr(config, "mempalace_enabled", False):
-                from bantz.memory.bridge import palace_bridge
-                if palace_bridge and palace_bridge.enabled:
-                    self._services["Neo4j"] = ServiceDot.UP
+        async def check_neo4j() -> None:
+            try:
+                if getattr(config, "mempalace_enabled", False):
+                    from bantz.memory.bridge import palace_bridge
+                    if palace_bridge and palace_bridge.enabled:
+                        self._services["Neo4j"] = ServiceDot.UP
+                    else:
+                        self._services["Neo4j"] = ServiceDot.DOWN
                 else:
-                    self._services["Neo4j"] = ServiceDot.DOWN
-            else:
-                self._services["Neo4j"] = ServiceDot.UNCONFIGURED
-        except Exception:
-            self._services["Neo4j"] = ServiceDot.DOWN
+                    self._services["Neo4j"] = ServiceDot.UNCONFIGURED
+            except Exception:
+                self._services["Neo4j"] = ServiceDot.DOWN
 
-        # ── Redis ─────────────────────────────────────────────────
-        try:
-            redis_url = getattr(config, "redis_url", None)
-            if redis_url:
-                import redis.asyncio as aioredis
-                rc = aioredis.from_url(redis_url)
-                await rc.ping()
-                await rc.aclose()
-                self._services["Redis"] = ServiceDot.UP
-            else:
-                self._services["Redis"] = ServiceDot.UNCONFIGURED
-        except Exception:
-            self._services["Redis"] = ServiceDot.DOWN
+        async def check_redis() -> None:
+            try:
+                redis_url = getattr(config, "redis_url", None)
+                if redis_url:
+                    import redis.asyncio as aioredis
+                    rc = aioredis.from_url(redis_url)
+                    await rc.ping()
+                    await rc.aclose()
+                    self._services["Redis"] = ServiceDot.UP
+                else:
+                    self._services["Redis"] = ServiceDot.UNCONFIGURED
+            except Exception:
+                self._services["Redis"] = ServiceDot.DOWN
 
-        # ── Gemini ────────────────────────────────────────────────
-        try:
-            if (
-                getattr(config, "gemini_enabled", False)
-                and getattr(config, "gemini_api_key", None)
-            ):
-                async with httpx.AsyncClient(timeout=3.0) as c:
-                    r = await c.get(
+        async def check_gemini(client: httpx.AsyncClient) -> None:
+            try:
+                if (
+                    getattr(config, "gemini_enabled", False)
+                    and getattr(config, "gemini_api_key", None)
+                ):
+                    r = await client.get(
                         "https://generativelanguage.googleapis.com"
                         f"/v1beta/models?key={config.gemini_api_key}"
                     )
@@ -570,27 +589,35 @@ class LiveUI:
                         ServiceDot.UP if r.status_code == 200
                         else ServiceDot.DOWN
                     )
-            else:
-                self._services["Gemini"] = ServiceDot.UNCONFIGURED
-        except Exception:
-            self._services["Gemini"] = ServiceDot.DOWN
+                else:
+                    self._services["Gemini"] = ServiceDot.UNCONFIGURED
+            except Exception:
+                self._services["Gemini"] = ServiceDot.DOWN
 
-        # ── Telegram ──────────────────────────────────────────────
-        try:
-            token = getattr(config, "telegram_bot_token", None)
-            if token:
-                async with httpx.AsyncClient(timeout=3.0) as c:
-                    r = await c.get(
+        async def check_telegram(client: httpx.AsyncClient) -> None:
+            try:
+                token = getattr(config, "telegram_bot_token", None)
+                if token:
+                    r = await client.get(
                         f"https://api.telegram.org/bot{token}/getMe"
                     )
                     self._services["Telegram"] = (
                         ServiceDot.UP if r.status_code == 200
                         else ServiceDot.DOWN
                     )
-            else:
-                self._services["Telegram"] = ServiceDot.UNCONFIGURED
-        except Exception:
-            self._services["Telegram"] = ServiceDot.DOWN
+                else:
+                    self._services["Telegram"] = ServiceDot.UNCONFIGURED
+            except Exception:
+                self._services["Telegram"] = ServiceDot.DOWN
+
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            await asyncio.gather(
+                check_ollama(client),
+                check_neo4j(),
+                check_redis(),
+                check_gemini(client),
+                check_telegram(client),
+            )
 
         self.add_log("Service probes complete")
 
@@ -782,6 +809,11 @@ class LiveUI:
                 self._running = False
                 return
             finally:
+                # aioconsole sets O_NONBLOCK on stdin via asyncio's
+                # connect_read_pipe(); in a PTY all three fds share one file
+                # description, so stdout/stderr become non-blocking too.
+                # Restore blocking mode before Rich starts writing again.
+                self._restore_blocking_io()
                 if self._live:
                     self._live.start()
                 if self._mouse:
@@ -792,7 +824,12 @@ class LiveUI:
                 continue
 
             self.add_chat("user", text)
-            await self._process_input(text)
+            try:
+                await self._process_input(text)
+            except Exception as exc:
+                self._busy = False
+                self._streaming_text = None
+                self.add_chat("error", f"Unexpected error: {exc}")
 
     async def _process_input(self, text: str) -> None:
         from bantz.core.brain import brain
@@ -909,10 +946,19 @@ class LiveUI:
         layout = self._build_layout()
         self._update_panels(layout)
 
-        # Install log handler
+        # Silence root-logger lastResort so third-party WARNING writes
+        # (httpx, asyncio, etc.) don't escape to stderr while Live owns the
+        # terminal.  NullHandler is idempotent and library-safe.
+        root_logger = logging.getLogger()
+        if not root_logger.handlers:
+            root_logger.addHandler(logging.NullHandler())
+
+        # Route all bantz.* logs through the queue panel (never to stderr).
         handler = _QueueLogHandler()
         handler.setFormatter(logging.Formatter("%(name)s: %(message)s"))
-        logging.getLogger("bantz").addHandler(handler)
+        bantz_logger = logging.getLogger("bantz")
+        bantz_logger.addHandler(handler)
+        bantz_logger.propagate = False  # stop propagation to root/lastResort
 
         # Event bus
         self._subscribe_bus()
@@ -952,7 +998,8 @@ class LiveUI:
             except Exception:
                 pass
             try:
-                logging.getLogger("bantz").removeHandler(handler)
+                bantz_logger.removeHandler(handler)
+                bantz_logger.propagate = True
             except Exception:
                 pass
 
