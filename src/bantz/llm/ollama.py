@@ -12,24 +12,7 @@ from bantz.config import config
 
 
 def _notify_health(ok: bool) -> None:
-    """Fire event-driven health status to OperationsHeader (#136).
-
-    Textual v8: call_from_thread raises RuntimeError when called from the
-    same thread as the app.  Detect context and call directly on main thread.
-    """
-    import threading as _threading
-    try:
-        from bantz.interface.tui.panels.header import ServiceStatus
-        from textual.app import App
-        app = App.current
-        if app and hasattr(app, "notify_service_health"):
-            status = ServiceStatus.UP if ok else ServiceStatus.DOWN
-            if _threading.current_thread() is _threading.main_thread():
-                app.notify_service_health("ollama", status)
-            else:
-                app.call_from_thread(app.notify_service_health, "ollama", status)
-    except Exception:
-        pass
+    pass  # Textual TUI removed; health status shown via live_ui service probes
 
 
 class OllamaClient:
