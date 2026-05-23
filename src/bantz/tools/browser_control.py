@@ -29,10 +29,14 @@ import logging
 import subprocess
 from typing import Any
 
+from bantz.agent.env_probe import env as _env_snapshot
 from bantz.config import config
 from bantz.tools import BaseTool, ToolResult, registry
 
 log = logging.getLogger("bantz.tools.browser_control")
+
+# Resolved once at startup from the live environment probe.
+_DEFAULT_BROWSER: str = _env_snapshot.browsers[0] if _env_snapshot.browsers else "firefox"
 
 # Common app-to-binary mapping
 _APP_BINARIES: dict[str, list[str]] = {
@@ -206,14 +210,15 @@ class BrowserControlTool(BaseTool):
 
     async def _open(self, kwargs: dict) -> ToolResult:
         """Launch an application (or open a web service in a browser)."""
-        app = kwargs.get("app", "firefox")
+        app = kwargs.get("app", "") or _DEFAULT_BROWSER
         url = kwargs.get("url", "")
 
         # ── Web service names → open in a real browser ────────────────
         web_url = _WEB_APPS.get(app.lower())
         if web_url:
             log.info("Web app '%s' → opening in browser: %s", app, web_url)
-            for browser in ("firefox", "chrome", "chromium"):
+            _browser_order = _env_snapshot.browsers or ["firefox", "chromium", "google-chrome"]
+            for browser in _browser_order:
                 if _find_binary(browser):
                     app = browser
                     url = url or web_url
@@ -221,7 +226,7 @@ class BrowserControlTool(BaseTool):
             else:
                 return ToolResult(
                     success=False, output="",
-                    error="No browser found. Install Firefox or Chrome.",
+                    error=f"No browser found (probed: {_env_snapshot.browsers or 'none'}).",
                 )
 
         # If already running, just focus it then navigate if url given
@@ -233,10 +238,19 @@ class BrowserControlTool(BaseTool):
 
         binary = _find_binary(app)
         if not binary:
-            return ToolResult(
-                success=False, output="",
-                error=f"Could not find binary for '{app}'. Is it installed?",
+            fallback = next(
+                (b for b in _env_snapshot.browsers if b != app and _find_binary(b)),
+                None,
             )
+            if fallback:
+                log.warning("Binary for '%s' not found; falling back to '%s'", app, fallback)
+                app = fallback
+                binary = _find_binary(fallback)
+            if not binary:
+                return ToolResult(
+                    success=False, output="",
+                    error=f"Could not find binary for '{app}'. Is it installed?",
+                )
 
         try:
             subprocess.Popen(
@@ -346,7 +360,7 @@ class BrowserControlTool(BaseTool):
             return ToolResult(success=False, output="", error="Provide url=https://...")
 
         # Focus the browser window before sending keyboard input
-        app = kwargs.get("app", "firefox")
+        app = kwargs.get("app", _DEFAULT_BROWSER)
         _focus_window(app)
         await asyncio.sleep(0.3)
 
@@ -378,7 +392,7 @@ class BrowserControlTool(BaseTool):
 
     async def _wait_for_load(self, kwargs: dict) -> ToolResult:
         """Wait until the browser page finishes loading (screenshot stabilizes)."""
-        app = kwargs.get("app", "firefox")
+        app = kwargs.get("app", _DEFAULT_BROWSER)
         max_wait = float(kwargs.get("max_wait", 15.0))
         _focus_window(app)
         await asyncio.sleep(0.5)
@@ -391,7 +405,7 @@ class BrowserControlTool(BaseTool):
 
     async def _new_tab(self, kwargs: dict) -> ToolResult:
         """Open a new browser tab with Ctrl+T."""
-        app = kwargs.get("app", "firefox")
+        app = kwargs.get("app", _DEFAULT_BROWSER)
         _focus_window(app)
         await asyncio.sleep(0.2)
         from bantz.tools.input_control import hotkey
@@ -410,7 +424,7 @@ class BrowserControlTool(BaseTool):
                                    (works for ANY visible element, including web content)
         """
         target = kwargs.get("target", "")
-        app = kwargs.get("app", "firefox")
+        app = kwargs.get("app", _DEFAULT_BROWSER)
         click_action = kwargs.get("click_action", "click")
         wait_load = str(kwargs.get("wait_load", "false")).lower() == "true"
 
@@ -516,7 +530,7 @@ class BrowserControlTool(BaseTool):
         """
         target = kwargs.get("target", "")
         text = kwargs.get("text", "")
-        app = kwargs.get("app", "firefox")
+        app = kwargs.get("app", _DEFAULT_BROWSER)
         press_enter = str(kwargs.get("press_enter", "true")).lower() != "false"
         site_hint = kwargs.get("site", "").lower()
         current_url = kwargs.get("url", "").lower()

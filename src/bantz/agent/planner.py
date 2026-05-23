@@ -23,6 +23,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from bantz.agent.env_probe import env as _env_probe
+
 log = logging.getLogger("bantz.planner")
 
 # ── System prompt — enforces 1920s Butler persona + valid JSON output ────────
@@ -35,6 +37,8 @@ Your task: break the request into a numbered list of discrete steps.
 Each step uses exactly ONE tool from the available set.
 
 AVAILABLE TOOLS: {tool_names}
+
+RUNTIME ENVIRONMENT: {environment}
 
 TOOL REFERENCE:
 - web_search: search the internet for information. Params: {{"query": "..."}}
@@ -147,13 +151,13 @@ Do NOT default to YouTube, Firefox, or any specific site unless the user mention
 
 User: "Open Chrome and go to reddit.com"
 <thinking>
-Step 1: Goal is to open Chrome browser and navigate to a URL. Two browser_control steps.
-Step 2: open chrome → navigate to URL. Simple.
+Step 1: Goal is to open a browser and navigate to Reddit. Runtime environment shows default browser: {default_browser}.
+Step 2: open {default_browser} → navigate to URL. Simple.
 Step 3: Anti-hallucination: user said Reddit, planning for Reddit — not anything else.
 </thinking>
 [
-  {{"step": 1, "tool": "browser_control", "params": {{"action": "open", "app": "chrome", "wait": 3.0}}, "description": "Open Chrome browser", "depends_on": null}},
-  {{"step": 2, "tool": "browser_control", "params": {{"action": "navigate", "app": "chrome", "url": "https://www.reddit.com", "wait": 2.5}}, "description": "Navigate to Reddit", "depends_on": 1}}
+  {{"step": 1, "tool": "browser_control", "params": {{"action": "open", "app": "{default_browser}", "wait": 3.0}}, "description": "Open {default_browser} browser", "depends_on": null}},
+  {{"step": 2, "tool": "browser_control", "params": {{"action": "navigate", "app": "{default_browser}", "url": "https://www.reddit.com", "wait": 2.5}}, "description": "Navigate to Reddit", "depends_on": 1}}
 ]
 
 User: "open me a dr strange video on youtube" (or "find X video on youtube", "play X on youtube")
@@ -300,9 +304,12 @@ class PlannerAgent:
         from bantz.core.intent import _stream_and_collect
 
         history_block = self._format_recent_history(recent_history)
+        _default_browser = _env_probe.browsers[0] if _env_probe.browsers else "firefox"
         prompt = PLANNER_SYSTEM.format(
             tool_names=", ".join(tool_names),
             recent_history_block=history_block,
+            environment=_env_probe.summary(),
+            default_browser=_default_browser,
         )
 
         messages = [
