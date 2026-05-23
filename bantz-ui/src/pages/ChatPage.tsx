@@ -10,14 +10,16 @@ interface ChatPageProps {
 }
 
 export function ChatPage({ wsStatus, onSend }: ChatPageProps) {
-  const chat = useAppStore((s) => s.chat);
-  const pushChat = useAppStore((s) => s.pushChat);
+  const chat          = useAppStore((s) => s.chat);
+  const pushChat      = useAppStore((s) => s.pushChat);
+  const streamingText = useAppStore((s) => s.streamingText);
   const [draft, setDraft] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll on new messages and on each streaming token.
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
-  }, [chat.length]);
+  }, [chat.length, streamingText]);
 
   function submit() {
     const v = draft.trim();
@@ -94,6 +96,19 @@ export function ChatPage({ wsStatus, onSend }: ChatPageProps) {
               )}
             </div>
           ))}
+
+          {/* Live streaming bubble — visible while backend is typing */}
+          {streamingText && (
+            <div className="grid grid-cols-[88px_1fr] gap-4">
+              <div className="pt-1 font-terminal text-[10px] tracking-widest text-ember-500">
+                BANTZ · {fmtTime(Date.now())}
+              </div>
+              <div className="border-l-2 border-ember-500/60 bg-obsidian-800/40 px-3 py-2 font-terminal text-[15px] leading-relaxed text-fg-primary">
+                {streamingText}
+                <span className="animate-blink ml-0.5 text-ember-500">▌</span>
+              </div>
+            </div>
+          )}
         </div>
         <div className="border-t border-obsidian-700 bg-obsidian-900/60 px-5 py-3">
           <div className="flex items-center gap-3 border border-obsidian-500 bg-obsidian-850 px-3 py-2 transition-colors duration-150 ease-bantz focus-within:border-ember-500 focus-within:shadow-ember-soft">

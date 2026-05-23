@@ -1,91 +1,29 @@
-import { useState } from "react";
 import {
-  ShieldAlert,
-  ShieldCheck,
-  AlertTriangle,
-  Info,
-  X,
-  Check,
-  ThermometerSun,
-  HardDrive,
-  Clock,
-  Server,
-  Wifi,
-  Package,
-  AlertCircle,
+  ShieldAlert, ShieldCheck, AlertTriangle, Info, X, Check,
+  ThermometerSun, HardDrive, Clock, Server, Wifi, Package, AlertCircle,
   type LucideIcon,
 } from "lucide-react";
 import { PageTitle, timeAgo } from "../components/primitives";
+import { useAppStore, type AlertItem, type AlertCategory, type AlertSeverity } from "../store/useAppStore";
 
-type Severity = "critical" | "warning" | "info";
-type Category = "thermal" | "disk" | "session" | "service" | "network" | "package";
-
-interface Alert {
-  id: string;
-  severity: Severity;
-  category: Category;
-  title: string;
-  detail: string;
-  ts: number;
-  source: string;
-}
-
-const SEEDED: Alert[] = [
-  {
-    id: "a1", severity: "critical", category: "thermal",
-    title: "GPU junction temperature climbing",
-    detail: "68°C and rising at +0.4°C/min. Throttle threshold (87°C) projected in ~47 minutes if trend continues.",
-    ts: Date.now() - 4 * 60 * 1000, source: "thermal-monitor",
-  },
-  {
-    id: "a2", severity: "critical", category: "disk",
-    title: "/home partition approaching saturation",
-    detail: "412 / 460 GB consumed (91%). 47 GB attributable to one directory: ~/Videos/exports/final_FINAL_v3/. I have my opinions.",
-    ts: Date.now() - 22 * 60 * 1000, source: "disk-mon",
-  },
-  {
-    id: "a3", severity: "warning", category: "session",
-    title: "Marathon session detected",
-    detail: "You have been at the terminal for 11h 23m without a break exceeding 4 minutes. This is, in my opinion, unsustainable.",
-    ts: Date.now() - 9 * 60 * 1000, source: "ego",
-  },
-  {
-    id: "a4", severity: "warning", category: "service",
-    title: "Redis evicting keys aggressively",
-    detail: "142 evictions/s (threshold 50). Cache pressure suggests undersized maxmemory or runaway producer.",
-    ts: Date.now() - 28 * 60 * 1000, source: "redis",
-  },
-  {
-    id: "a5", severity: "warning", category: "network",
-    title: "Gemini API quota at 87%",
-    detail: "At current consumption rate the daily quota will exhaust in 2h 14m. Consider model fallback.",
-    ts: Date.now() - 44 * 60 * 1000, source: "gemini",
-  },
-  {
-    id: "a6", severity: "info", category: "package",
-    title: "Package arriving Thursday",
-    detail: 'Sender: yourself. Contents: coffee. Catalogued under "recurring vanities."',
-    ts: Date.now() - 2 * 3600 * 1000, source: "package-watch",
-  },
-];
-
-const SEV: Record<Severity, { bar: string; text: string; border: string; bg: string; label: string }> = {
+const SEV: Record<AlertSeverity, { bar: string; text: string; border: string; bg: string; label: string }> = {
   critical: { bar:"bg-rose-500",   text:"text-rose-300",   border:"border-rose-500/60",   bg:"bg-rose-500/5",   label:"CRITICAL" },
   warning:  { bar:"bg-gold-500",   text:"text-gold-400",   border:"border-gold-500/40",   bg:"bg-gold-500/5",   label:"WARNING" },
   info:     { bar:"bg-velvet-200", text:"text-velvet-200", border:"border-velvet-200/40", bg:"bg-velvet-200/5", label:"INFO" },
 };
 
-const CAT_ICON: Record<Category, LucideIcon> = {
+const CAT_ICON: Record<AlertCategory, LucideIcon> = {
   thermal: ThermometerSun, disk: HardDrive, session: Clock,
-  service: Server, network: Wifi, package: Package,
+  service: Server,         network: Wifi,   package: Package,
 };
 
 export function AlertsPage() {
-  const [alerts, setAlerts] = useState<Alert[]>(SEEDED);
-  const counts: Record<Severity, number> = { critical: 0, warning: 0, info: 0 };
-  for (const a of alerts) counts[a.severity]++;
+  const alerts          = useAppStore((s) => s.alerts);
+  const dismissAlert    = useAppStore((s) => s.dismissAlert);
+  const dismissAllAlerts = useAppStore((s) => s.dismissAllAlerts);
 
-  const dismiss = (id: string) => setAlerts((a) => a.filter((x) => x.id !== id));
+  const counts: Record<AlertSeverity, number> = { critical: 0, warning: 0, info: 0 };
+  for (const a of alerts) counts[a.severity]++;
 
   return (
     <div className="flex h-full flex-col">
@@ -96,7 +34,7 @@ export function AlertsPage() {
         right={
           <button
             type="button"
-            onClick={() => setAlerts([])}
+            onClick={dismissAllAlerts}
             className="flex items-center gap-2 border border-obsidian-500 bg-obsidian-800 px-4 py-2 font-ui text-[10px] font-bold uppercase tracking-widest text-obsidian-200 transition-colors hover:border-ember-500 hover:text-ember-500"
           >
             <Check size={12} strokeWidth={1.5} /> Dismiss All
@@ -107,8 +45,8 @@ export function AlertsPage() {
       <div className="mb-4 grid grid-cols-3 gap-3">
         {([
           { sev: "critical" as const, label: "CRITICAL", Icon: ShieldAlert },
-          { sev: "warning" as const,  label: "WARNING",  Icon: AlertTriangle },
-          { sev: "info" as const,     label: "INFO",     Icon: Info },
+          { sev: "warning"  as const, label: "WARNING",  Icon: AlertTriangle },
+          { sev: "info"     as const, label: "INFO",     Icon: Info },
         ]).map((row) => {
           const st = SEV[row.sev];
           const Icon = row.Icon;
@@ -145,8 +83,8 @@ export function AlertsPage() {
           </div>
         )}
 
-        {alerts.map((a) => {
-          const st = SEV[a.severity];
+        {alerts.map((a: AlertItem) => {
+          const st   = SEV[a.severity];
           const Icon = CAT_ICON[a.category] ?? AlertCircle;
           return (
             <div key={a.id} className={`relative flex items-stretch border ${st.border} ${st.bg}`}>
@@ -187,7 +125,7 @@ export function AlertsPage() {
               </div>
               <button
                 type="button"
-                onClick={() => dismiss(a.id)}
+                onClick={() => dismissAlert(a.id)}
                 className="m-3 grid h-7 w-7 self-start place-items-center border border-obsidian-500 text-obsidian-200 transition-colors hover:border-rose-500 hover:text-rose-300"
                 aria-label="Dismiss"
               >

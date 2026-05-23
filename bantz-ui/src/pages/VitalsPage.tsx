@@ -74,9 +74,20 @@ export function VitalsPage() {
     return () => window.clearInterval(id);
   }, []);
 
-  const latest = vitals[vitals.length - 1] || { cpu: 0, mem: 0, disk: 0 };
+  const latest  = vitals[vitals.length - 1] || { cpu: 0, mem: 0, disk: 0, ram_used: 0, ram_total: 0, disk_used: 0, disk_total: 0, vram_used: 0, vram_total: 0 };
   const lastNet = net[net.length - 1] || { down: 0, up: 0 };
-  const temp = Math.round(gpuTemp);
+  const temp    = Math.round(gpuTemp);
+
+  // Use real backend values when available, fall back to synthetic.
+  const ramUsed   = latest.ram_total  > 0 ? latest.ram_used  : null;
+  const ramTotal  = latest.ram_total  > 0 ? latest.ram_total  : null;
+  const diskUsed  = latest.disk_total > 0 ? latest.disk_used  : null;
+  const diskTotal = latest.disk_total > 0 ? latest.disk_total : null;
+  const vramUsed  = latest.vram_total > 0 ? latest.vram_used  : null;
+  const vramTotal = latest.vram_total > 0 ? latest.vram_total : null;
+  const ramPct    = ramTotal  ? Math.round((ramUsed!  / ramTotal!)  * 100) : Math.round(latest.mem);
+  const diskPct   = diskTotal ? Math.round((diskUsed! / diskTotal!) * 100) : Math.round(latest.disk || 91);
+  const vramPct   = vramTotal ? Math.round((vramUsed! / vramTotal!) * 100) : 38;
 
   return (
     <div className="flex h-full flex-col">
@@ -93,10 +104,10 @@ export function VitalsPage() {
       />
 
       <div className="grid grid-cols-4 gap-3">
-        <ArcGauge label="CPU"  value={latest.cpu} detail="i9-13900K · 24c/32t"    tone={latest.cpu > 75 ? "rose" : "ember"} />
-        <ArcGauge label="RAM"  value={62}          detail="19.8 / 32 GB"           tone="ember" />
-        <ArcGauge label="VRAM" value={38}          detail="9.1 / 24 GB · RTX 4090" tone="gold" />
-        <ArcGauge label="DISK" value={latest.disk || 91} detail="/home · 412 / 460 GB" tone={(latest.disk || 91) > 85 ? "rose" : "ember"} />
+        <ArcGauge label="CPU"  value={latest.cpu} detail="i9-13900K · 24c/32t"       tone={latest.cpu > 75 ? "rose" : "ember"} />
+        <ArcGauge label="RAM"  value={ramPct}     detail={ramTotal  ? `${ramUsed!.toFixed(1)} / ${ramTotal.toFixed(1)} GB`     : "— / — GB"}           tone="ember" />
+        <ArcGauge label="VRAM" value={vramPct}    detail={vramTotal ? `${(vramUsed!/1024).toFixed(1)} / ${(vramTotal/1024).toFixed(1)} GB · GPU` : "— / — GB · GPU"} tone="gold" />
+        <ArcGauge label="DISK" value={diskPct}    detail={diskTotal ? `${diskUsed!.toFixed(0)} / ${diskTotal.toFixed(0)} GB`   : "/home · — GB"}        tone={diskPct > 85 ? "rose" : "ember"} />
       </div>
 
       <div className="mt-3 grid min-h-[200px] grid-cols-[1fr_320px] gap-3">
