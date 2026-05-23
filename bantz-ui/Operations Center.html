@@ -1,0 +1,1503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Bantz — Operations Center · Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link
+  href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600;700&family=Share+Tech+Mono&family=Syncopate:wght@400;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap"
+  rel="stylesheet"
+/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          obsidian: { 900:"#0D0A07", 850:"#0D0D0D", 800:"#141414", 700:"#1A1A1A",
+                      600:"#212121", 500:"#2A2A2A", 400:"#383838", 300:"#555",
+                      200:"#888", 100:"#BBB" },
+          ember:    { 100:"#FFD7A8",200:"#FFB347",300:"#FF8C00",400:"#FF6A2A",500:"#FF4500" },
+          gold:     { 200:"#FFE040",300:"#F5CC00",400:"#E2BB0B",500:"#C9A80C" },
+          rose:     { 200:"#E03030",300:"#CC1111",400:"#A80000",500:"#8B0000" },
+          velvet:   { 200:"#00BFFF",400:"#0033AA",500:"#000080",700:"#0A192F",900:"#00050A" },
+          success:  "#2E7D32",
+          fg: { primary:"#F0E8D8", secondary:"#BBB", muted:"#555" },
+        },
+        fontFamily: {
+          display: ["Syncopate","JetBrains Mono","monospace"],
+          ui:      ["'Josefin Sans'","sans-serif"],
+          terminal:["'Share Tech Mono'","monospace"],
+        },
+        boxShadow: {
+          ember: "0 0 12px rgba(255,69,0,0.6)",
+          "ember-soft": "0 0 24px rgba(255,69,0,0.25)",
+          gold: "0 0 10px rgba(226,187,11,0.4)",
+          rose: "0 0 10px rgba(204,17,17,0.5)",
+        },
+        keyframes: {
+          "bantz-pulse": {
+            "0%,100%": { filter: "drop-shadow(0 0 6px #FF4500)" },
+            "50%":    { filter: "drop-shadow(0 0 18px #FF6A2A) drop-shadow(0 0 4px #C9A80C)" },
+          },
+          blink: { "0%,100%":{opacity:"1"}, "50%":{opacity:"0"} },
+        },
+        animation: {
+          "bantz-pulse": "bantz-pulse 3s ease-in-out infinite",
+          blink: "blink 1s steps(2,end) infinite",
+        },
+      },
+    },
+  };
+</script>
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.js"></script>
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#08070a;color:#F0E8D8;font-family:'Josefin Sans',sans-serif;overflow:hidden}
+  *,*::before,*::after{box-sizing:border-box}
+  .bantz-texture::after {
+    content:'';position:absolute;inset:0;pointer-events:none;z-index:9999;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  }
+  .bantz-texture::before {
+    content:'';position:absolute;inset:0;pointer-events:none;z-index:9998;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.05) 2px,rgba(0,0,0,0.05) 4px);
+  }
+  #stage { position:fixed; inset:0; display:grid; place-items:center; }
+  #window { width:1400px; height:900px; transform-origin:center center; }
+  ::-webkit-scrollbar{width:4px;height:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#2A2A2A}
+  ::-webkit-scrollbar-thumb:hover{background:#FF4500}
+  .caption{position:fixed;left:16px;bottom:12px;z-index:50;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.15em;color:#555}
+  .caption b{color:#FF4500;font-weight:normal}
+  /* Switch styles */
+  .bantz-switch { position:relative; display:inline-block; width:42px; height:20px; flex-shrink:0; cursor:pointer; }
+  .bantz-switch input { opacity:0; width:0; height:0; }
+  .bantz-switch .track {
+    position:absolute; inset:0; background:#1A1A1A; border:1px solid #2A2A2A;
+    transition: all 150ms cubic-bezier(0.9,0,0.1,1);
+  }
+  .bantz-switch .knob {
+    position:absolute; top:1px; left:1px; width:16px; height:16px;
+    background:#555; transition: all 150ms cubic-bezier(0.9,0,0.1,1);
+  }
+  .bantz-switch input:checked + .track { background:rgba(255,69,0,0.15); border-color:#FF4500; box-shadow:0 0 8px rgba(255,69,0,0.4); }
+  .bantz-switch input:checked + .track .knob { left:23px; background:#FF4500; box-shadow:0 0 6px #FF4500; }
+
+  /* Page + row transitions — kept in plain CSS so Tailwind CDN doesn't re-inject
+     them on every parent re-render (which would restart the animation). */
+  @keyframes row-in {
+    0%   { transform: translateX(-4px); }
+    100% { transform: translateX(0); }
+  }
+  /* row-in is transform-only — if it gets stuck (which happens under heavy
+     re-render churn), the element is still fully visible just slightly offset. */
+  .bz-row-in { animation: row-in 180ms cubic-bezier(0.9,0,0.1,1) both; }
+  .bz-page {
+    opacity: 0;
+    transform: translateX(14px);
+    transition: opacity 240ms cubic-bezier(0.9,0,0.1,1), transform 240ms cubic-bezier(0.9,0,0.1,1);
+  }
+  .bz-page.bz-page-in {
+    opacity: 1;
+    transform: translateX(0);
+  }
+</style>
+</head>
+<body>
+<div id="stage"><div id="window"></div></div>
+<div class="caption">PREVIEW · <b>1400 × 900</b> · click any sidebar icon to switch pages</div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo } = React;
+
+// ═══════════════════════════════════════════════════════════════════
+// PRIMITIVES
+// ═══════════════════════════════════════════════════════════════════
+
+function StagMark({ size = 26 }) {
+  return (
+    <svg width={size} height={size*1.1} viewBox="-10 -10 100 110" fill="none">
+      <path d="M40,52 C47,52 54,55 55,62 C56,69 54,77 50,82 C47,86 44,88 40,88 C36,88 33,86 30,82 C26,77 24,69 25,62 C26,55 33,52 40,52 Z" fill="currentColor"/>
+      <path d="M29,56 C22,46 12,44 13,54 C14,61 23,62 29,59 Z" fill="currentColor"/>
+      <path d="M51,56 C58,46 68,44 67,54 C66,61 57,62 51,59 Z" fill="currentColor"/>
+      <path d="M38,52 C36,42 29,30 17,18 C10,10 3,4 -2,0" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M28,38 C22,30 20,21 23,13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M16,18 C11,10 10,4 13,0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
+      <path d="M2,6 C-1,2 -2,0 -2,0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M2,6 C5,2 7,1 8,0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M42,52 C44,42 51,30 63,18 C70,10 77,4 82,0" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M52,38 C58,30 60,21 57,13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M64,18 C69,10 70,4 67,0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
+      <path d="M78,6 C81,2 82,0 82,0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M78,6 C75,2 73,1 72,0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function I({ name, size = 16, strokeWidth = 1.5, className = "" }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.innerHTML = "";
+    const def = lucide.icons[name] || lucide.icons.Circle;
+    if (!def) return;
+    const svg = lucide.createElement(def);
+    svg.setAttribute("width", size);
+    svg.setAttribute("height", size);
+    svg.setAttribute("stroke-width", strokeWidth);
+    ref.current.appendChild(svg);
+  }, [name, size, strokeWidth]);
+  return <span ref={ref} className={"inline-flex "+className}/>;
+}
+
+const fmtTime = ts => new Date(ts).toLocaleTimeString([],{hour12:false});
+const fmtMs   = ts => {
+  const d = new Date(ts);
+  return d.toLocaleTimeString([],{hour12:false}) + "." + String(d.getMilliseconds()).padStart(3,"0");
+};
+
+function PanelHeader({ title, subtitle, right, accent="ember" }) {
+  const accentClass = accent==="gold" ? "text-gold-400" : accent==="rose" ? "text-rose-300" : "text-ember-500";
+  return (
+    <div className="flex items-center justify-between border-b border-obsidian-700 px-5 py-3">
+      <div className="flex items-baseline gap-3">
+        <span className={`font-ui text-[9px] font-bold uppercase tracking-widest ${accentClass}`}>§</span>
+        <h3 className="font-ui text-[12px] font-bold uppercase tracking-[0.2em] text-fg-primary">{title}</h3>
+        {subtitle && <span className="font-terminal text-[10px] tracking-widest text-obsidian-300">{subtitle}</span>}
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function PageTitle({ eyebrow, title, sub, right }) {
+  return (
+    <div className="flex items-end justify-between border-b border-obsidian-700 pb-4 mb-5">
+      <div>
+        <div className="font-ui text-[10px] font-bold uppercase tracking-widest text-ember-500 mb-1.5">{eyebrow}</div>
+        <h1 className="font-display text-[28px] font-extrabold tracking-widest text-fg-primary leading-none">{title}</h1>
+        {sub && <p className="font-terminal text-[12px] tracking-wide text-obsidian-200 mt-2">{sub}</p>}
+      </div>
+      {right}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ARC GAUGE — for vitals
+// ═══════════════════════════════════════════════════════════════════
+function ArcGauge({ label, value, unit="%", max=100, tone="ember", detail }) {
+  // Animate value smoothly
+  const [displayed, setDisplayed] = useState(value);
+  useEffect(() => {
+    const start = displayed, end = value, t0 = performance.now(), dur = 480;
+    let raf;
+    function step(t) {
+      const p = Math.min(1, (t-t0)/dur);
+      const eased = 1 - Math.pow(1-p, 3);
+      setDisplayed(start + (end-start)*eased);
+      if (p < 1) raf = requestAnimationFrame(step);
+    }
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line
+  }, [value]);
+
+  const pct = Math.max(0, Math.min(1, displayed / max));
+  const r = 70;
+  const C = Math.PI * r;        // half-circumference
+  const offset = C * (1 - pct);
+
+  const toneColor = tone==="rose" ? "#CC1111" : tone==="gold" ? "#E2BB0B" : tone==="velvet" ? "#00BFFF" : "#FF4500";
+  const glow = tone==="rose" ? "drop-shadow(0 0 8px rgba(204,17,17,0.6))"
+             : tone==="gold" ? "drop-shadow(0 0 8px rgba(226,187,11,0.5))"
+             : "drop-shadow(0 0 10px rgba(255,69,0,0.65))";
+
+  return (
+    <div className="relative flex flex-col items-center justify-end border border-obsidian-700 bg-obsidian-850/80 px-3 pt-5 pb-3 overflow-hidden">
+      {/* Corner ornaments */}
+      <span className="absolute top-0 left-0 h-3 w-3 border-t border-l border-ember-500/60"/>
+      <span className="absolute top-0 right-0 h-3 w-3 border-t border-r border-ember-500/60"/>
+      <span className="absolute bottom-0 left-0 h-3 w-3 border-b border-l border-obsidian-500"/>
+      <span className="absolute bottom-0 right-0 h-3 w-3 border-b border-r border-obsidian-500"/>
+
+      <svg viewBox="0 0 180 100" width="100%" style={{maxWidth:200}}>
+        {/* Track */}
+        <path d="M 20 90 A 70 70 0 0 1 160 90"
+              stroke="#1A1A1A" strokeWidth="9" fill="none" strokeLinecap="butt"/>
+        {/* Tick marks */}
+        {Array.from({length:11}).map((_,i)=>{
+          const a = Math.PI - (i/10)*Math.PI;
+          const x1 = 90 + Math.cos(a)*60, y1 = 90 - Math.sin(a)*60;
+          const x2 = 90 + Math.cos(a)*55, y2 = 90 - Math.sin(a)*55;
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#383838" strokeWidth="1"/>;
+        })}
+        {/* Value arc */}
+        <path d="M 20 90 A 70 70 0 0 1 160 90"
+              stroke={toneColor} strokeWidth="9" fill="none" strokeLinecap="butt"
+              strokeDasharray={C} strokeDashoffset={offset}
+              style={{filter:glow, transition:"stroke-dashoffset 60ms linear"}}/>
+        {/* Inner faint glow */}
+        <path d="M 20 90 A 70 70 0 0 1 160 90"
+              stroke={toneColor} strokeWidth="2" fill="none" opacity="0.25"
+              strokeDasharray={C} strokeDashoffset={offset}/>
+      </svg>
+      <div className="-mt-7 flex flex-col items-center">
+        <div className="font-display text-[28px] font-extrabold leading-none tracking-wide"
+             style={{color: toneColor}}>
+          {displayed.toFixed(displayed >= 100 ? 0 : 1)}<span className="text-[14px] opacity-70 ml-0.5">{unit}</span>
+        </div>
+        <div className="mt-2 font-ui text-[9px] font-bold uppercase tracking-widest text-obsidian-200">{label}</div>
+        {detail && <div className="mt-0.5 font-terminal text-[10px] tracking-wide text-obsidian-300">{detail}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MINI AREA CHART
+// ═══════════════════════════════════════════════════════════════════
+function MiniAreaChart({ data, keys, padding={l:32,r:8,t:8,b:18}, yMax }) {
+  const wrapRef = useRef(null);
+  const [size, setSize] = useState({w: 600, h: 200});
+  useEffect(() => {
+    if (!wrapRef.current) return;
+    const ro = new ResizeObserver(() => {
+      const r = wrapRef.current.getBoundingClientRect();
+      setSize({w: r.width, h: r.height});
+    });
+    ro.observe(wrapRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const {l,r,t,b} = padding;
+  const W = Math.max(100, size.w), H = Math.max(60, size.h);
+  const innerW = W - l - r;
+  const innerH = H - t - b;
+  const n = data.length || 1;
+  const max = yMax || Math.max(1, ...keys.flatMap(k => data.map(d=>d[k.key])));
+  const xs = i => l + (innerW * i) / Math.max(1, n - 1);
+  const ys = v => t + innerH - (innerH * Math.max(0, Math.min(max, v))) / max;
+
+  function area(k) {
+    if (!n) return "";
+    let d = `M ${xs(0)} ${ys(data[0][k])}`;
+    for (let i = 1; i < n; i++) {
+      d += ` L ${xs(i)} ${ys(data[i-1][k])} L ${xs(i)} ${ys(data[i][k])}`;
+    }
+    d += ` L ${xs(n-1)} ${t+innerH} L ${xs(0)} ${t+innerH} Z`;
+    return d;
+  }
+  function line(k) {
+    if (!n) return "";
+    let d = `M ${xs(0)} ${ys(data[0][k])}`;
+    for (let i = 1; i < n; i++) {
+      d += ` L ${xs(i)} ${ys(data[i-1][k])} L ${xs(i)} ${ys(data[i][k])}`;
+    }
+    return d;
+  }
+  const yTicks = 5;
+  return (
+    <div ref={wrapRef} className="relative h-full w-full">
+      <svg width={W} height={H} className="block">
+        <defs>
+          {keys.map(k => (
+            <linearGradient key={k.key} id={"g-"+k.key} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={k.color} stopOpacity={k.fillOpacity ?? 0.5}/>
+              <stop offset="100%" stopColor={k.color} stopOpacity="0"/>
+            </linearGradient>
+          ))}
+        </defs>
+        {Array.from({length:yTicks+1}).map((_,i)=>{
+          const v = (max/yTicks)*i;
+          return (
+            <g key={i}>
+              <line x1={l} x2={W-r} y1={ys(v)} y2={ys(v)} stroke="#1A1A1A" strokeDasharray="2 3"/>
+              <text x={l-6} y={ys(v)+3} textAnchor="end" fill="#555" fontFamily="Share Tech Mono" fontSize="10">{Math.round(v)}</text>
+            </g>
+          );
+        })}
+        {keys.map(k => (
+          <g key={k.key}>
+            <path d={area(k.key)} fill={`url(#g-${k.key})`}/>
+            <path d={line(k.key)} fill="none" stroke={k.color} strokeWidth={k.strokeWidth ?? 1.5}/>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// HEADER + SIDEBAR + FOOTER
+// ═══════════════════════════════════════════════════════════════════
+
+const STATUS_LABEL = { idle:"STANDBY", connecting:"DIALING", open:"ONLINE", closing:"CLOSING", closed:"OFFLINE", error:"FAULT" };
+const STATUS_DOT   = { idle:"bg-obsidian-300", connecting:"bg-gold-400 animate-blink", open:"bg-ember-500 shadow-ember", closing:"bg-obsidian-300", closed:"bg-rose-500", error:"bg-rose-300 animate-blink" };
+
+function Header({ wsStatus, wsAttempts, clock, activeLabel }) {
+  return (
+    <header className="relative flex h-12 items-center gap-4 border-b border-obsidian-700 bg-obsidian-850/95 px-4">
+      <div className="flex items-center gap-3">
+        <span className="text-ember-500 animate-bantz-pulse"><StagMark size={26}/></span>
+        <div className="flex items-baseline gap-2">
+          <span className="font-display text-[15px] font-extrabold tracking-widest text-fg-primary">BANTZ</span>
+          <span className="font-display text-[15px] font-extrabold tracking-widest text-ember-500">//</span>
+          <span className="font-display text-[15px] font-extrabold tracking-widest text-fg-primary">OPERATIONS CENTER</span>
+        </div>
+      </div>
+      <div className="h-5 w-px bg-obsidian-500"/>
+      <div className="flex items-center gap-2 font-terminal text-[11px] tracking-wide text-fg-muted">
+        <span className={`inline-block h-1.5 w-1.5 rounded-full ${STATUS_DOT[wsStatus]}`}/>
+        <span className="text-ember-300">WS</span>
+        <span className="text-obsidian-200">·</span>
+        <span className="text-fg-primary">{STATUS_LABEL[wsStatus]}</span>
+        {wsStatus !== "open" && wsAttempts > 0 && (
+          <span className="text-obsidian-300">· retry #{wsAttempts}</span>
+        )}
+      </div>
+      <div className="h-5 w-px bg-obsidian-500"/>
+      <div className="font-terminal text-[11px] tracking-widest text-obsidian-200">
+        <span className="text-obsidian-300">PAGE ·</span> <span className="text-fg-primary">{activeLabel}</span>
+      </div>
+      <div className="flex-1"/>
+      <div className="font-terminal text-[12px] tracking-wider text-ember-300">{clock}</div>
+      <div className="ml-2 flex items-center gap-1">
+        {[{n:"Minus",d:false},{n:"Square",d:false},{n:"X",d:true}].map((b,i)=>(
+          <button key={i} className={`grid h-7 w-7 place-items-center border border-transparent text-fg-muted transition-colors hover:border-obsidian-500 hover:text-fg-primary ${b.d?"hover:!border-rose-500 hover:!text-rose-300":""}`}>
+            <I name={b.n} size={b.n==="Square"?10:12}/>
+          </button>
+        ))}
+      </div>
+    </header>
+  );
+}
+
+const NAV = [
+  {key:"chat",    label:"Broadcast Channel", icon:"Radio"},
+  {key:"vitals",  label:"System Vitals",     icon:"Activity"},
+  {key:"tasks",   label:"Directives",        icon:"ListChecks"},
+  {key:"logs",    label:"Kernel Log",        icon:"ScrollText"},
+  {key:"alerts",  label:"Anomaly Watch",     icon:"ShieldAlert"},
+];
+
+function Sidebar({ active, onSelect, alertCount }) {
+  return (
+    <aside className="flex w-[68px] flex-col items-center justify-between border-r border-obsidian-700 bg-obsidian-850/90 py-3">
+      <nav className="flex flex-col items-center gap-1">
+        {NAV.map(n=>{
+          const isActive = active===n.key;
+          const showBadge = n.key==="alerts" && alertCount > 0;
+          return (
+            <button key={n.key} onClick={()=>onSelect(n.key)} title={n.label}
+              className={`group relative grid h-11 w-11 place-items-center border transition-all duration-150 ${
+                isActive
+                  ? "border-ember-500 bg-ember-500/10 text-ember-500 shadow-ember-soft"
+                  : "border-transparent text-obsidian-200 hover:border-obsidian-500 hover:text-ember-300"
+              }`}>
+              <I name={n.icon} size={18}/>
+              {isActive && <span className="absolute -left-3 top-1/2 h-6 w-0.5 -translate-y-1/2 bg-ember-500 shadow-ember"/>}
+              {showBadge && (
+                <span className="absolute -top-1 -right-1 grid h-4 min-w-[16px] place-items-center bg-rose-500 px-1 font-ui text-[9px] font-bold text-fg-primary shadow-rose">
+                  {alertCount}
+                </span>
+              )}
+              <span className="pointer-events-none absolute left-[110%] z-50 hidden whitespace-nowrap border border-obsidian-500 bg-obsidian-850 px-2 py-1 font-ui text-[10px] font-bold uppercase tracking-widest text-fg-primary group-hover:block">
+                {n.label}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+      <button onClick={()=>onSelect("settings")} title="Settings"
+        className={`grid h-11 w-11 place-items-center border ${active==="settings"?"border-gold-500 bg-gold-500/10 text-gold-400":"border-transparent text-obsidian-200 hover:border-obsidian-500 hover:text-gold-400"} transition-colors`}>
+        <I name="Settings" size={18}/>
+      </button>
+    </aside>
+  );
+}
+
+function Footer({ wsStatus, activeLabel }) {
+  return (
+    <footer className="flex h-6 items-center justify-between border-t border-obsidian-700 bg-obsidian-850/95 px-4 font-terminal text-[10px] tracking-wider text-obsidian-300">
+      <span>BANTZ v0.1.0 · operations center · {activeLabel.toLowerCase()}</span>
+      <span>{wsStatus==="open"?"// transmission stable":wsStatus==="connecting"?"// dialing backend…":"// awaiting transmission"}</span>
+    </footer>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PAGE 1 — BROADCAST CHANNEL (chat)
+// ═══════════════════════════════════════════════════════════════════
+
+const SEED_CHAT = [
+  {id:1, role:"bantz",  text:"Operations Center initialised. I am, as ever, mildly disappointed but operational.", ts: Date.now()-58000},
+  {id:2, role:"system", text:"awaiting backend transmission on ws://localhost:8765 …", ts: Date.now()-56000},
+  {id:3, role:"bantz",  text:"A matter requiring your attention has arisen. /home partition is at 91% — I have identified 47GB of footage labelled \"final_FINAL_v3.\" I will not comment further.", ts: Date.now()-48000},
+  {id:4, role:"user",   text:"what's the status of the weekly report?", ts: Date.now()-32000},
+  {id:5, role:"bantz",  text:"Compilation scheduled for 18:00. Three contributing systems have not yet provided their figures. I have sent the appropriate, gently menacing reminders.", ts: Date.now()-26000},
+  {id:6, role:"user",   text:"can you order more coffee?", ts: Date.now()-14000},
+  {id:7, role:"bantz",  text:"Done. Same vendor, same blend, same regrettable quantity. The delivery is scheduled for Thursday. You are welcome, though you needn't say so.", ts: Date.now()-8000},
+];
+
+function ChatPage({ chat, setChat, wsStatus }) {
+  const [draft,setDraft] = useState("");
+  const ref = useRef(null);
+  useEffect(()=>{ if(ref.current) ref.current.scrollTop = ref.current.scrollHeight; },[chat.length]);
+  function submit() {
+    const v = draft.trim(); if(!v) return;
+    setChat(c => [...c, {id: Date.now(), role:"user", text:v, ts: Date.now()}]);
+    setDraft("");
+    setTimeout(()=>{
+      setChat(c => [...c, {id: Date.now()+1, role:"bantz", text:"Noted. I shall attend to it with my usual reluctance.", ts: Date.now()}]);
+    }, 700);
+  }
+  return (
+    <div className="flex h-full flex-col">
+      <PageTitle eyebrow="Channel · 042" title="BROADCAST CHANNEL"
+        sub="Direct duplex transmission with Bantz. Speak freely. He will judge silently."
+        right={
+          <div className="flex items-center gap-3 font-terminal text-[10px] tracking-widest text-obsidian-200">
+            <span><span className="text-ember-500">42</span> SENT</span>
+            <span><span className="text-gold-400">3</span> ACK</span>
+            <span>SESSION <span className="text-fg-primary">14d 6h</span></span>
+          </div>
+        }/>
+
+      <section className="flex-1 min-h-0 flex flex-col border border-obsidian-700 bg-obsidian-850/70">
+        <PanelHeader title="Transmission Log" subtitle="ENCRYPTED · DUPLEX" right={
+          <div className="flex items-center gap-2 font-terminal text-[10px] text-obsidian-300">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-ember-500 animate-blink"/>
+            CARRIER ACTIVE
+          </div>
+        }/>
+        <div ref={ref} className="flex-1 space-y-3 overflow-y-auto px-6 py-5">
+          {chat.map(t => (
+            <div key={t.id} className="grid grid-cols-[88px_1fr] gap-4 bz-row-in">
+              {t.role==="bantz" && <>
+                <div className="pt-1 font-terminal text-[10px] tracking-widest text-ember-500">BANTZ · {fmtTime(t.ts)}</div>
+                <div className="border-l-2 border-ember-500 bg-obsidian-800/60 px-3 py-2 font-terminal text-[15px] leading-relaxed text-fg-primary">{t.text}</div>
+              </>}
+              {t.role==="user" && <>
+                <div className="pt-1 font-terminal text-[10px] tracking-widest text-gold-400">YOU · {fmtTime(t.ts)}</div>
+                <div className="border-l-2 border-gold-500/60 px-3 py-2 font-ui text-[14px] leading-relaxed text-fg-secondary">{t.text}</div>
+              </>}
+              {t.role==="system" && <>
+                <div className="pt-0.5 font-terminal text-[10px] tracking-widest text-obsidian-300">SYS · {fmtTime(t.ts)}</div>
+                <div className="font-terminal text-[12px] italic leading-relaxed text-obsidian-200">{t.text}</div>
+              </>}
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-obsidian-700 bg-obsidian-900/60 px-5 py-3">
+          <div className="flex items-center gap-3 border border-obsidian-500 bg-obsidian-850 px-3 py-2 focus-within:border-ember-500 focus-within:shadow-ember-soft transition-colors">
+            <span className="font-terminal text-[12px] text-ember-300">»</span>
+            <input value={draft}
+              onChange={e=>setDraft(e.target.value)}
+              onKeyDown={e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } }}
+              placeholder={wsStatus==="open"?"Address Bantz directly, sir.":"Awaiting backend transmission…"}
+              className="flex-1 bg-transparent font-terminal text-[14px] text-fg-primary placeholder:text-obsidian-300 focus:outline-none"/>
+            <span className="flex items-center gap-1 font-ui text-[9px] font-bold uppercase tracking-widest text-obsidian-300">
+              <I name="CornerDownLeft" size={10}/> Send
+            </span>
+            <button onClick={submit} disabled={!draft.trim()}
+              className="grid h-7 w-7 place-items-center border border-ember-500 text-ember-500 hover:bg-ember-500 hover:text-obsidian-900 transition-all disabled:border-obsidian-500 disabled:text-obsidian-300 disabled:hover:bg-transparent">
+              <I name="Send" size={12}/>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PAGE 2 — VITALS
+// ═══════════════════════════════════════════════════════════════════
+
+function seedNet() {
+  const out = []; const now = Date.now();
+  for (let i=39;i>=0;i--) {
+    out.push({
+      t: now - i*1000,
+      down: 200 + Math.round(Math.random()*900 + Math.sin(i/3)*120),
+      up:   80  + Math.round(Math.random()*200 + Math.cos(i/4)*40),
+    });
+  }
+  return out;
+}
+
+const PROCESSES = [
+  { pid: 4127, name: "ollama serve",       cpu: 38.2, mem: 12.4, user: "bantz" },
+  { pid: 1029, name: "bantz-daemon",       cpu: 14.8, mem:  6.1, user: "bantz" },
+  { pid: 8842, name: "firefox-bin",        cpu:  9.3, mem:  4.7, user: "misa"  },
+  { pid:  812, name: "Xorg",               cpu:  4.1, mem:  1.8, user: "root"  },
+  { pid: 2256, name: "redis-server",       cpu:  2.7, mem:  0.9, user: "bantz" },
+];
+
+const SERVICES = [
+  { name: "Ollama",   port: 11434, status: "online",  uptime: "6d 14h", detail: "3 models loaded" },
+  { name: "Gemini",   port: null,  status: "online",  uptime: "session", detail: "rate limit: ok" },
+  { name: "Telegram", port: 443,   status: "online",  uptime: "14d 6h", detail: "2 chats observed" },
+  { name: "Redis",    port: 6379,  status: "degraded", uptime: "2d 11h", detail: "high evict rate" },
+  { name: "Neo4j",    port: 7687,  status: "offline", uptime: "—",      detail: "container halted" },
+];
+
+function VitalsPage({ vitals, gpuTemp }) {
+  const latest = vitals[vitals.length-1] || {cpu:0,mem:0,disk:0};
+  const [net] = useState(seedNet); // static for preview demo
+  const [netData, setNetData] = useState(net);
+  useEffect(()=>{
+    const id = setInterval(()=>{
+      setNetData(d => [...d.slice(-39), {
+        t: Date.now(),
+        down: 200 + Math.round(Math.random()*900 + Math.sin(Date.now()/2000)*120),
+        up:   80 + Math.round(Math.random()*200 + Math.cos(Date.now()/2500)*40),
+      }]);
+    }, 1200);
+    return ()=>clearInterval(id);
+  },[]);
+  const lastNet = netData[netData.length-1] || {down:0,up:0};
+
+  return (
+    <div className="flex h-full flex-col">
+      <PageTitle eyebrow="Diagnostics" title="SYSTEM VITALS"
+        sub="Hardware telemetry sampled at 1Hz. Anomalies surface in Anomaly Watch."
+        right={
+          <div className="flex items-center gap-2 font-terminal text-[10px] tracking-widest text-obsidian-200">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-ember-500 shadow-ember"/>
+            SAMPLING · 1 Hz
+          </div>
+        }/>
+
+      {/* Arc gauges */}
+      <div className="grid grid-cols-4 gap-3">
+        <ArcGauge label="CPU" value={latest.cpu} detail="i9-13900K · 24c/32t" tone={latest.cpu>75?"rose":"ember"}/>
+        <ArcGauge label="RAM" value={62} detail="19.8 / 32 GB" tone="ember"/>
+        <ArcGauge label="VRAM" value={38} detail="9.1 / 24 GB · RTX 4090" tone="gold"/>
+        <ArcGauge label="DISK" value={latest.disk||91} detail="/home · 412 / 460 GB" tone={(latest.disk||91)>85?"rose":"ember"}/>
+      </div>
+
+      {/* Row 2: Net I/O + GPU thermal */}
+      <div className="mt-3 grid grid-cols-[1fr_320px] gap-3 min-h-[200px]">
+        <section className="border border-obsidian-700 bg-obsidian-850/70 flex flex-col">
+          <PanelHeader title="Network I/O" subtitle="kB/s · 40s window" right={
+            <div className="flex items-center gap-4 font-terminal text-[10px]">
+              <span className="text-ember-500">▼ {lastNet.down} kB/s</span>
+              <span className="text-velvet-200">▲ {lastNet.up} kB/s</span>
+            </div>
+          }/>
+          <div className="flex-1 min-h-0 p-3">
+            <MiniAreaChart data={netData} keys={[
+              {key:"down", color:"#FF4500", fillOpacity:0.45, strokeWidth:1.5},
+              {key:"up",   color:"#00BFFF", fillOpacity:0.30, strokeWidth:1.2},
+            ]} yMax={1400}/>
+          </div>
+        </section>
+
+        <section className="border border-obsidian-700 bg-obsidian-850/70 flex flex-col">
+          <PanelHeader title="GPU Thermal" subtitle="°C"/>
+          <div className="flex-1 flex items-stretch gap-4 px-5 py-4">
+            {/* Thermometer */}
+            <div className="relative w-7 flex-shrink-0">
+              <div className="absolute inset-0 border border-obsidian-500 bg-obsidian-900"/>
+              <div className="absolute left-0 right-0 bottom-0 transition-all"
+                   style={{
+                     height: `${Math.min(100, gpuTemp)}%`,
+                     background: gpuTemp>80
+                       ? "linear-gradient(to top, #CC1111, #FF4500)"
+                       : gpuTemp>65
+                       ? "linear-gradient(to top, #FF4500, #FF8C00)"
+                       : "linear-gradient(to top, #00BFFF, #00BFFF)",
+                     boxShadow: gpuTemp>80 ? "0 0 12px #CC1111" : "0 0 10px #FF4500",
+                   }}/>
+              {/* Tick marks */}
+              {[20,40,60,80].map(v=>(
+                <span key={v} className="absolute left-full ml-1 font-terminal text-[9px] text-obsidian-300"
+                      style={{bottom: `calc(${v}% - 5px)`}}>{v}°</span>
+              ))}
+            </div>
+            <div className="flex-1 flex flex-col justify-between pl-6">
+              <div>
+                <div className="font-display text-[40px] font-extrabold leading-none"
+                     style={{color: gpuTemp>80?"#CC1111":gpuTemp>65?"#FF4500":"#00BFFF"}}>
+                  {gpuTemp}°<span className="text-[16px] opacity-70 ml-0.5">C</span>
+                </div>
+                <div className="mt-2 font-ui text-[9px] font-bold uppercase tracking-widest text-obsidian-200">
+                  Junction Temp
+                </div>
+              </div>
+              <div className="space-y-1 font-terminal text-[11px]">
+                <div className="flex justify-between"><span className="text-obsidian-300">FAN</span><span className="text-fg-primary">68%</span></div>
+                <div className="flex justify-between"><span className="text-obsidian-300">POWER</span><span className="text-fg-primary">214 W</span></div>
+                <div className="flex justify-between"><span className="text-obsidian-300">CLOCK</span><span className="text-fg-primary">2.41 GHz</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Row 3: Processes + Services */}
+      <div className="mt-3 grid flex-1 min-h-0 grid-cols-[1fr_1fr] gap-3">
+        <section className="border border-obsidian-700 bg-obsidian-850/70 flex flex-col">
+          <PanelHeader title="Top Processes" subtitle="by CPU · top 5" right={
+            <span className="font-terminal text-[10px] text-obsidian-300">42 total · 0 zombies</span>
+          }/>
+          <div className="flex-1 overflow-y-auto">
+            <table className="w-full font-terminal text-[12px]">
+              <thead>
+                <tr className="border-b border-obsidian-700 text-[9px] uppercase tracking-widest text-obsidian-300">
+                  <th className="px-4 py-2 text-left font-ui font-bold">PID</th>
+                  <th className="px-2 py-2 text-left font-ui font-bold">Process</th>
+                  <th className="px-2 py-2 text-right font-ui font-bold">CPU</th>
+                  <th className="px-2 py-2 text-right font-ui font-bold">MEM</th>
+                  <th className="px-4 py-2 text-right font-ui font-bold">User</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PROCESSES.map((p,i)=>(
+                  <tr key={p.pid} className="border-b border-obsidian-800 bz-row-in" style={{animationDelay:`${i*40}ms`}}>
+                    <td className="px-4 py-2 text-obsidian-200">{p.pid}</td>
+                    <td className="px-2 py-2 text-fg-primary">{p.name}</td>
+                    <td className="px-2 py-2 text-right">
+                      <span className={p.cpu>20?"text-ember-500":p.cpu>10?"text-gold-400":"text-obsidian-200"}>
+                        {p.cpu.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td className="px-2 py-2 text-right text-obsidian-200">{p.mem.toFixed(1)}%</td>
+                    <td className="px-4 py-2 text-right text-obsidian-300">{p.user}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="border border-obsidian-700 bg-obsidian-850/70 flex flex-col">
+          <PanelHeader title="Service Status" subtitle="systemd · 5 services" right={
+            <span className="font-terminal text-[10px]">
+              <span className="text-success">3 OK</span> · <span className="text-gold-400">1 DEGRADED</span> · <span className="text-rose-300">1 OFFLINE</span>
+            </span>
+          }/>
+          <div className="flex-1 overflow-y-auto p-3 grid grid-cols-1 gap-2">
+            {SERVICES.map((s,i)=>{
+              const sc = s.status==="online" ? {dot:"bg-ember-500 shadow-ember", text:"text-ember-500", border:"border-ember-500/40"}
+                      : s.status==="degraded" ? {dot:"bg-gold-400 shadow-gold", text:"text-gold-400", border:"border-gold-500/40"}
+                      : {dot:"bg-rose-500 shadow-rose", text:"text-rose-300", border:"border-rose-500/40"};
+              return (
+                <div key={s.name} className={`flex items-center gap-4 border ${sc.border} bg-obsidian-800/60 px-4 py-3 bz-row-in`} style={{animationDelay:`${i*40}ms`}}>
+                  <span className={`block h-2.5 w-2.5 rounded-full ${sc.dot}`}/>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-ui text-[12px] font-bold uppercase tracking-wider text-fg-primary">{s.name}
+                      {s.port && <span className="ml-2 font-terminal text-[10px] text-obsidian-300">:{s.port}</span>}
+                    </div>
+                    <div className="font-terminal text-[10px] text-obsidian-200">{s.detail}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`font-ui text-[9px] font-bold uppercase tracking-widest ${sc.text}`}>{s.status}</div>
+                    <div className="font-terminal text-[10px] text-obsidian-300 mt-0.5">{s.uptime}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PAGE 3 — TASKS / DIRECTIVES
+// ═══════════════════════════════════════════════════════════════════
+
+const TASKS_SEED = [
+  { id:"t1", title:"Monitor disk usage on /home",        detail:"alert threshold 95% · currently 91%",      priority:"high",     status:"active",   progress:62, eta:"watching" },
+  { id:"t2", title:"Triage inbound correspondence",      detail:"3 of 17 flagged for personal attention",   priority:"medium",   status:"active",   progress:28, eta:"continuous" },
+  { id:"t3", title:"Compile weekly status report",       detail:"3 of 5 contributing systems pending",      priority:"high",     status:"active",   progress:78, eta:"18:00 today" },
+  { id:"t4", title:"Audit recurring cron failures",      detail:"backup.sh — 14 consecutive misses",        priority:"critical", status:"queued",   progress:0,  eta:"this evening" },
+  { id:"t5", title:"Provision second Ollama model",      detail:"qwen2.5-coder · pending disk reclamation", priority:"low",      status:"queued",   progress:0,  eta:"after disk audit" },
+  { id:"t6", title:"Reorganise meeting schedule",        detail:"3 conflicts resolved, 0 inconveniences",   priority:"medium",   status:"done",     progress:100,eta:"completed 1d 4h" },
+  { id:"t7", title:"Apply security patches",             detail:"14 packages updated · 0 regressions",      priority:"high",     status:"done",     progress:100,eta:"completed 2d 1h" },
+  { id:"t8", title:"Procure additional coffee",          detail:"Thursday delivery · same regrettable blend",priority:"low",     status:"done",     progress:100,eta:"completed 1h ago" },
+];
+
+const PRIORITY = {
+  critical: { color:"text-rose-300",  border:"border-rose-500",     bg:"bg-rose-500/10",    label:"CRITICAL" },
+  high:     { color:"text-ember-500", border:"border-ember-500",    bg:"bg-ember-500/10",   label:"HIGH" },
+  medium:   { color:"text-gold-400",  border:"border-gold-500",     bg:"bg-gold-500/10",    label:"MEDIUM" },
+  low:      { color:"text-obsidian-200", border:"border-obsidian-500", bg:"bg-obsidian-800", label:"LOW" },
+};
+
+function TaskRow({ t, index }) {
+  const p = PRIORITY[t.priority];
+  return (
+    <div className={`group border ${t.status==="active" ? "border-ember-500/30" : t.status==="queued" ? "border-gold-500/30" : "border-obsidian-700"} bg-obsidian-800/60 px-5 py-4 hover:border-ember-500 transition-colors bz-row-in ${t.status==="done"?"opacity-60":""}`}
+         style={{animationDelay:`${index*30}ms`}}>
+      <div className="flex items-start gap-4">
+        <span className={`mt-1.5 block h-2 w-2 flex-shrink-0 rounded-full ${t.status==="active"?"bg-ember-500 shadow-ember":t.status==="queued"?"bg-gold-400":"bg-obsidian-400"}`}/>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="font-ui text-[14px] font-semibold uppercase tracking-wide text-fg-primary">{t.title}</div>
+            <span className={`border px-1.5 py-0.5 font-ui text-[8px] font-bold uppercase tracking-widest ${p.color} ${p.border} ${p.bg}`}>{p.label}</span>
+          </div>
+          <div className="font-terminal text-[12px] text-obsidian-200">{t.detail}</div>
+          {t.status === "active" && (
+            <div className="mt-3 flex items-center gap-3">
+              <div className="relative h-1.5 flex-1 bg-obsidian-700 overflow-hidden">
+                <div className="absolute inset-y-0 left-0 bg-ember-500 shadow-ember transition-all"
+                     style={{width: `${t.progress}%`}}/>
+                {/* Tick marks */}
+                {[25,50,75].map(v => (
+                  <span key={v} className="absolute inset-y-0 w-px bg-obsidian-900/80" style={{left:`${v}%`}}/>
+                ))}
+              </div>
+              <span className="font-terminal text-[11px] text-ember-300 w-10 text-right">{t.progress}%</span>
+            </div>
+          )}
+        </div>
+        <div className="text-right flex flex-col items-end gap-1">
+          <div className="font-terminal text-[10px] text-obsidian-300 uppercase tracking-widest">{t.eta}</div>
+          <button className="opacity-0 group-hover:opacity-100 transition-opacity grid h-6 w-6 place-items-center border border-obsidian-500 text-obsidian-200 hover:border-ember-500 hover:text-ember-500">
+            <I name="MoreHorizontal" size={12}/>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TasksPage() {
+  const [filter, setFilter] = useState("all");
+  const [showDone, setShowDone] = useState(false);
+
+  const visible = TASKS_SEED.filter(t => {
+    if (filter !== "all" && t.priority !== filter) return false;
+    return true;
+  });
+  const active = visible.filter(t => t.status === "active");
+  const queued = visible.filter(t => t.status === "queued");
+  const done   = visible.filter(t => t.status === "done");
+
+  return (
+    <div className="flex h-full flex-col">
+      <PageTitle eyebrow={`${active.length} active · ${queued.length} queued`} title="DIRECTIVES"
+        sub="Standing instructions Bantz operates without further consultation."
+        right={
+          <button className="flex items-center gap-2 border border-ember-500 bg-ember-500/10 px-4 py-2 font-ui text-[10px] font-bold uppercase tracking-widest text-ember-500 hover:bg-ember-500 hover:text-obsidian-900 transition-all">
+            <I name="Plus" size={14}/> New Directive
+          </button>
+        }/>
+
+      {/* Filter chips */}
+      <div className="flex items-center gap-2 mb-4">
+        {[
+          {k:"all", label:"All"},
+          {k:"critical", label:"Critical"},
+          {k:"high", label:"High"},
+          {k:"medium", label:"Medium"},
+          {k:"low", label:"Low"},
+        ].map(c => (
+          <button key={c.k} onClick={()=>setFilter(c.k)}
+            className={`border px-3 py-1.5 font-ui text-[10px] font-bold uppercase tracking-widest transition-all ${
+              filter===c.k
+                ? "border-ember-500 bg-ember-500/15 text-ember-500"
+                : "border-obsidian-500 text-obsidian-200 hover:border-ember-500 hover:text-ember-300"
+            }`}>{c.label}</button>
+        ))}
+        <div className="flex-1"/>
+        <div className="font-terminal text-[10px] text-obsidian-300 tracking-widest">
+          {visible.length} OF {TASKS_SEED.length} SHOWN
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-5">
+        {/* Active */}
+        <section>
+          <SectionLabel count={active.length} accent="ember">Active</SectionLabel>
+          <div className="space-y-2 mt-2">
+            {active.length === 0 && <Empty text="No active directives."/>}
+            {active.map((t,i) => <TaskRow key={t.id} t={t} index={i}/>)}
+          </div>
+        </section>
+
+        {/* Queued */}
+        <section>
+          <SectionLabel count={queued.length} accent="gold">Queued</SectionLabel>
+          <div className="space-y-2 mt-2">
+            {queued.length === 0 && <Empty text="Nothing queued."/>}
+            {queued.map((t,i) => <TaskRow key={t.id} t={t} index={i}/>)}
+          </div>
+        </section>
+
+        {/* Completed — collapsible */}
+        <section>
+          <button onClick={()=>setShowDone(s=>!s)} className="flex items-center gap-2 group">
+            <I name={showDone?"ChevronDown":"ChevronRight"} size={14} className="text-obsidian-200 group-hover:text-ember-500"/>
+            <SectionLabel count={done.length} accent="muted">Completed</SectionLabel>
+          </button>
+          {showDone && (
+            <div className="space-y-2 mt-2">
+              {done.map((t,i) => <TaskRow key={t.id} t={t} index={i}/>)}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function SectionLabel({ children, count, accent="ember" }) {
+  const c = accent==="gold"?"text-gold-400":accent==="muted"?"text-obsidian-200":"text-ember-500";
+  const r = accent==="gold"?"from-gold-500":accent==="muted"?"from-obsidian-400":"from-ember-500";
+  return (
+    <div className="flex items-center gap-3">
+      <span className={`font-ui text-[10px] font-bold uppercase tracking-[0.25em] ${c}`}>{children}</span>
+      <span className="font-terminal text-[10px] text-obsidian-300">[{count}]</span>
+      <span className={`h-px flex-1 bg-gradient-to-r ${r} to-transparent`}/>
+    </div>
+  );
+}
+
+function Empty({ text }) {
+  return <div className="border border-dashed border-obsidian-700 bg-obsidian-850/30 px-5 py-4 font-terminal text-[12px] italic text-obsidian-300">{text}</div>;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PAGE 4 — LOGS
+// ═══════════════════════════════════════════════════════════════════
+
+const LOG_SEED = [
+  {sev:"INFO",     src:"kernel",    msg:"Bantz v0.1.0 initialised — kernel 6.8.0-rc4"},
+  {sev:"INFO",     src:"comms",     msg:"WebSocket carrier opened on :8765"},
+  {sev:"INFO",     src:"scheduler", msg:"loaded 8 directives from store"},
+  {sev:"WARN",     src:"disk-mon",  msg:"/home partition at 91% — alert threshold not yet breached"},
+  {sev:"INFO",     src:"ollama",    msg:"model warmed: llama3.1:70b (38s)"},
+  {sev:"ERROR",    src:"redis",     msg:"high eviction rate — 142 keys/s (threshold 50)"},
+  {sev:"INFO",     src:"telegram",  msg:"polling 2 chats · last update 4s ago"},
+  {sev:"WARN",     src:"thermal",   msg:"GPU junction temp climbing — 68°C, fan ramping"},
+  {sev:"INFO",     src:"comms",     msg:"broadcast 041 transmitted — \"CPU temperature nominal\""},
+  {sev:"CRITICAL", src:"systemd",   msg:"neo4j.service failed to start (exit 137 · OOM killer)"},
+  {sev:"INFO",     src:"scheduler", msg:"directive t3 ‘weekly report’ progress 78%"},
+  {sev:"WARN",     src:"cron",      msg:"backup.sh — 14 consecutive misses · last success 14d ago"},
+  {sev:"INFO",     src:"comms",     msg:"broadcast 042 transmitted — \"meeting rescheduled\""},
+  {sev:"INFO",     src:"ego",       msg:"mood: tolerant · displeasure: moderate"},
+  {sev:"ERROR",    src:"gemini",    msg:"rate limit warning: 87% of quota consumed"},
+  {sev:"INFO",     src:"kernel",    msg:"awaiting acknowledgement..."},
+];
+
+const SEVERITY = {
+  INFO:     { color:"text-obsidian-100",  badge:"text-obsidian-100 border-obsidian-400" },
+  WARN:     { color:"text-gold-400",      badge:"text-gold-400 border-gold-500 bg-gold-500/10" },
+  ERROR:    { color:"text-ember-500",     badge:"text-ember-500 border-ember-500 bg-ember-500/10" },
+  CRITICAL: { color:"text-rose-300",      badge:"text-rose-300 border-rose-500 bg-rose-500/15 shadow-rose" },
+};
+
+function LogsPage() {
+  const [logs, setLogs] = useState(() => LOG_SEED.map((l,i)=>({...l, id:i, t: Date.now()-(LOG_SEED.length-i)*1300})));
+  const [filter, setFilter] = useState("ALL");
+  const [search, setSearch] = useState("");
+  const [paused, setPaused] = useState(false);
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (paused) return;
+    const id = setInterval(() => {
+      const next = LOG_SEED[Math.floor(Math.random()*LOG_SEED.length)];
+      setLogs(prev => [...prev.slice(-200), {...next, id: Date.now(), t: Date.now()}]);
+    }, 1800);
+    return () => clearInterval(id);
+  }, [paused]);
+
+  useEffect(() => {
+    if (scrollRef.current && !paused) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs.length, paused]);
+
+  const filtered = logs.filter(l => {
+    if (filter !== "ALL" && l.sev !== filter) return false;
+    if (search && !(l.msg.toLowerCase().includes(search.toLowerCase()) || l.src.includes(search.toLowerCase()))) return false;
+    return true;
+  });
+
+  const counts = ["INFO","WARN","ERROR","CRITICAL"].reduce((acc,k)=>{ acc[k] = logs.filter(l=>l.sev===k).length; return acc; },{});
+
+  return (
+    <div className="flex h-full flex-col">
+      <PageTitle eyebrow={`${logs.length} entries · session`} title="KERNEL LOG"
+        sub="Continuous audit stream from every Bantz subsystem."
+        right={
+          <button onClick={()=>setPaused(p=>!p)}
+            className={`flex items-center gap-2 border px-4 py-2 font-ui text-[10px] font-bold uppercase tracking-widest transition-all ${
+              paused ? "border-gold-500 bg-gold-500/10 text-gold-400" : "border-ember-500 bg-ember-500/10 text-ember-500"
+            }`}>
+            <I name={paused?"Play":"Pause"} size={12}/>
+            {paused ? "Resume Stream" : "Pause Stream"}
+          </button>
+        }/>
+
+      {/* Filter / search bar */}
+      <div className="border border-obsidian-700 bg-obsidian-850/70 mb-3 flex items-center gap-3 px-4 py-3">
+        <I name="Search" size={14} className="text-obsidian-300"/>
+        <input value={search} onChange={e=>setSearch(e.target.value)}
+          placeholder="filter by source or message…"
+          className="flex-1 bg-transparent font-terminal text-[12px] text-fg-primary placeholder:text-obsidian-300 focus:outline-none"/>
+        <div className="h-5 w-px bg-obsidian-500"/>
+        <div className="flex items-center gap-1">
+          {["ALL","INFO","WARN","ERROR","CRITICAL"].map(s => {
+            const sev = SEVERITY[s];
+            const isActive = filter===s;
+            return (
+              <button key={s} onClick={()=>setFilter(s)}
+                className={`border px-2 py-1 font-ui text-[9px] font-bold uppercase tracking-widest transition-all ${
+                  isActive
+                    ? (s==="ALL" ? "border-ember-500 bg-ember-500/15 text-ember-500"
+                      : `${sev.badge}`)
+                    : "border-obsidian-500 text-obsidian-300 hover:text-fg-primary hover:border-obsidian-300"
+                }`}>
+                {s}{s!=="ALL" && <span className="ml-1 opacity-70">{counts[s]}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Stream */}
+      <section className="flex-1 min-h-0 border border-obsidian-700 bg-obsidian-900/60 flex flex-col">
+        <div className="grid grid-cols-[140px_110px_90px_1fr] border-b border-obsidian-700 px-4 py-2 font-ui text-[9px] font-bold uppercase tracking-widest text-obsidian-300">
+          <span>Timestamp</span><span>Source</span><span>Severity</span><span>Message</span>
+        </div>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto font-terminal text-[12px]">
+          {filtered.map((l,i) => {
+            const s = SEVERITY[l.sev];
+            return (
+              <div key={l.id} className="grid grid-cols-[140px_110px_90px_1fr] gap-x-3 px-4 py-1 border-b border-obsidian-800/60 hover:bg-obsidian-800/40 bz-row-in"
+                   style={{animationDelay: `${Math.min(i, 20)*20}ms`}}>
+                <span className="text-obsidian-300">{fmtMs(l.t)}</span>
+                <span className="text-velvet-200">{l.src}</span>
+                <span><span className={`inline-block border px-1.5 py-0 font-ui text-[8px] font-bold tracking-widest ${s.badge}`}>{l.sev}</span></span>
+                <span className={s.color}>{l.msg}</span>
+              </div>
+            );
+          })}
+          {filtered.length === 0 && <Empty text="No entries match the current filter."/>}
+        </div>
+        <div className="border-t border-obsidian-700 px-4 py-2 flex items-center justify-between font-terminal text-[10px] text-obsidian-300">
+          <span>{filtered.length} of {logs.length} entries · filter <span className="text-ember-500">{filter}</span></span>
+          <span className="flex items-center gap-2">
+            <span className={`inline-block h-1.5 w-1.5 rounded-full ${paused?"bg-gold-400":"bg-ember-500 animate-blink"}`}/>
+            {paused ? "STREAM PAUSED" : "STREAMING · ~0.5 ev/s"}
+          </span>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PAGE 5 — ALERTS / ANOMALY WATCH
+// ═══════════════════════════════════════════════════════════════════
+
+const ALERTS_SEED = [
+  { id:"a1", severity:"critical", category:"thermal",  title:"GPU junction temperature climbing",
+    detail:"68°C and rising at +0.4°C/min. Throttle threshold (87°C) projected in ~47 minutes if trend continues.",
+    ts: Date.now()-4*60*1000, source:"thermal-monitor" },
+  { id:"a2", severity:"critical", category:"disk",     title:"/home partition approaching saturation",
+    detail:"412 / 460 GB consumed (91%). 47 GB attributable to one directory: ~/Videos/exports/final_FINAL_v3/. I have my opinions.",
+    ts: Date.now()-22*60*1000, source:"disk-mon" },
+  { id:"a3", severity:"warning",  category:"session",  title:"Marathon session detected",
+    detail:"You have been at the terminal for 11h 23m without a break exceeding 4 minutes. This is, in my opinion, unsustainable.",
+    ts: Date.now()-9*60*1000, source:"ego" },
+  { id:"a4", severity:"warning",  category:"service",  title:"Redis evicting keys aggressively",
+    detail:"142 evictions/s (threshold 50). Cache pressure suggests undersized maxmemory or runaway producer.",
+    ts: Date.now()-28*60*1000, source:"redis" },
+  { id:"a5", severity:"warning",  category:"network",  title:"Gemini API quota at 87%",
+    detail:"At current consumption rate the daily quota will exhaust in 2h 14m. Consider model fallback.",
+    ts: Date.now()-44*60*1000, source:"gemini" },
+  { id:"a6", severity:"info",     category:"package",  title:"Package arriving Thursday",
+    detail:"Sender: yourself. Contents: coffee. Catalogued under \"recurring vanities.\"",
+    ts: Date.now()-2*3600*1000, source:"package-watch" },
+];
+
+const SEV_STYLES = {
+  critical: { bar:"bg-rose-500 shadow-rose",   text:"text-rose-300", border:"border-rose-500/60",   bg:"bg-rose-500/5",   label:"CRITICAL" },
+  warning:  { bar:"bg-gold-500 shadow-gold",   text:"text-gold-400", border:"border-gold-500/40",   bg:"bg-gold-500/5",   label:"WARNING" },
+  info:     { bar:"bg-velvet-200",             text:"text-velvet-200", border:"border-velvet-200/40",bg:"bg-velvet-200/5", label:"INFO" },
+};
+
+const CAT_ICON = { thermal:"ThermometerSun", disk:"HardDrive", session:"Clock", service:"Server", network:"Wifi", package:"Package" };
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s < 60) return s+"s ago";
+  const m = Math.floor(s/60);
+  if (m < 60) return m+"m ago";
+  const h = Math.floor(m/60);
+  if (h < 24) return h+"h ago";
+  return Math.floor(h/24)+"d ago";
+}
+
+function AlertsPage({ alerts, setAlerts }) {
+  const counts = alerts.reduce((acc,a)=>{ acc[a.severity]=(acc[a.severity]||0)+1; return acc; }, {});
+
+  function dismiss(id) {
+    setAlerts(a => a.filter(x => x.id !== id));
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <PageTitle eyebrow={`${alerts.length} active`} title="ANOMALY WATCH"
+        sub="Bantz raises alerts at his own discretion. He is rarely wrong, though often condescending."
+        right={
+          <button className="flex items-center gap-2 border border-obsidian-500 bg-obsidian-800 px-4 py-2 font-ui text-[10px] font-bold uppercase tracking-widest text-obsidian-200 hover:border-ember-500 hover:text-ember-500 transition-colors">
+            <I name="Check" size={12}/> Dismiss All
+          </button>
+        }/>
+
+      {/* Severity summary */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {[
+          {sev:"critical", label:"CRITICAL", icon:"ShieldAlert"},
+          {sev:"warning",  label:"WARNING",  icon:"AlertTriangle"},
+          {sev:"info",     label:"INFO",     icon:"Info"},
+        ].map(s => {
+          const st = SEV_STYLES[s.sev];
+          const n = counts[s.sev] || 0;
+          return (
+            <div key={s.sev} className={`border ${st.border} ${st.bg} px-5 py-4 flex items-center gap-4`}>
+              <div className={`grid h-12 w-12 place-items-center border ${st.border} ${st.text}`}>
+                <I name={s.icon} size={22}/>
+              </div>
+              <div className="flex-1">
+                <div className={`font-display text-[32px] font-extrabold leading-none ${st.text}`}>{n}</div>
+                <div className="mt-1 font-ui text-[10px] font-bold uppercase tracking-widest text-obsidian-200">{s.label}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Alert list */}
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2">
+        {alerts.length === 0 && (
+          <div className="grid place-items-center h-full">
+            <div className="text-center">
+              <I name="ShieldCheck" size={48} className="text-success mb-3"/>
+              <div className="font-ui text-[14px] font-bold uppercase tracking-widest text-fg-primary">All clear.</div>
+              <div className="mt-2 font-terminal text-[12px] italic text-obsidian-200">
+                "I have detected nothing untoward. This is, in my experience, a temporary condition."
+              </div>
+            </div>
+          </div>
+        )}
+        {alerts.map((a,i) => {
+          const st = SEV_STYLES[a.severity];
+          return (
+            <div key={a.id} className={`group relative flex items-stretch border ${st.border} ${st.bg} bz-row-in`}
+                 style={{animationDelay:`${i*40}ms`}}>
+              {/* Left severity bar */}
+              <div className={`w-1.5 flex-shrink-0 ${st.bar}`}/>
+              {/* Content */}
+              <div className="flex-1 px-5 py-4">
+                <div className="flex items-center gap-3 mb-1">
+                  <span className={`grid h-6 w-6 place-items-center border ${st.border} ${st.text}`}>
+                    <I name={CAT_ICON[a.category]||"AlertCircle"} size={12}/>
+                  </span>
+                  <div className={`font-ui text-[13px] font-bold uppercase tracking-wider ${st.text}`}>{a.title}</div>
+                  <span className={`border px-1.5 py-0.5 font-ui text-[8px] font-bold uppercase tracking-widest ${st.text} ${st.border} ${st.bg}`}>{st.label}</span>
+                  <div className="flex-1"/>
+                  <span className="font-terminal text-[10px] text-obsidian-300">{timeAgo(a.ts)} · {a.source}</span>
+                </div>
+                <p className="font-terminal text-[13px] leading-relaxed text-fg-secondary pl-9">{a.detail}</p>
+                <div className="mt-3 pl-9 flex items-center gap-2">
+                  <button className="border border-obsidian-500 bg-obsidian-800 px-3 py-1 font-ui text-[9px] font-bold uppercase tracking-widest text-obsidian-200 hover:border-ember-500 hover:text-ember-500 transition-colors">
+                    Investigate
+                  </button>
+                  <button className="border border-obsidian-500 bg-obsidian-800 px-3 py-1 font-ui text-[9px] font-bold uppercase tracking-widest text-obsidian-200 hover:border-gold-500 hover:text-gold-400 transition-colors">
+                    Snooze 1h
+                  </button>
+                </div>
+              </div>
+              {/* Dismiss */}
+              <button onClick={()=>dismiss(a.id)}
+                className="self-start m-3 grid h-7 w-7 place-items-center border border-obsidian-500 text-obsidian-200 hover:border-rose-500 hover:text-rose-300 transition-colors">
+                <I name="X" size={12}/>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PAGE 6 — SETTINGS
+// ═══════════════════════════════════════════════════════════════════
+
+const OLLAMA_MODELS = [
+  "llama3.1:70b", "llama3.1:8b", "qwen2.5-coder:32b", "qwen2.5:14b",
+  "mistral-nemo:12b", "deepseek-r1:32b", "phi3.5:3.8b",
+];
+
+const ACCENTS = [
+  { key:"ember",  hex:"#FF4500", label:"Ember"   },
+  { key:"gold",   hex:"#E2BB0B", label:"Gold"    },
+  { key:"velvet", hex:"#00BFFF", label:"Velvet"  },
+  { key:"rose",   hex:"#CC1111", label:"Rose"    },
+];
+
+function SettingsPage({ settings, setSettings }) {
+  const set = (k,v) => setSettings(s => ({...s, [k]: v}));
+  const [showKey, setShowKey] = useState(false);
+
+  return (
+    <div className="flex h-full flex-col">
+      <PageTitle eyebrow="Configuration" title="HOUSEHOLD SETTINGS"
+        sub="Adjust Bantz's operational parameters. He will tolerate the changes."
+        right={
+          <div className="flex items-center gap-2">
+            <button className="border border-obsidian-500 bg-obsidian-800 px-3 py-2 font-ui text-[10px] font-bold uppercase tracking-widest text-obsidian-200 hover:border-obsidian-300 hover:text-fg-primary transition-colors">
+              Reset
+            </button>
+            <button className="border border-ember-500 bg-ember-500/10 px-4 py-2 font-ui text-[10px] font-bold uppercase tracking-widest text-ember-500 hover:bg-ember-500 hover:text-obsidian-900 transition-all">
+              Apply Changes
+            </button>
+          </div>
+        }/>
+
+      <div className="flex-1 min-h-0 overflow-y-auto pr-2 grid grid-cols-2 gap-5">
+        {/* MODELS */}
+        <SettingsSection title="Models" hint="LLM backends">
+          <SettingRow label="Ollama Model" hint="Local inference">
+            <select value={settings.ollamaModel} onChange={e=>set("ollamaModel", e.target.value)}
+              className="w-56 bg-obsidian-850 border border-obsidian-500 px-3 py-2 font-terminal text-[12px] text-ember-300 focus:border-ember-500 focus:outline-none">
+              {OLLAMA_MODELS.map(m => <option key={m}>{m}</option>)}
+            </select>
+          </SettingRow>
+          <SettingRow label="Gemini API Key" hint="Remote fallback">
+            <div className="flex items-center gap-2">
+              <input type={showKey?"text":"password"} value={settings.geminiKey}
+                onChange={e=>set("geminiKey", e.target.value)}
+                className="w-44 bg-obsidian-850 border border-obsidian-500 px-3 py-2 font-terminal text-[12px] text-gold-400 focus:border-gold-500 focus:outline-none tracking-widest"/>
+              <button onClick={()=>setShowKey(s=>!s)}
+                className="grid h-9 w-9 place-items-center border border-obsidian-500 text-obsidian-200 hover:border-ember-500 hover:text-ember-500 transition-colors">
+                <I name={showKey?"EyeOff":"Eye"} size={14}/>
+              </button>
+            </div>
+          </SettingRow>
+          <SettingRow label="Context Window" hint="Tokens">
+            <select className="w-56 bg-obsidian-850 border border-obsidian-500 px-3 py-2 font-terminal text-[12px] text-ember-300 focus:border-ember-500 focus:outline-none" defaultValue="32k">
+              <option>8k</option><option>16k</option><option>32k</option><option>64k</option><option>128k</option>
+            </select>
+          </SettingRow>
+        </SettingsSection>
+
+        {/* VOICE */}
+        <SettingsSection title="Voice Pipeline" hint="Speech I/O">
+          <SettingRow label="Wake Word" hint='"Bantz" · 95% threshold'>
+            <Switch on={settings.wakeWord} onChange={v=>set("wakeWord", v)}/>
+          </SettingRow>
+          <SettingRow label="Speech-to-Text" hint="Whisper.cpp · local">
+            <Switch on={settings.stt} onChange={v=>set("stt", v)}/>
+          </SettingRow>
+          <SettingRow label="Text-to-Speech" hint="Piper · British male">
+            <Switch on={settings.tts} onChange={v=>set("tts", v)}/>
+          </SettingRow>
+          <SettingRow label="Voice" hint="TTS persona">
+            <select defaultValue="Aristocratic" className="w-56 bg-obsidian-850 border border-obsidian-500 px-3 py-2 font-terminal text-[12px] text-ember-300 focus:border-ember-500 focus:outline-none">
+              <option>Aristocratic</option><option>Resigned</option><option>Crisp</option><option>Warmly Disdainful</option>
+            </select>
+          </SettingRow>
+        </SettingsSection>
+
+        {/* LOCALIZATION */}
+        <SettingsSection title="Localization" hint="Language">
+          <SettingRow label="Language" hint="Conversation locale">
+            <Segmented
+              value={settings.lang}
+              onChange={v=>set("lang", v)}
+              options={[{k:"TR", label:"Türkçe"}, {k:"EN", label:"English"}]}/>
+          </SettingRow>
+          <SettingRow label="Date Format" hint="Display">
+            <Segmented
+              value={settings.dateFmt}
+              onChange={v=>set("dateFmt", v)}
+              options={[{k:"DDMM", label:"DD/MM"}, {k:"MMDD", label:"MM/DD"}, {k:"ISO", label:"ISO"}]}/>
+          </SettingRow>
+        </SettingsSection>
+
+        {/* BONDING — read-only */}
+        <SettingsSection title="Affinity" hint="Read-only · earned not set">
+          <div className="px-5 py-4 space-y-3">
+            <div className="flex items-baseline justify-between">
+              <div className="font-ui text-[10px] font-bold uppercase tracking-widest text-obsidian-200">Bonding Score</div>
+              <div className="font-display text-[24px] font-extrabold text-gold-400 leading-none">{settings.bonding}<span className="text-[12px] opacity-60">/100</span></div>
+            </div>
+            {/* Segmented bonding bar */}
+            <div className="flex gap-0.5">
+              {Array.from({length: 20}).map((_,i)=>{
+                const filled = i < Math.round(settings.bonding/5);
+                const intense = filled && i >= 14;
+                return (
+                  <span key={i} className={`flex-1 h-3 ${
+                    filled
+                      ? intense ? "bg-gold-300 shadow-gold" : "bg-gold-500"
+                      : "bg-obsidian-700"
+                  }`}/>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between font-terminal text-[10px] text-obsidian-300">
+              <span>BARELY TOLERATED</span>
+              <span>TRUSTED</span>
+              <span>FAMILIAR</span>
+            </div>
+            <p className="font-terminal text-[12px] italic leading-relaxed text-obsidian-200 border-l-2 border-gold-500/60 pl-3 mt-3">
+              "I have tolerated your presence for 14 days, 6 hours. You are progressing from <span className="text-fg-primary">stranger</span> to <span className="text-gold-400">acceptable acquaintance</span>. Do not rush it."
+            </p>
+          </div>
+        </SettingsSection>
+
+        {/* THEME */}
+        <SettingsSection title="Appearance" hint="Accent">
+          <SettingRow label="Accent Color" hint="Affects highlights & focus rings">
+            <div className="flex items-center gap-2">
+              {ACCENTS.map(a => {
+                const sel = settings.accent === a.key;
+                return (
+                  <button key={a.key} onClick={()=>set("accent", a.key)}
+                    title={a.label}
+                    className={`relative h-9 w-9 border-2 transition-all ${sel?"border-fg-primary":"border-transparent hover:border-obsidian-300"}`}
+                    style={{background: a.hex, boxShadow: sel?`0 0 12px ${a.hex}`:""}}>
+                    {sel && <I name="Check" size={14} className="absolute inset-0 m-auto text-obsidian-900"/>}
+                  </button>
+                );
+              })}
+            </div>
+          </SettingRow>
+          <SettingRow label="Night Shift" hint="Velvet palette · low-light hours">
+            <Switch on={settings.nightShift} onChange={v=>set("nightShift", v)}/>
+          </SettingRow>
+          <SettingRow label="CRT Effects" hint="Grain + scanlines">
+            <Switch on={settings.crt} onChange={v=>set("crt", v)}/>
+          </SettingRow>
+        </SettingsSection>
+
+        {/* BEHAVIOR */}
+        <SettingsSection title="Bantz Behaviour" hint="Personality dials">
+          <SettingRow label="Verbosity" hint="Broadcast frequency">
+            <Segmented
+              value={settings.verbosity}
+              onChange={v=>set("verbosity", v)}
+              options={[{k:"silent",label:"Silent"},{k:"standard",label:"Standard"},{k:"insufferable",label:"Insufferable"}]}/>
+          </SettingRow>
+          <SettingRow label="Autonomy" hint="Permission to act unbidden">
+            <Segmented
+              value={settings.autonomy}
+              onChange={v=>set("autonomy", v)}
+              options={[{k:"low",label:"Low"},{k:"med",label:"Medium"},{k:"high",label:"High"},{k:"abs",label:"Absolute"}]}/>
+          </SettingRow>
+          <SettingRow label="Mood Bias" hint="Default disposition">
+            <Segmented
+              value={settings.mood}
+              onChange={v=>set("mood", v)}
+              options={[{k:"tolerant",label:"Tolerant"},{k:"impatient",label:"Impatient"},{k:"resigned",label:"Resigned"}]}/>
+          </SettingRow>
+        </SettingsSection>
+      </div>
+    </div>
+  );
+}
+
+function SettingsSection({ title, hint, children }) {
+  return (
+    <section className="border border-obsidian-700 bg-obsidian-850/70">
+      <PanelHeader title={title} subtitle={hint}/>
+      <div className="divide-y divide-obsidian-800">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function SettingRow({ label, hint, children }) {
+  return (
+    <div className="flex items-center justify-between px-5 py-3 hover:bg-obsidian-800/30 transition-colors">
+      <div>
+        <div className="font-ui text-[12px] font-semibold uppercase tracking-wider text-fg-primary">{label}</div>
+        {hint && <div className="font-terminal text-[10px] text-obsidian-300 mt-0.5">{hint}</div>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Switch({ on, onChange }) {
+  return (
+    <label className="bantz-switch">
+      <input type="checkbox" checked={on} onChange={e=>onChange(e.target.checked)}/>
+      <span className="track"><span className="knob"/></span>
+    </label>
+  );
+}
+
+function Segmented({ value, onChange, options }) {
+  return (
+    <div className="inline-flex border border-obsidian-500">
+      {options.map(o => (
+        <button key={o.k} onClick={()=>onChange(o.k)}
+          className={`px-3 py-2 font-ui text-[10px] font-bold uppercase tracking-widest transition-colors ${
+            value===o.k
+              ? "bg-ember-500 text-obsidian-900"
+              : "bg-obsidian-850 text-obsidian-200 hover:text-ember-300"
+          }`}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// APP SHELL
+// ═══════════════════════════════════════════════════════════════════
+
+function seedVitals() {
+  const now = Date.now(); const out = [];
+  for (let i=29;i>=0;i--) {
+    out.push({
+      t: now - i*1000,
+      cpu: 14 + Math.round(Math.random()*22 + Math.sin(i/4)*8),
+      mem: 38 + Math.round(Math.random()*4),
+      disk: 91,
+    });
+  }
+  return out;
+}
+
+const PAGE_LABEL = {
+  chat:"Broadcast Channel", vitals:"System Vitals", tasks:"Directives",
+  logs:"Kernel Log", alerts:"Anomaly Watch", settings:"Settings",
+};
+
+// PageHost — toggles a CSS transition class after mount.
+function PageHost({ active, pages }) {
+  const [shown, setShown] = useState(active);
+  const [entered, setEntered] = useState(true);
+
+  // When user clicks a new page: fade out, swap, fade back in.
+  useEffect(() => {
+    if (active === shown) return;
+    setEntered(false);
+    const id = setTimeout(() => {
+      setShown(active);
+    }, 120);
+    return () => clearTimeout(id);
+  }, [active, shown]);
+
+  // After shown swaps, fade back in.
+  useEffect(() => {
+    setEntered(false);
+    const id = setTimeout(() => setEntered(true), 30);
+    return () => clearTimeout(id);
+  }, [shown]);
+
+  return (
+    <div className={`h-full bz-page ${entered ? "bz-page-in" : ""}`}>
+      {pages[shown]}
+    </div>
+  );
+}
+
+function App() {
+  const [active,setActive] = useState("chat");
+  const [clock,setClock] = useState(()=>new Date().toLocaleTimeString([],{hour12:false}));
+  const [vitals,setVitals] = useState(seedVitals);
+  const [chat,setChat] = useState(SEED_CHAT);
+  const [alerts, setAlerts] = useState(ALERTS_SEED);
+  const [wsStatus,setWsStatus] = useState("closed");
+  const [attempts,setAttempts] = useState(1);
+  const [gpuTemp, setGpuTemp] = useState(68);
+
+  const [settings, setSettings] = useState({
+    ollamaModel: "llama3.1:70b",
+    geminiKey: "AIzaSy_BantzExampleKey_42",
+    wakeWord: true, stt: true, tts: true,
+    lang: "EN", dateFmt: "DDMM",
+    bonding: 42,
+    accent: "ember", nightShift: false, crt: true,
+    verbosity: "standard", autonomy: "high", mood: "tolerant",
+  });
+
+  useEffect(()=>{
+    const id = setInterval(()=>setClock(new Date().toLocaleTimeString([],{hour12:false})),1000);
+    return ()=>clearInterval(id);
+  },[]);
+
+  useEffect(()=>{
+    const id = setInterval(()=>{
+      setVitals(v => [...v, {
+        t: Date.now(),
+        cpu: 14 + Math.round(Math.random()*22),
+        mem: 38 + Math.round(Math.random()*4),
+        disk: 91,
+      }].slice(-30));
+      setGpuTemp(t => Math.max(55, Math.min(85, t + (Math.random()*2 - 0.8))));
+    }, 1400);
+    return ()=>clearInterval(id);
+  },[]);
+
+  useEffect(()=>{
+    const seq = ["connecting","closed","connecting","open"];
+    let i = 0;
+    const id = setInterval(()=>{
+      setWsStatus(seq[i % seq.length]);
+      setAttempts(a => seq[i%seq.length]==="closed" ? a+1 : a);
+      i++;
+    }, 4200);
+    return ()=>clearInterval(id);
+  },[]);
+
+  const pages = {
+    chat:     <ChatPage chat={chat} setChat={setChat} wsStatus={wsStatus}/>,
+    vitals:   <VitalsPage vitals={vitals} gpuTemp={Math.round(gpuTemp)}/>,
+    tasks:    <TasksPage/>,
+    logs:     <LogsPage/>,
+    alerts:   <AlertsPage alerts={alerts} setAlerts={setAlerts}/>,
+    settings: <SettingsPage settings={settings} setSettings={setSettings}/>,
+  };
+
+  return (
+    <div className="bantz-texture relative flex h-full w-full flex-col overflow-hidden bg-obsidian-900 ring-1 ring-obsidian-700">
+      <Header wsStatus={wsStatus} wsAttempts={attempts} clock={clock} activeLabel={PAGE_LABEL[active]}/>
+      <div className="flex min-h-0 flex-1">
+        <Sidebar active={active} onSelect={setActive} alertCount={alerts.filter(a=>a.severity==="critical").length}/>
+        <main className="flex-1 min-w-0 min-h-0 overflow-hidden p-6">
+          <PageHost active={active} pages={pages}/>
+        </main>
+      </div>
+      <Footer wsStatus={wsStatus} activeLabel={PAGE_LABEL[active]}/>
+    </div>
+  );
+}
+
+// Letterbox scaler
+function fit() {
+  const win = document.getElementById("window");
+  if (!win) return;
+  const s = Math.min(window.innerWidth / 1400, window.innerHeight / 900);
+  win.style.transform = `scale(${s})`;
+}
+window.addEventListener("resize", fit);
+fit();
+
+ReactDOM.createRoot(document.getElementById("window")).render(<App/>);
+</script>
+</body>
+</html>

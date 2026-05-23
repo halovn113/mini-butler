@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   BANTZ — Operations Center · Global Styles
+   ============================================================ */
+
+:root {
+  --ember-500: #ff4500;
+  --ember-400: #ff6a2a;
+  --ember-300: #ff8c00;
+  --gold-500: #c9a80c;
+  --gold-400: #e2bb0b;
+  --rose-500: #8b0000;
+  --rose-300: #cc1111;
+  --obsidian-900: #0d0a07;
+  --obsidian-850: #0d0d0d;
+  --obsidian-800: #141414;
+  --obsidian-700: #1a1a1a;
+  --obsidian-500: #2a2a2a;
+  --fg-primary: #f0e8d8;
+  --fg-muted: #555555;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--fg-primary);
+  font-family: "Josefin Sans", "Trebuchet MS", sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--obsidian-500);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ember-500);
+}
+
+/* Page transition — driven by class swap from PageHost */
+.bz-page {
+  opacity: 0;
+  transform: translateX(14px);
+  transition:
+    opacity 240ms cubic-bezier(0.9, 0, 0.1, 1),
+    transform 240ms cubic-bezier(0.9, 0, 0.1, 1);
+}
+.bz-page.bz-page-in {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Bantz toggle switch */
+.bz-switch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.bz-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.bz-switch .track {
+  position: absolute;
+  inset: 0;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  transition: all 150ms cubic-bezier(0.9, 0, 0.1, 1);
+}
+.bz-switch .knob {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 16px;
+  height: 16px;
+  background: #555;
+  transition: all 150ms cubic-bezier(0.9, 0, 0.1, 1);
+}
+.bz-switch input:checked + .track {
+  background: rgba(255, 69, 0, 0.15);
+  border-color: var(--ember-500);
+  box-shadow: 0 0 8px rgba(255, 69, 0, 0.4);
+}
+.bz-switch input:checked + .track .knob {
+  left: 23px;
+  background: var(--ember-500);
+  box-shadow: 0 0 6px var(--ember-500);
+}
+
+/* Grain + scanline texture */
+.bantz-texture::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+}
+.bantz-texture::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.04) 2px,
+    rgba(0, 0, 0, 0.04) 4px
+  );
+}
+
+/* Art Deco rule */
+.deco-rule {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--ember-500) 20%,
+    var(--ember-500) 80%,
+    transparent
+  );
+}
+
+/* Drag region for custom titlebar */
+[data-tauri-drag-region] {
+  -webkit-app-region: drag;
+}
+
+button,
+input,
+select,
+textarea,
+a {
+  -webkit-app-region: no-drag;
+}
