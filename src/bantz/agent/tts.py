@@ -52,7 +52,7 @@ log = logging.getLogger(__name__)
 
 PHONETIC_REPLACEMENTS: dict[str, str] = {
     # Apostrophe-broken words → remove apostrophe, keep pronunciation
-    r"(?i)\bma'a?m\b":    "mam",        # ma'm, ma'am → mam (apostrof kaldır)
+    r"(?i)\bma'a?m\b":    "mam",        # ma'm, ma'am → mam (remove apostrophe)
     r"(?i)\bsir'?s\b":    "sirs",       # sir's (possessive read as plural)
     r"(?i)\bo'clock\b":   "oh clock",   # o'clock → natural reading
     # Abbreviations that Piper spells out
@@ -475,7 +475,7 @@ class TTSEngine:
         self._speak_task = asyncio.create_task(self.speak(text))
 
     def stop(self) -> None:
-        """Immediately stop all TTS playback ("Sessiz ol Bantz!")."""
+        """Immediately stop all TTS playback."""
         self._stop_requested = True
         self._kill_playback()
         if self._speak_task and not self._speak_task.done():
