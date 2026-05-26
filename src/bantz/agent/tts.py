@@ -262,11 +262,15 @@ def strip_markdown_for_tts(text: str) -> str:
 
 
 class TTSEngine:
-    """Streaming Piper TTS with aplay playback and interrupt support."""
+    """Streaming Piper TTS with PipeWire/PulseAudio/ALSA playback and interrupt support.
+
+    Player priority at startup: pw-play → paplay → aplay.
+    """
 
     def __init__(self) -> None:
         self._piper_path: str | None = None
-        self._aplay_path: str | None = None
+        self._aplay_path: str | None = None   # points to whichever player was found
+        self._player_name: str = ""            # "pw-play" | "paplay" | "aplay"
         self._sox_path: str | None = None
         self._model_path: str | None = None
         self._sample_rate: int = 22050  # read from model .onnx.json
@@ -281,7 +285,10 @@ class TTSEngine:
     # ── Init (lazy) ─────────────────────────────────────────────────────
 
     def _ensure_init(self) -> bool:
-        """Discover Piper and aplay binaries. Returns True if ready."""
+        """Discover Piper and audio player binaries. Returns True if ready.
+
+        Player priority: pw-play → paplay → aplay.
+        """
         if self._piper_path is not None:
             return bool(self._piper_path and self._aplay_path)
 
@@ -290,7 +297,6 @@ class TTSEngine:
         # Find piper
         piper = shutil.which("piper")
         if not piper:
-            # Check common locations
             for p in [
                 Path.home() / ".local" / "bin" / "piper",
                 Path("/usr/local/bin/piper"),
@@ -300,13 +306,19 @@ class TTSEngine:
                     piper = str(p)
                     break
 
-        # Find aplay
-        aplay = shutil.which("aplay")
-        if not aplay:
-            for p in [Path("/usr/bin/aplay"), Path("/usr/local/bin/aplay")]:
-                if p.exists():
-                    aplay = str(p)
-                    break
+        # Find audio player — pw-play → paplay → aplay
+        player: str = ""
+        player_name: str = ""
+        for candidate, name in [
+            ("pw-play", "pw-play"),
+            ("paplay",  "paplay"),
+            ("aplay",   "aplay"),
+        ]:
+            found = shutil.which(candidate)
+            if found:
+                player = found
+                player_name = name
+                break
 
         if not piper:
             log.warning("TTS: piper binary not found — audio disabled")
@@ -314,14 +326,16 @@ class TTSEngine:
             self._aplay_path = ""
             return False
 
-        if not aplay:
-            log.warning("TTS: aplay binary not found — audio disabled")
+        if not player:
+            log.warning("TTS: no audio player found (tried pw-play, paplay, aplay) — audio disabled")
             self._piper_path = ""
             self._aplay_path = ""
             return False
 
         self._piper_path = piper
-        self._aplay_path = aplay
+        self._aplay_path = player
+        self._player_name = player_name
+        log.info("TTS: player=%s (%s)", player_name, player)
 
         # Resolve model path
         model = config.tts_model_path
@@ -391,7 +405,7 @@ class TTSEngine:
     # ── Public API ──────────────────────────────────────────────────────
 
     def available(self) -> bool:
-        """Check if TTS is available (Piper + aplay + model found)."""
+        """Check if TTS is available (Piper + audio player + model found)."""
         from bantz.config import config
         if not config.tts_enabled:
             return False
@@ -531,18 +545,54 @@ class TTSEngine:
 
     # ── Internal: Playback ──────────────────────────────────────────────
 
+    def _player_cmd(self) -> list[str]:
+        """Return the playback command for the detected audio backend.
+
+        All three backends accept raw 16-bit signed PCM from stdin:
+          pw-play  -- ``-a/--raw`` flag enables raw mode
+          paplay   -- ``--raw`` flag enables raw mode
+          aplay    -- ``-t raw`` enables raw mode
+        """
+        sr = str(self._sample_rate)
+        if self._player_name == "pw-play":
+            return [
+                self._aplay_path,
+                "--raw",
+                f"--rate={sr}",
+                "--channels=1",
+                "--format=s16",
+                "-",
+            ]
+        if self._player_name == "paplay":
+            return [
+                self._aplay_path,
+                "--raw",
+                f"--rate={sr}",
+                "--channels=1",
+                "--format=s16le",
+                "-",
+            ]
+        # aplay (ALSA fallback)
+        return [
+            self._aplay_path,
+            "-r", sr,
+            "-f", "S16_LE",
+            "-t", "raw",
+            "-c", "1",
+        ]
+
     async def _play(self, wav_data: bytes) -> None:
-        """Play raw WAV data via aplay, optionally through SoX.
+        """Play raw PCM data via the detected audio player, optionally through SoX.
 
         Three modes depending on config and sox availability:
 
         1. Animatronic (``tts_animatronic_filter=true`` + sox found):
-               stdin → sox (pitch/reverb/overdrive/gain) → aplay
+               stdin → sox (pitch/reverb/overdrive/gain) → player
         2. Gain-only (sox found, animatronic off, ``tts_gain > 0``):
-               stdin → sox (gain only) → aplay
+               stdin → sox (gain only) → player
            Boosts volume without any colouring effects.
         3. Direct (sox not found or ``tts_gain == 0``):
-               stdin → aplay  (no processing)
+               stdin → player  (no processing)
 
         Sets PULSE_PROP so PulseAudio/PipeWire labels the stream as
         'BantzTTS' so the audio ducker skips Bantz's own output.
@@ -627,33 +677,25 @@ class TTSEngine:
                     processed = wav_data  # fallback: play original
 
                 proc = await asyncio.create_subprocess_exec(
-                    self._aplay_path,
-                    "-r", str(self._sample_rate),
-                    "-f", "S16_LE",
-                    "-t", "raw",
-                    "-c", "1",
+                    *self._player_cmd(),
                     stdin=asyncio.subprocess.PIPE,
                     stdout=asyncio.subprocess.DEVNULL,
                     stderr=asyncio.subprocess.PIPE,
                     env=env,
                 )
                 self._playing = proc
-                _, aplay_err = await proc.communicate(input=processed)
+                _, player_err = await proc.communicate(input=processed)
                 log.debug(
-                    "TTS-APLAY(sox): rc=%s stderr=%s",
-                    proc.returncode,
-                    (aplay_err or b"").decode(errors="replace")[:200],
+                    "TTS-%s(sox): rc=%s stderr=%s",
+                    self._player_name.upper(), proc.returncode,
+                    (player_err or b"").decode(errors="replace")[:200],
                 )
                 self._playing = None
 
             else:
-                # Direct: no sox — raw Piper output straight to aplay
+                # Direct: no sox — raw Piper output straight to player
                 proc = await asyncio.create_subprocess_exec(
-                    self._aplay_path,
-                    "-r", str(self._sample_rate),
-                    "-f", "S16_LE",
-                    "-t", "raw",
-                    "-c", "1",
+                    *self._player_cmd(),
                     stdin=asyncio.subprocess.PIPE,
                     stdout=asyncio.subprocess.DEVNULL,
                     stderr=asyncio.subprocess.DEVNULL,
@@ -689,7 +731,7 @@ class TTSEngine:
             "available": self.available(),
             "speaking": self._speaking,
             "piper": self._piper_path or "not found",
-            "aplay": self._aplay_path or "not found",
+            "player": f"{self._player_name} ({self._aplay_path})" if self._aplay_path else "not found",
             "sox": self._sox_path or "not found",
             "model": self._model_path or "not found",
         }
