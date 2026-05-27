@@ -518,8 +518,16 @@ class TTSEngine:
         ]
         if self._speaker > 0:
             cmd.extend(["--speaker", str(self._speaker)])
-        if self._rate != 1.0:
-            cmd.extend(["--length-scale", str(1.0 / self._rate)])
+        # length_scale takes priority; fall back to rate inversion for compat
+        try:
+            from bantz.config import config as _cfg
+            ls = _cfg.tts_length_scale
+        except Exception:
+            ls = 1.0
+        if ls != 1.0:
+            cmd.extend(["--length_scale", str(ls)])
+        elif self._rate != 1.0:
+            cmd.extend(["--length_scale", str(round(1.0 / self._rate, 4))])
 
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -632,6 +640,10 @@ class TTSEngine:
             if use_animatronic or use_gain_only:
                 # Build sox effects chain
                 if use_animatronic:
+                    log.debug(
+                        "TTS: animatronic filter active (gain=+%gdB, sox=%s)",
+                        gain_db, self._sox_path,
+                    )
                     effects = [
                         "tempo", "0.80",
                         "pitch", "-200",
