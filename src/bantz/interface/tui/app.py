@@ -16,7 +16,6 @@ Event flow:
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from textual.app import App, ComposeResult
 from textual.message import Message
