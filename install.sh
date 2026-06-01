@@ -191,7 +191,8 @@ VENV_PY="${VENV_DIR}/bin/python"
 VENV_PIP="${VENV_DIR}/bin/pip"
 
 "$VENV_PIP" install --quiet --upgrade pip
-"$VENV_PIP" install --quiet -e "${INSTALL_DIR}[dev]"
+echo "  Installing dependencies — this takes 1-3 minutes on first run…"
+"$VENV_PIP" install -e "${INSTALL_DIR}[dev]"
 ok "Bantz installed in isolated venv"
 
 # ── Step 6: PATH ──────────────────────────────────────────────────────────────
