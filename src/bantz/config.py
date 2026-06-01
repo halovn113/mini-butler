@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from typing import Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 log = logging.getLogger("bantz.config")
@@ -66,6 +66,12 @@ class Config(BaseSettings):
     location_region: str = Field("", alias="BANTZ_REGION")
     location_lat: float = Field(0.0, alias="BANTZ_LAT")
     location_lon: float = Field(0.0, alias="BANTZ_LON")
+
+    @field_validator("location_lat", "location_lon", mode="before")
+    @classmethod
+    def _coerce_empty_coord(cls, v: object) -> object:
+        # .env.example ships BANTZ_LAT= / BANTZ_LON= as empty strings; treat as 0.0
+        return 0.0 if v == "" else v
 
     # ── GPS Relay ─────────────────────────────────────────────────────────
     gps_relay_token: str = Field("", alias="BANTZ_GPS_RELAY_TOKEN")
