@@ -153,12 +153,24 @@ Supporting systems run alongside the main loop:
 
 ## Installation
 
-**Requirements**: Python 3.11+, Ollama running locally
+**Requirements**: Python 3.11+, git, [Ollama](https://ollama.com) running locally
+
+### One-liner (recommended)
 
 ```bash
-git clone <repo>
+curl -fsSL https://raw.githubusercontent.com/miclaldogan/bantzv2/main/install.sh | bash
+```
+
+Checks Python and git, clones the repo to `~/.local/share/bantz/src`, installs the package, fixes your `PATH` if needed, runs an interactive wizard to write your `.env`, and finishes with `bantz --doctor`.
+
+### Manual
+
+```bash
+git clone https://github.com/miclaldogan/bantzv2.git
 cd bantzv2
 pip install -e ".[dev]"
+cp .env.example .env   # then edit with your values
+bantz --doctor
 ```
 
 **Voice pipeline** (all optional — install only what you need):
