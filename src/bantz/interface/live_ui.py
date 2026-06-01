@@ -98,6 +98,18 @@ _DOT_STYLE: dict[ServiceDot, str] = {
 # Rendering helpers
 # ═══════════════════════════════════════════════════════════════════════════
 
+def _active_model_label() -> str:
+    """Return a short label for the active LLM provider shown in the TUI header."""
+    p = (config.llm_provider or "ollama").lower()
+    if p == "claude":
+        return f"claude/{config.anthropic_model}"
+    if p == "openai":
+        return f"openai/{config.openai_model}"
+    if p == "gemini":
+        return f"gemini/{config.gemini_model}"
+    return config.ollama_model
+
+
 def _bar(value: float, max_val: float = 100.0, width: int = 10) -> str:
     """Colored ASCII bar: green < 60 %, yellow < 85 %, red otherwise."""
     pct = min(value / max_val * 100, 100) if max_val else 0
@@ -283,7 +295,7 @@ class LiveUI:
         now = datetime.now().strftime("%H:%M:%S")
         # ── info line: model name, persona state, memory drawer count (#437) ──
         info_parts: list[str] = [
-            f"[dim]model:[/][bold cyan]{config.ollama_model}[/]",
+            f"[dim]model:[/][bold cyan]{_active_model_label()}[/]",
         ]
         if self._memory_count >= 0:
             info_parts.append(
@@ -925,7 +937,7 @@ class LiveUI:
         self._start_input_thread(loop)
 
         self.add_chat("system", "Bantz v3 started.")
-        self.add_chat("system", f"Model: {config.ollama_model}")
+        self.add_chat("system", f"Model: {_active_model_label()}")
         self.add_chat("system", "─" * 38)
 
         # ── First-run welcome banner ───────────────────────────────

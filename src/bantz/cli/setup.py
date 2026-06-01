@@ -979,25 +979,55 @@ async def _doctor() -> None:
     print("Bantz v2 — System Check")
     print("─" * 52)
 
-    # Ollama
-    is_remote = "localhost" not in config.ollama_base_url and "127.0.0.1" not in config.ollama_base_url
-    mode_label = "remote (GPU VPS)" if is_remote else "local"
-    try:
-        await ollama.verify_connection()
-        print(f"✅ Ollama [{mode_label}]: connected — {config.ollama_model} @ {config.ollama_base_url}")
-    except RuntimeError as _e:
-        print(f"❌ Ollama [{mode_label}]: {_e}")
+    # ── Active LLM provider ──────────────────────────────────────────────────
+    _provider = (config.llm_provider or "ollama").lower()
 
-    # Gemini
-    from bantz.llm.gemini import gemini as _gem
-    if _gem.is_enabled():
-        gem_ok = await _gem.is_available()
-        if gem_ok:
-            print(f"✅ Gemini: connected ({config.gemini_model})")
+    if _provider == "claude":
+        from bantz.llm.anthropic_client import claude as _claude
+        if _claude.is_enabled():
+            _ok = await _claude.is_available()
+            if _ok:
+                print(f"✅ Claude: connected — {config.anthropic_model}")
+            else:
+                print(f"❌ Claude: UNREACHABLE — check BANTZ_ANTHROPIC_API_KEY")
         else:
-            print("❌ Gemini: UNREACHABLE")
+            print("❌ Claude: API key not set  → bantz --setup claude")
+    elif _provider == "openai":
+        from bantz.llm.openai_client import openai_client as _oai
+        if _oai.is_enabled():
+            _ok = await _oai.is_available()
+            if _ok:
+                print(f"✅ OpenAI: connected — {config.openai_model}")
+            else:
+                print(f"❌ OpenAI: UNREACHABLE — check BANTZ_OPENAI_API_KEY")
+        else:
+            print("❌ OpenAI: API key not set  → bantz --setup openai")
+    elif _provider == "gemini":
+        from bantz.llm.gemini import gemini as _gem
+        _ok = await _gem.is_available()
+        if _ok:
+            print(f"✅ Gemini: connected — {config.gemini_model}")
+        else:
+            print("❌ Gemini: UNREACHABLE — check BANTZ_GEMINI_API_KEY")
     else:
-        print("⚪ Gemini: disabled  → bantz --setup gemini")
+        # Ollama (default)
+        is_remote = "localhost" not in config.ollama_base_url and "127.0.0.1" not in config.ollama_base_url
+        mode_label = "remote (GPU VPS)" if is_remote else "local"
+        try:
+            await ollama.verify_connection()
+            print(f"✅ Ollama [{mode_label}]: connected — {config.ollama_model} @ {config.ollama_base_url}")
+        except RuntimeError as _e:
+            print(f"❌ Ollama [{mode_label}]: {_e}")
+
+    # Ollama always shown as secondary if it's not the active provider
+    if _provider != "ollama":
+        is_remote = "localhost" not in config.ollama_base_url and "127.0.0.1" not in config.ollama_base_url
+        mode_label = "remote" if is_remote else "local"
+        try:
+            await ollama.verify_connection()
+            print(f"   Ollama [{mode_label}]: available — {config.ollama_model} (used for routing/tools)")
+        except RuntimeError:
+            print(f"   Ollama [{mode_label}]: offline (routing/tools will be degraded)")
 
     # MemPalace
     if config.mempalace_enabled:
