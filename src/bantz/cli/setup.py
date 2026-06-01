@@ -28,6 +28,12 @@ def _handle_setup(parts: list[str]) -> None:
     if len(parts) >= 1 and parts[0].lower() == "gemini":
         _setup_gemini()
         return
+    if len(parts) >= 1 and parts[0].lower() == "claude":
+        _setup_claude()
+        return
+    if len(parts) >= 1 and parts[0].lower() == "openai":
+        _setup_openai()
+        return
     if len(parts) >= 1 and parts[0].lower() == "voice":
         _setup_voice()
         return
@@ -50,7 +56,9 @@ def _handle_setup(parts: list[str]) -> None:
         print("  bantz --setup schedule")
         print("  bantz --setup telegram")
         print("  bantz --setup places")
-        print("  bantz --setup gemini")
+        print("  bantz --setup claude        ← Anthropic Claude API")
+        print("  bantz --setup openai        ← OpenAI / compatible API")
+        print("  bantz --setup gemini        ← Google Gemini API")
         print("  bantz --setup voice")
         print("  bantz --setup systemd")
         print("  bantz --setup systemd --check")
@@ -157,46 +165,131 @@ def _setup_telegram() -> None:
     print("Start with: python -m bantz.interface.telegram_bot")
 
 
+def _env_path():
+    """Return the .env file path — prefers ~/.local/share/bantz/.env, falls back to CWD."""
+    from pathlib import Path
+    data_env = Path.home() / ".local" / "share" / "bantz" / ".env"
+    return data_env if data_env.exists() else Path.cwd() / ".env"
+
+
+def _write_env(updates: dict[str, str], *, prefix_strip: list[str] | None = None) -> None:
+    """Write key=value pairs into the .env file, replacing existing entries."""
+    import os
+    env_path = _env_path()
+    lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.exists() else []
+    for pfx in (prefix_strip or []):
+        lines = [l for l in lines if not l.startswith(pfx)]
+    for k, v in updates.items():
+        lines = [l for l in lines if not l.startswith(f"{k}=")]
+        lines.append(f"{k}={v}")
+    env_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(env_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    os.fchmod(fd, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    print(f"\n   Saved to: {env_path}")
+
+
+def _setup_claude() -> None:
+    """Interactive Claude (Anthropic) API key setup."""
+    print("\nBantz — Claude Setup")
+    print("─" * 40)
+    print("1. Go to https://console.anthropic.com/settings/keys")
+    print("2. Create an API key")
+    print("3. Paste it below (input is hidden):\n")
+
+    import getpass
+    api_key = getpass.getpass("Anthropic API key: ").strip()
+    if not api_key:
+        print("No key provided. Cancelled.")
+        return
+
+    print("\nAvailable models:")
+    print("  1  claude-sonnet-4-6        (recommended — fast + smart)")
+    print("  2  claude-opus-4-8          (most capable, slower)")
+    print("  3  claude-haiku-4-5-20251001 (fastest, cheapest)")
+    choice = input("\nModel choice [1]: ").strip() or "1"
+    model = {
+        "1": "claude-sonnet-4-6",
+        "2": "claude-opus-4-8",
+        "3": "claude-haiku-4-5-20251001",
+    }.get(choice, "claude-sonnet-4-6")
+
+    _write_env({
+        "BANTZ_LLM_PROVIDER":    "claude",
+        "BANTZ_ANTHROPIC_API_KEY": api_key,
+        "BANTZ_ANTHROPIC_MODEL": model,
+    })
+    print(f"   Provider: Claude / Anthropic")
+    print(f"   Model:    {model}")
+    print("\nRun 'bantz --doctor' to verify the connection.")
+
+
+def _setup_openai() -> None:
+    """Interactive OpenAI API key setup."""
+    print("\nBantz — OpenAI Setup")
+    print("─" * 40)
+    print("1. Go to https://platform.openai.com/api-keys")
+    print("2. Create an API key")
+    print("3. Paste it below (input is hidden):\n")
+
+    import getpass
+    api_key = getpass.getpass("OpenAI API key: ").strip()
+    if not api_key:
+        print("No key provided. Cancelled.")
+        return
+
+    print("\nAvailable models:")
+    print("  1  gpt-4o-mini   (recommended — fast + cheap)")
+    print("  2  gpt-4o        (most capable)")
+    print("  3  o3-mini       (reasoning model)")
+    choice = input("\nModel choice [1]: ").strip() or "1"
+    model = {
+        "1": "gpt-4o-mini",
+        "2": "gpt-4o",
+        "3": "o3-mini",
+    }.get(choice, "gpt-4o-mini")
+
+    base_url = input("API base URL (Enter for default openai.com): ").strip()
+    updates = {
+        "BANTZ_LLM_PROVIDER":  "openai",
+        "BANTZ_OPENAI_API_KEY": api_key,
+        "BANTZ_OPENAI_MODEL":   model,
+    }
+    if base_url:
+        updates["BANTZ_OPENAI_BASE_URL"] = base_url
+
+    _write_env(updates)
+    print(f"   Provider: OpenAI")
+    print(f"   Model:    {model}")
+    print("\nRun 'bantz --doctor' to verify the connection.")
+
+
 def _setup_gemini() -> None:
     """Interactive Gemini API key setup."""
-    from pathlib import Path
-
-    print("\n🦌 Gemini API Setup")
+    print("\nBantz — Gemini Setup")
     print("─" * 40)
     print("1. Go to https://aistudio.google.com/apikey")
     print("2. Create an API key")
-    print("3. Paste it below:")
-    print()
+    print("3. Paste it below:\n")
 
-    api_key = input("Gemini API key: ").strip()
+    import getpass
+    api_key = getpass.getpass("Gemini API key: ").strip()
     if not api_key:
         print("No key provided. Cancelled.")
         return
 
     model = input("Model (default: gemini-2.0-flash): ").strip() or "gemini-2.0-flash"
 
-    # Write to .env
-    env_path = Path.cwd() / ".env"
-    if env_path.exists():
-        lines = env_path.read_text(encoding="utf-8").splitlines()
-    else:
-        lines = []
-
-    # Remove old gemini entries
-    lines = [line for line in lines if not line.startswith("BANTZ_GEMINI_")]
-
-    lines.append("BANTZ_GEMINI_ENABLED=true")
-    lines.append(f"BANTZ_GEMINI_API_KEY={api_key}")
-    lines.append(f"BANTZ_GEMINI_MODEL={model}")
-
-    import os
-    fd = os.open(str(env_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    os.fchmod(fd, 0o600)
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
-    print(f"\n✅ Gemini configured: {env_path}")
-    print(f"   Model: {model}")
-    print("   Gemini will be used as the finalizer for high-quality responses.")
+    _write_env({
+        "BANTZ_LLM_PROVIDER":  "gemini",
+        "BANTZ_GEMINI_ENABLED": "true",
+        "BANTZ_GEMINI_API_KEY": api_key,
+        "BANTZ_GEMINI_MODEL":   model,
+    })
+    print(f"   Provider: Gemini")
+    print(f"   Model:    {model}")
+    print("\nRun 'bantz --doctor' to verify the connection.")
 
 
 # ── Voice packages checked by _setup_voice ──────────────────────────────────
