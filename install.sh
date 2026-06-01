@@ -31,6 +31,36 @@ echo -e "${BLD}Welcome to the Bantz installer.${RST}"
 echo "This script clones Bantz, installs it, walks you through configuration,"
 echo "and runs a health check. Press Ctrl-C at any time to abort."
 
+# ── OS Detection ─────────────────────────────────────────────────────────────
+_os="$(uname -s 2>/dev/null || echo unknown)"
+_is_wsl=false
+if grep -qiE "microsoft|wsl" /proc/version 2>/dev/null; then
+  _is_wsl=true
+fi
+
+if [[ "$_os" == MINGW* || "$_os" == CYGWIN* || "$_os" == MSYS* ]]; then
+  echo
+  echo -e "${YLW}${BLD}Windows detected (Git Bash / MSYS).${RST}"
+  echo
+  echo "The Bantz backend (AI engine, scheduler, voice pipeline) requires Linux."
+  echo "You have two options:"
+  echo
+  echo -e "  ${BLD}Option 1 — WSL2 (recommended, full Bantz)${RST}"
+  echo "    Install WSL2 from the Microsoft Store, then inside WSL run:"
+  echo "    curl -fsSL https://raw.githubusercontent.com/miclaldogan/bantzv2/main/install.sh | bash"
+  echo
+  echo -e "  ${BLD}Option 2 — UI only (Windows-native desktop app)${RST}"
+  echo "    Install Node.js (https://nodejs.org) and Rust (https://rustup.rs), then:"
+  echo "    git clone https://github.com/miclaldogan/bantzv2.git"
+  echo "    cd bantzv2/bantz-ui"
+  echo "    npm install"
+  echo "    npm run tauri:build"
+  echo "    The installer will appear in src-tauri/target/release/bundle/"
+  echo "    Point the app at a Bantz backend running on WSL2 or a Linux machine."
+  echo
+  exit 0
+fi
+
 # ── Step 1: Python 3.11+ ─────────────────────────────────────────────────────
 step "1/9" "Checking Python version…"
 if ! command -v python3 &>/dev/null; then
