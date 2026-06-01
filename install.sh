@@ -110,42 +110,45 @@ fi
 step "7/9" "${BLD}Setup Wizard${RST} — press Enter to accept defaults shown in [brackets]."
 echo
 
+# _ask VAR PROMPT DEFAULT
+# Reads one line from /dev/tty, assigns to VAR (no subshell — printf goes
+# straight to the terminal so the prompt is always visible).
 _ask() {
-  local prompt="$1" default="$2"
-  printf "  %b%s%b [%b%s%b]: " "$BLD" "$prompt" "$RST" "$CYN" "$default" "$RST" >&2
-  read -r REPLY < /dev/tty
-  printf '%s' "${REPLY:-$default}"
+  local _var="$1" _prompt="$2" _default="$3" _reply
+  printf "  %b%s%b [%b%s%b]: " "$BLD" "$_prompt" "$RST" "$CYN" "$_default" "$RST"
+  IFS= read -r _reply < /dev/tty
+  printf -v "$_var" '%s' "${_reply:-$_default}"
 }
 
 _ask_yn() {
-  local prompt="$1" default="$2"
-  printf "  %b%s%b (y/n) [%b%s%b]: " "$BLD" "$prompt" "$RST" "$CYN" "$default" "$RST" >&2
-  read -r REPLY < /dev/tty
-  printf '%s' "${REPLY:-$default}"
+  local _var="$1" _prompt="$2" _default="$3" _reply
+  printf "  %b%s%b (y/n) [%b%s%b]: " "$BLD" "$_prompt" "$RST" "$CYN" "$_default" "$RST"
+  IFS= read -r _reply < /dev/tty
+  printf -v "$_var" '%s' "${_reply:-$_default}"
 }
 
-OLLAMA_MODEL=$(_ask "Ollama model for Bantz" "llama3.1:8b")
-LANGUAGE=$(_ask "Preferred language (tr/en)" "tr")
+_ask OLLAMA_MODEL "Ollama model for Bantz"        "llama3.1:8b"
+_ask LANGUAGE     "Preferred language (tr/en)"    "tr"
 
 GEMINI_ENABLED="false"; GEMINI_KEY=""
-GEMINI_RESP=$(_ask_yn "Enable Gemini as a fallback LLM?" "n")
-if [[ "$GEMINI_RESP" =~ ^[Yy] ]]; then
+_ask_yn _GEMINI "Enable Gemini as a fallback LLM?" "n"
+if [[ "$_GEMINI" =~ ^[Yy] ]]; then
   GEMINI_ENABLED="true"
-  GEMINI_KEY=$(_ask "Gemini API key" "")
+  _ask GEMINI_KEY "Gemini API key" ""
 fi
 
 PICO_KEY=""; WAKE_WORD="false"
-PICO_RESP=$(_ask_yn "Do you have a Porcupine key for wake word detection?" "n")
-if [[ "$PICO_RESP" =~ ^[Yy] ]]; then
+_ask_yn _PICO "Do you have a Porcupine key for wake word detection?" "n"
+if [[ "$_PICO" =~ ^[Yy] ]]; then
   WAKE_WORD="true"
-  PICO_KEY=$(_ask "Porcupine access key" "")
+  _ask PICO_KEY "Porcupine access key" ""
 fi
 
 TG_TOKEN=""; TG_USERS=""
-TG_RESP=$(_ask_yn "Set up Telegram remote access?" "n")
-if [[ "$TG_RESP" =~ ^[Yy] ]]; then
-  TG_TOKEN=$(_ask "Telegram bot token" "")
-  TG_USERS=$(_ask "Whitelisted Telegram user ID(s) (comma-separated)" "")
+_ask_yn _TG "Set up Telegram remote access?" "n"
+if [[ "$_TG" =~ ^[Yy] ]]; then
+  _ask TG_TOKEN "Telegram bot token"                              ""
+  _ask TG_USERS "Whitelisted Telegram user ID(s) (comma-separated)" ""
 fi
 
 # ── Step 8: Write .env ────────────────────────────────────────────────────────
