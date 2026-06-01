@@ -327,7 +327,15 @@ class Config(BaseSettings):
     def ensure_dirs(self) -> None:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    model_config = {"env_file": ".env", "extra": "ignore"}
+    model_config = {
+        # Check the wizard-written .env first, then CWD .env (dev override wins).
+        "env_file": [
+            str(Path.home() / ".local" / "share" / "bantz" / ".env"),
+            ".env",
+        ],
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
+    }
 
 
 config = Config()

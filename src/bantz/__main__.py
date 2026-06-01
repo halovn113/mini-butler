@@ -119,7 +119,7 @@ def main() -> None:
 
 
 def _open_ui() -> None:
-    import os
+    import shutil
     import socket
     import subprocess
     import sys
@@ -150,27 +150,36 @@ def _open_ui() -> None:
             start_new_session=True,
         )
 
-    # Prefer compiled release binary, then AppImage, then dev server
-    release_bin = ui_dir / "src-tauri" / "target" / "release" / "bantz-ui"
+    # Binary name is platform-specific
+    is_win = sys.platform == "win32"
+    bin_name = "bantz-ui.exe" if is_win else "bantz-ui"
+
+    # Prefer compiled release binary, then AppImage (Linux), then dev server
+    release_bin = ui_dir / "src-tauri" / "target" / "release" / bin_name
     appimage_dir = ui_dir / "src-tauri" / "target" / "release" / "bundle" / "appimage"
     appimages = sorted(appimage_dir.glob("*.AppImage")) if appimage_dir.exists() else []
 
     if release_bin.exists():
         print("[→] Launching Bantz UI …")
-        os.execv(str(release_bin), [str(release_bin)])
+        subprocess.run([str(release_bin)], check=False)
+        return
 
-    elif appimages:
+    if appimages:
         print("[→] Launching Bantz UI …")
-        os.execv(str(appimages[0]), [str(appimages[0])])
+        subprocess.run([str(appimages[0])], check=False)
+        return
 
-    else:
-        # No compiled binary yet — run via Vite/Tauri dev server
-        if not (ui_dir / "node_modules").exists():
-            print("[→] Installing npm dependencies (first run) …")
-            subprocess.run(["npm", "install"], cwd=ui_dir, check=True)
-        print("[→] Starting Bantz UI (dev mode) …")
-        os.chdir(ui_dir)
-        os.execvp("npm", ["npm", "run", "tauri:dev"])
+    # No compiled binary — fall back to Vite/Tauri dev server
+    npm = shutil.which("npm")
+    if not npm:
+        sys.exit("[✗] npm not found in PATH. Install Node.js from https://nodejs.org")
+
+    if not (ui_dir / "node_modules").exists():
+        print("[→] Installing npm dependencies (first run) …")
+        subprocess.run([npm, "install"], cwd=ui_dir, check=True)
+
+    print("[→] Starting Bantz UI (dev mode) …")
+    subprocess.run([npm, "run", "tauri:dev"], cwd=ui_dir, check=False)
 
 
 async def _start_ws_server() -> None:

@@ -195,6 +195,7 @@ echo -e "${GRN}${BLD}═══════════════════�
 echo -e "${GRN}${BLD}  Bantz is installed and ready.${RST}"
 echo -e "${GRN}${BLD}═══════════════════════════════════════════════════${RST}"
 echo
+echo -e "  Run ${BLD}bantz --ui${RST}       to open the desktop Operations Center."
 echo -e "  Run ${BLD}bantz${RST}           to start the terminal interface."
 echo -e "  Run ${BLD}bantz --daemon${RST}  for headless background mode."
 echo -e "  Run ${BLD}bantz --doctor${RST}  to check your configuration at any time."
