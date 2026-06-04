@@ -200,13 +200,11 @@ Every user message travels this pipeline:
 
 ## Active Issues — Priority Order
 
-### #460 — `finalizer.py` Hardcodes Ollama — Bypasses Configured LLM Provider (CRITICAL)
-**Affected files**: `core/finalizer.py`
-**What needs to change**:
-- `finalize()` (line 123), the streaming path (line 190), and `synthesize_plan_response()` (line 300) all do `from bantz.llm.ollama import ollama` directly — they always use Ollama regardless of `config.llm_provider`
-- When the user runs `bantz --setup claude` or `bantz --setup openai`, the configured provider is used for the main brain chat but finalizer always falls back to Ollama — if Ollama is not running, finalizer crashes
-- Fix: replace the three hardcoded imports with a `get_llm()` factory (same pattern brain.py should use) that returns the active provider's client based on `config.llm_provider`
-- The factory should live in `llm/__init__.py` or a new `llm/router.py` so all callsites share one lookup
+### ~~#460 — `finalizer.py` Hardcodes Ollama — Bypasses Configured LLM Provider~~ ✅ FIXED (PR #468, merged 2026-06-04)
+**Affected files**: `core/finalizer.py`, `llm/router.py`
+**What was changed**:
+- `llm/router.py`: added `get_llm = get_provider` alias
+- `core/finalizer.py`: replaced hardcoded `from bantz.llm.ollama import ollama` at all three call-sites (`finalize()`, `finalize_stream()`, `synthesize_plan_response()`) with `from bantz.llm.router import get_llm` + `llm = get_llm()`
 
 ---
 
