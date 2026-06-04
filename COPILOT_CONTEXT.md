@@ -208,13 +208,11 @@ Every user message travels this pipeline:
 
 ---
 
-### #461 — `summarizer.py` Hardcodes Ollama/Gemini — Bypasses Configured LLM Provider (CRITICAL)
+### ~~#461 — `summarizer.py` Hardcodes Ollama/Gemini — Bypasses Configured LLM Provider~~ ✅ FIXED (PR #469, merged 2026-06-04)
 **Affected files**: `tools/summarizer.py`
-**What needs to change**:
-- `SummarizerTool.execute()` checks `gemini.is_enabled()` and falls back to `ollama` (lines 79–88) — Claude and OpenAI are never considered
-- When `BANTZ_LLM_PROVIDER=claude` or `BANTZ_LLM_PROVIDER=openai`, summaries silently fall back to Ollama if Gemini is not enabled
-- Fix: use the same `get_llm()` factory from #460 so the summarizer respects the configured provider
-- Affects every report or document-summary the planner produces
+**What was changed**:
+- Replaced Gemini-first → Ollama fallback two-try block in `SummarizerTool.execute()` with a single `from bantz.llm.router import get_llm; llm = get_llm(); raw = await llm.chat(messages)` call
+- `temperature=0.2` kwarg removed (Ollama's `chat()` has no temperature param; all providers use their defaults)
 
 ---
 
