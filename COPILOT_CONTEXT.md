@@ -260,129 +260,63 @@ Every user message travels this pipeline:
 
 ---
 
-### #431 — Ghost Loop / STT Broken (CRITICAL)
-**Affected files**: `agent/stt.py`, `agent/voice_capture.py`, `agent/ghost_loop.py`, `agent/wake_word.py`
-**What needs to change**:
-- Install `faster-whisper`, `pyaudio`, `webrtcvad` (add to `pyproject.toml` as optional `[voice]` extras)
-- `STTEngine._ensure_model()` currently silently returns `False` on ImportError — surface this as a visible TUI warning
-- `VoiceCapture.capture()` silently fails when PyAudio is missing — add check in `__init__`
-- `WakeWordListener` needs `BANTZ_PICOVOICE_ACCESS_KEY` populated in `.env`
-- All three failures are invisible to the user; ghost loop appears "running" but never hears anything
+### ~~#431 — Ghost Loop / STT Broken~~ ✅ CLOSED (closed 2026-05-27)
+**Was**: `agent/stt.py`, `agent/voice_capture.py`, `agent/ghost_loop.py`, `agent/wake_word.py` — voice packages missing, failures invisible
 
 ---
 
-### #440 — First-Run Onboarding Missing (HIGH)
-**Affected files**: `interface/live_ui.py`, `__main__.py`, `cli/setup.py`
-**What needs to change**:
-- On fresh TUI launch, detect if conversation history is empty → show welcome banner with capability list
-- Add `bantz --setup onboarding` or inline first-run wizard before the chat cursor appears
-- Banner must confirm Ollama is running and list what works (text chat, Turkish, TTS) vs what needs setup (voice)
-- `bantz --once` must emit a "Loading models…" progress line before the 15–30s silence window
+### ~~#440 — First-Run Onboarding Missing~~ ✅ CLOSED (closed 2026-05-27)
+**Was**: `interface/live_ui.py`, `__main__.py`, `cli/setup.py` — no welcome banner or guided first-run experience
 
 ---
 
-### #442 — Raw Tracebacks Break Persona (HIGH)
-**Affected files**: `core/brain.py`, `core/finalizer.py`, `interface/live_ui.py`, `interface/telegram_bot.py`
-**What needs to change**:
-- Wrap all tool execution and LLM calls in `try/except` at the brain level
-- Map exception types to butler-voice error messages (e.g., "I'm afraid I encountered a slight mechanical difficulty, ma'am")
-- `interface/live_ui.py` must catch widget render errors and display styled error cells, not raw tracebacks
-- `interface/telegram_bot.py` must never send a Python traceback to the user
+### ~~#442 — Raw Tracebacks Break Persona~~ ✅ CLOSED (closed 2026-05-27)
+**Was**: `core/brain.py`, `interface/live_ui.py`, `interface/telegram_bot.py` — unhandled exceptions exposed Python tracebacks to the user
 
 ---
 
-### #432 — `--doctor` MemPalace False Negative (HIGH)
-**Affected files**: `cli/setup.py:_doctor()`
-**What needs to change**:
-- `_doctor()` checks `palace_bridge.enabled` which is always `False` at import time
-- Fix: add `await palace_bridge.init()` before the enabled check inside `_doctor()`
-- Also fix: Ollama tool count shows 0 in doctor output; needs `await` on tool schema fetch
-- Group voice failures together with actionable fix commands (pip install commands) instead of flat list
+### ~~#432 — `--doctor` MemPalace False Negative~~ ✅ CLOSED (closed 2026-05-27)
+**Was**: `cli/setup.py:_doctor()` — `palace_bridge.enabled` always False at import time; Ollama tool count shows 0
 
 ---
 
-### #433 — MarianMT Wrong Routing (MEDIUM)
-**Affected files**: `core/intent.py:COT_SYSTEM`, `core/routing_engine.py:quick_route()`
-**What needs to change**:
-- Turkish hardware/system queries must be caught by `quick_route()` regex patterns before translation
-- Add Turkish keyword patterns: `cpu kullanımı`, `ram`, `bellek`, `disk`, `işlemci`, `sistem` → route to `system` tool
-- Add Turkish examples to `COT_SYSTEM` prompt in `intent.py:_ROUTING_HINTS` for the system tool
-- Post-translation normalization: "What is the use of X" → "What is X usage" for metric queries
+### ~~#433 — MarianMT Wrong Routing~~ ✅ CLOSED (closed 2026-05-27)
+**Was**: `core/intent.py`, `core/routing_engine.py` — Turkish hardware queries not caught by `quick_route()` before translation
 
 ---
 
-### #437 — TUI Status Bar Missing (MEDIUM)
-**Affected files**: `interface/live_ui.py`
-**What needs to change**:
-- Add a persistent footer/status bar to the Textual TUI showing service health indicators
-- Required dots: Ollama (green/red), MemPalace (green/red), TTS (green/red), STT (green/red), Voice (green/red)
-- Health checks must be non-blocking (async, polled every 30s in background)
-- Status bar should also show: model name, active persona state, memory drawer count
+### ~~#437 — TUI Status Bar Missing~~ ✅ CLOSED (closed 2026-05-27)
+**Was**: `interface/live_ui.py` — no live service health dots (Ollama/MemPalace/TTS/STT/Voice)
 
 ---
 
-### #434 — Guided Voice Setup Wizard Missing (MEDIUM)
-**Affected files**: `cli/setup.py:_handle_setup()`
-**What needs to change**:
-- Implement `bantz --setup voice` wizard that:
-  1. Checks which of `faster-whisper`, `pyaudio`, `webrtcvad`, `pvporcupine` are installed
-  2. Offers to run `pip install` for missing packages
-  3. Prompts for `BANTZ_PICOVOICE_ACCESS_KEY` and writes it to `.env`
-  4. Sets `BANTZ_VOICE_ENABLED=true`, `BANTZ_STT_ENABLED=true`, `BANTZ_GHOST_LOOP_ENABLED=true` in `.env`
-  5. Runs a mic test + STT test + TTS test and reports pass/fail
-- Add `bantz --setup voice` to argparse in `__main__.py`
+### ~~#434 — Guided Voice Setup Wizard Missing~~ ✅ CLOSED (closed 2026-05-27)
+**Was**: `cli/setup.py` — no `bantz --setup voice` wizard; voice package detection/install not surfaced to user
 
 ---
 
-### #435 — `bantz --once` Silent Hang (MEDIUM)
-**Affected files**: `__main__.py:_once()`, `core/brain.py`, `i18n/bridge.py`
-**What needs to change**:
-- `_once()` must emit progress to stderr before any async operation:
-  - "Loading translation model…" before `bridge.to_english()`
-  - "Thinking…" before Ollama call
-  - "Synthesizing voice…" before TTS
-- MarianMT load time (~3s) and Ollama inference (~8–15s) happen in complete silence currently
-- Consider pre-warming MarianMT in a background thread during startup
+### ~~#435 — `bantz --once` Silent Hang~~ ✅ CLOSED (closed 2026-05-28)
+**Was**: `__main__.py:_once()` — no progress output during 15–30 s of model load + inference
 
 ---
 
-### #439 — VLM Vision Never Called (LOW-MEDIUM)
-**Affected files**: `vision/remote_vlm.py`, `tools/visual_click.py`, `config.py`
-**What needs to change**:
-- `BANTZ_VLM_ENABLED=false` disables `describe_screen()` entirely
-- Add a local VLM option (e.g., `llava` via Ollama) so vision works without a remote server
-- When user asks "ekran görüntüsü al ve anlat" (take screenshot and describe), route to `screenshot` + local VLM
-- Update `remote_vlm.py` to support `BANTZ_VLM_BACKEND=ollama` with `BANTZ_VLM_MODEL=llava`
+### ~~#439 — VLM Vision Never Called~~ ✅ CLOSED (closed 2026-05-28)
+**Was**: `vision/remote_vlm.py`, `config.py` — `BANTZ_VLM_ENABLED=false` by default; no local Ollama VLM path
 
 ---
 
-### #438 — AffinityEngine Never Fires (LOW)
-**Affected files**: `core/rl_hooks.py`, `agent/affinity_engine.py`, `config.py`
-**What needs to change**:
-- `BANTZ_RL_ENABLED=false` causes `rl_reward_hook()` to always return early
-- 96 interactions collected in `messages` table are never used for personalization
-- Fix: set `BANTZ_RL_ENABLED=true` in default `.env.example` (AffinityEngine is safe to enable)
-- Ensure `AffinityEngine` is initialized in `DataLayer.__init__()` when `rl_enabled=True`
-- Wire `HabitEngine.top_tools_for_segment()` output into `memory_injector.inject(ctx)`
+### ~~#438 — AffinityEngine Never Fires~~ ✅ CLOSED (closed 2026-05-28)
+**Was**: `core/rl_hooks.py`, `agent/affinity_engine.py` — `BANTZ_RL_ENABLED=false` default; interaction data collected but unused
 
 ---
 
-### #436 — Redis Dead Reference (LOW)
-**Affected files**: `memory/bridge.py:178`, `interface/telegram_bot.py`
-**What needs to change**:
-- Remove or update the Redis architecture comment at `bridge.py:178` — Redis was never implemented
-- `telegram_bot.py:_active_chats` is a plain Python set lost on restart; replace with SQLite KV store using `data/sqlite_store.py:SQLiteKVStore`
-- `SQLiteKVStore` already exists and supports set operations — this is a 10-line fix
+### ~~#436 — Redis Dead Reference~~ ✅ CLOSED (closed 2026-05-28)
+**Was**: `memory/bridge.py:178`, `interface/telegram_bot.py` — Redis comment stale; `_active_chats` set lost on restart
 
 ---
 
-### #441 — AmbientEngine Blocked by Picovoice (LOW)
-**Affected files**: `agent/ambient.py`, `agent/wake_word.py`
-**What needs to change**:
-- `ambient_analyzer.feed_frames()` is only called from `WakeWordListener._listen_loop()`
-- When Picovoice is unavailable, AmbientAnalyzer is completely unreachable
-- Add `StandaloneAmbientSampler` class in `agent/ambient.py` that opens a raw PyAudio stream independently of Porcupine
-- Guard with `if config.ambient_enabled and not config.wake_word_enabled: start standalone sampler`
+### ~~#441 — AmbientEngine Blocked by Picovoice~~ ✅ CLOSED (closed 2026-05-28)
+**Was**: `agent/ambient.py`, `agent/wake_word.py` — `AmbientAnalyzer` only reachable via Porcupine; added `StandaloneAmbientSampler`
 
 ---
 
