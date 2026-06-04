@@ -224,13 +224,13 @@ Every user message travels this pipeline:
 
 ---
 
-### #465 — TUI Service Dots Always Show Ollama/Gemini — No Claude or OpenAI Indicator (HIGH)
+### ~~#465 — TUI Service Dots Always Show Ollama/Gemini — No Claude or OpenAI Indicator~~ ✅ FIXED (PR #470, merged 2026-06-04)
 **Affected files**: `interface/live_ui.py`
-**What needs to change**:
-- `_run_health_checks()` only checks Ollama (line 587) and Gemini (line 698) — when `BANTZ_LLM_PROVIDER=claude` or `openai`, the Ollama dot shows red even though Bantz is working correctly with the configured provider
-- The `dots` renderer (line 292) needs to show the active provider dot instead of always showing Ollama
-- Fix: add `check_claude()` and `check_openai()` coroutines alongside the existing Ollama/Gemini checks; only run the check that matches `config.llm_provider`; update the dot label to the active provider name
-- `_get_llm_label()` (line 102) already returns the correct short label — use it for the dot text too
+**What was changed**:
+- `__init__`: `"Ollama"` key in `_services` replaced with dynamic label from `config.llm_provider`
+- `_probe_services`: `_provider`/`_llm_key` computed at method top; `check_ollama` updated to use `_llm_key`
+- Added `check_claude()` (key-presence + `is_enabled()`, no live API call) and `check_openai()` (same)
+- `gather()`: selects active LLM coroutine via `if/elif _provider`; gemini uses `asyncio.sleep(0)` since `check_gemini()` already owns the `"Gemini"` dot
 
 ---
 
