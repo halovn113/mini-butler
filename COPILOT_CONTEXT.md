@@ -244,12 +244,14 @@ Every user message travels this pipeline:
 
 ---
 
-### #464 — TUI: `_erase_prompt_line()` Causes Double-Render Artifact — Whole TUI Block Duplicates on Screen (MEDIUM)
-**Affected files**: `interface/live_ui.py:_erase_prompt_line`
-**What needs to change**:
-- `_erase_prompt_line()` (line 484) writes escape sequences to `sys.stdout` while `Rich Live` is running — this races with the Live render loop and causes the entire TUI layout to print a second copy on screen
-- Fix: instead of writing escape sequences directly, update the prompt panel's `Renderable` to clear itself (set prompt text to empty string) and let the next Live refresh handle the erase — no raw stdout writes while Live is active
-- Alternatively, call `self._live.stop()` → erase → `self._live.start()` but that causes flicker; prefer the renderable approach
+### ~~#464 — TUI: `_erase_prompt_line()` Causes Double-Render Artifact — Whole TUI Block Duplicates on Screen~~ ✅ FIXED (PR #471, merged 2026-06-04)
+**Affected files**: `interface/live_ui.py`
+**What was changed**:
+- Added `Layout(name="prompt", size=1)` at bottom of `_build_layout()`
+- Added `self._prompt_text: str = ""` to `__init__`; `_render_prompt()` renders it as a `Text` renderable; `_update_panels()` pushes it to the layout
+- Main loop: `sys.stdout.write("› ")` replaced with `self._prompt_text = "› "` set before `_refresh_now()`
+- `_erase_prompt_line()`: body replaced with `self._prompt_text = ""`; no more raw `os.write` to fd 1 while Live runs
+- `import os` removed (no longer needed)
 
 ---
 
