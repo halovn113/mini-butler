@@ -16,11 +16,11 @@ Screenshots and screen recordings live in [`bantz-demo/`](bantz-demo/).
 
 **GIF walkthroughs:**
 
-![seg1](bantz-demo/seg1.gif)
-![seg2](bantz-demo/seg2.gif)
-![seg3](bantz-demo/seg3.gif)
-![seg4](bantz-demo/seg4.gif)
-![seg5](bantz-demo/seg5.gif)
+<img src="bantz-demo/seg1.gif" width="100%">
+<img src="bantz-demo/seg2.gif" width="100%">
+<img src="bantz-demo/seg3.gif" width="100%">
+<img src="bantz-demo/seg4.gif" width="100%">
+<img src="bantz-demo/seg5.gif" width="100%">
 
 ---
 
