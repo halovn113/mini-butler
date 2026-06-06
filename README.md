@@ -4,6 +4,26 @@ Bantz is a local-first AI assistant that runs on your Linux machine and acts as 
 
 ---
 
+## Demo
+
+Screenshots and screen recordings live in [`bantz-demo/`](bantz-demo/).
+
+| | |
+|---|---|
+| ![Chat](bantz-demo/bantzChat.jpeg) | ![Vitals](bantz-demo/bantzVitals.jpeg) |
+| ![Logs](bantz-demo/bantzLogs.jpeg) | ![Directives](bantz-demo/bantzDirectives.jpeg) |
+| ![Anomaly Watch](bantz-demo/bantzAnomalyWatch.jpeg) | ![Settings](bantz-demo/bantzSettings.jpeg) |
+
+**GIF walkthroughs:**
+
+![seg1](bantz-demo/seg1.gif)
+![seg2](bantz-demo/seg2.gif)
+![seg3](bantz-demo/seg3.gif)
+![seg4](bantz-demo/seg4.gif)
+![seg5](bantz-demo/seg5.gif)
+
+---
+
 ## Architecture
 
 The Brain (`core/brain.py`) sits at the center. Every request — typed, spoken, or sent via Telegram — goes through the same pipeline:
