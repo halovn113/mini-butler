@@ -1,4 +1,4 @@
-# Bantz
+# Bantz (It's Still in Early Development)
 
 Bantz is a local-first AI assistant that runs on your Linux machine and acts as a personal butler — it has a voice, remembers things across sessions, runs scheduled jobs overnight, controls your desktop, reads your email, and talks to you like a person who's known you long enough to be useful. The primary interface is a terminal. Everything is local by default. Nothing phones home unless you configure it to.
 
