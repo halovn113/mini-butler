@@ -396,6 +396,58 @@ class TestHelpers:
         result = _extract_json(text)
         assert result["route"] == "tool"
 
+    # ── planner→tool_name rescue (route/tool_name mismatch) ──────────────
+    # llama3.1 answers single-tool requests with route="planner" while naming
+    # the correct tool in tool_name (35/42 planner over-routes in
+    # eval/routing_eval_results.json).
+
+    def test_planner_rescue_fires_for_known_tool(self):
+        import bantz.tools.system  # noqa: F401 — registers "system"
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "planner", "tool_name": "system", '
+            '"tool_args": {"metric": "cpu"}, "confidence": 1.0}'
+        )
+        assert result["route"] == "tool"
+        assert result["tool_name"] == "system"
+        assert result["tool_args"] == {"metric": "cpu"}
+
+    def test_planner_rescue_skips_unknown_tool(self):
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "planner", "tool_name": "frobnicator", '
+            '"tool_args": {"x": 1}, "confidence": 1.0}'
+        )
+        assert result["route"] == "planner"
+
+    def test_planner_rescue_skips_empty_or_missing_tool_name(self):
+        from bantz.core.intent import _extract_json
+        for payload in (
+            '{"route": "planner", "tool_name": null, "tool_args": {"q": "x"}}',
+            '{"route": "planner", "tool_name": "", "tool_args": {"q": "x"}}',
+            '{"route": "planner", "tool_name": "planner", "tool_args": {"q": "x"}}',
+            '{"route": "planner"}',
+        ):
+            assert _extract_json(payload)["route"] == "planner"
+
+    def test_planner_rescue_skips_empty_tool_args(self):
+        import bantz.tools.system  # noqa: F401
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "planner", "tool_name": "system", "tool_args": {}}'
+        )
+        assert result["route"] == "planner"
+
+    def test_planner_rescue_skips_tool_name_list(self):
+        # Genuine plans sometimes emit tool_name as a list of steps —
+        # never rescue those.
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "planner", "tool_name": ["web_search", "summarizer"], '
+            '"tool_args": {"topic": "x"}}'
+        )
+        assert result["route"] == "planner"
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 5. Backward compatibility — old signature still works

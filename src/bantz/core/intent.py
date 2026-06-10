@@ -206,6 +206,35 @@ def _extract_json(text: str) -> dict:
             data["tool_name"] = data.get("tool_name") or wrong_route
         data["route"] = "tool"
 
+    # Rescue: llama3.1 frequently answers a single-tool request with
+    # route="planner" while naming the correct tool (with populated args) in
+    # tool_name — measured at 35/42 planner over-routes in
+    # eval/routing_eval_results.json.  "planner" is a valid route, so the
+    # normalisation above never touches it.  When tool_name is a single
+    # registered tool and tool_args is a populated dict, trust tool_name.
+    # Known cost: a genuine multi-step request whose JSON also names its first
+    # tool is demoted to one tool call — ~2/100 on the eval vs 35/100 rescued.
+    if isinstance(data, dict) and data.get("route") == "planner":
+        tool_name = data.get("tool_name")
+        tool_args = data.get("tool_args")
+        if (
+            isinstance(tool_name, str)
+            and tool_name
+            and tool_name != "planner"
+            and isinstance(tool_args, dict)
+            and tool_args
+        ):
+            try:
+                from bantz.tools import registry as _registry
+                known = _registry.get(tool_name) is not None
+            except Exception:
+                known = False
+            if known:
+                log.debug(
+                    "route/tool_name mismatch rescued: planner → %s", tool_name
+                )
+                data["route"] = "tool"
+
     return data
 
 
