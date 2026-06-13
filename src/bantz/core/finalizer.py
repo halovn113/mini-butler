@@ -141,7 +141,10 @@ async def finalize(
             formality_hint=formality_hint,
         )},
         {"role": "user", "content": (
-            f"User asked: {en_input}\n\nTool output:\n{output[:3000]}"
+            "FACTS (from tool, treat as ground truth — do not contradict or ignore these):\n"
+            f"{output[:3000]}\n\n"
+            f"User asked: {en_input}\n"
+            "Answer using ONLY the facts above. Do not add information not present in the facts."
         )},
     ]
 
@@ -217,7 +220,10 @@ async def finalize_stream(
             formality_hint=formality_hint,
         )},
         {"role": "user", "content": (
-            f"User asked: {en_input}\n\nTool output:\n{output[:3000]}"
+            "FACTS (from tool, treat as ground truth — do not contradict or ignore these):\n"
+            f"{output[:3000]}\n\n"
+            f"User asked: {en_input}\n"
+            "Answer using ONLY the facts above. Do not add information not present in the facts."
         )},
     ]
 
@@ -347,8 +353,10 @@ async def finalize_plan(
             persona_state=_persona_hint(),
         )},
         {"role": "user", "content": (
-            f"The employer asked: {user_input}\n\n"
-            f"Task results:\n{context_block}"
+            "FACTS (from tools, treat as ground truth — do not contradict or ignore these):\n"
+            f"{context_block}\n\n"
+            f"The employer asked: {user_input}\n"
+            "Answer using ONLY the facts above. Do not add information not present in the facts."
         )},
     ]
 
