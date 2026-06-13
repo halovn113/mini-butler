@@ -14,7 +14,7 @@ from bantz.config import config
 from bantz.core.time_context import time_ctx
 from bantz.data import data_layer
 from bantz.core.profile import profile
-from bantz.core.intent import cot_route
+from bantz.core.intent import cot_route, _ANAPHORA
 from bantz.core.finalizer import (
     finalize as _finalize_fn,
     finalize_stream as _finalize_stream_fn,
@@ -76,6 +76,29 @@ _BUTLER_LLM_ERROR = (
     "I'm afraid I encountered a slight mechanical difficulty, ma'am. "
     "Please do try again presently."
 )
+
+# Topic-discipline fence appended to the chat system prompt (live re-run
+# tests 19/20: chat answers inherited the previous turn's topic).
+_TOPIC_DISCIPLINE = (
+    "\n\nAnswer the user's CURRENT message. Earlier conversation is context "
+    "for tone and references only — do NOT continue a previous topic unless "
+    "the current message explicitly refers back to it."
+)
+
+
+def _mood_suffix() -> str:
+    """Personality 'mood bias' dial → an instruction appended to the chat
+    system prompt. Read live from config so Settings changes apply at once."""
+    try:
+        from bantz.config import config
+        mood = (config.mood_bias or "tolerant").lower()
+    except Exception:
+        mood = "tolerant"
+    if mood == "impatient":
+        return "\n\nBe concise. Skip pleasantries."
+    if mood == "resigned":
+        return "\n\nKeep responses minimal and dry."
+    return ""  # tolerant = default disposition
 
 
 def _exc_to_butler(exc: Exception) -> str:
@@ -146,6 +169,11 @@ class Brain:
         except (ImportError, ModuleNotFoundError):
             pass
         import bantz.tools.summarizer    # noqa: F401  (Architect's Revision)
+        try:
+            import bantz.tools.screen_query_tool  # noqa: F401  (vision pipeline)
+            import bantz.tools.vision_execute     # noqa: F401  (vision pipeline)
+        except (ImportError, ModuleNotFoundError):
+            pass  # PIL / vision deps may not be installed
         self._memory_ready = False
         self._graph_ready = False
         # Session state: stores last tool results for contextual follow-ups
@@ -962,6 +990,21 @@ class Brain:
         )
 
     @staticmethod
+    def _gate_history(prior: list[dict], en_input: str) -> list[dict]:
+        """Anaphora-gate the chat history window (live re-run tests 19/20).
+
+        Unconditional 12-message history made chat answers inherit the
+        previous turn's topic (both memory-check tests answered about Alan
+        Turing). When the current input contains a back-reference
+        (``_ANAPHORA``), keep the full window; otherwise keep only the last
+        two turns for tone continuity and let ``_TOPIC_DISCIPLINE`` mark the
+        message as a fresh topic.
+        """
+        if not prior or _ANAPHORA.search(en_input):
+            return prior
+        return prior[-4:]
+
+    @staticmethod
     def _dedup_history(history: list[dict]) -> list[dict]:
         """Collapse repeated assistant responses to prevent context-window echo loops (#184).
 
@@ -1016,6 +1059,7 @@ class Brain:
         history = data_layer.conversations.context(n=12)
         prior = history[:-1] if (history and history[-1]["role"] == "user") else history
         prior = self._dedup_history(prior)
+        prior = self._gate_history(prior, en_input)
 
         # Concurrent context injection (#227)
         ctx = BantzContext(en_input=en_input)
@@ -1024,7 +1068,7 @@ class Brain:
         await _inject_memory(ctx, en_input)
 
         messages = [
-            {"role": "system", "content": _build_chat_system(ctx, tc)},
+            {"role": "system", "content": _build_chat_system(ctx, tc) + _TOPIC_DISCIPLINE + _mood_suffix()},
             *prior,
             {"role": "user", "content": en_input},
         ]
@@ -1058,6 +1102,7 @@ class Brain:
         history = data_layer.conversations.context(n=12)
         prior = history[:-1] if (history and history[-1]["role"] == "user") else history
         prior = self._dedup_history(prior)
+        prior = self._gate_history(prior, en_input)
 
         # Concurrent context injection (#227)
         ctx = BantzContext(en_input=en_input)
@@ -1065,7 +1110,7 @@ class Brain:
         self._feedback_ctx = ""  # clear after consumption
         await _inject_memory(ctx, en_input)
 
-        system_content = _build_chat_system(ctx, tc)
+        system_content = _build_chat_system(ctx, tc) + _TOPIC_DISCIPLINE + _mood_suffix()
 
         # (#253) People-Pleaser guard: inject routing failure context
         if system_alert:

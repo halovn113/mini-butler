@@ -377,6 +377,25 @@ def _extract_json(text: str, utterance: str = "") -> dict:
             except Exception:  # registry unavailable (e.g. bare unit tests)
                 pass
 
+    # Autonomy dial → whether the user must confirm before this tool runs.
+    # low: always confirm any tool/planner action. absolute: never confirm,
+    # even destructive. medium/high (default): confirm only destructive tools.
+    if isinstance(data, dict):
+        try:
+            from bantz.config import config
+            autonomy = (config.autonomy or "high").lower()
+        except Exception:
+            autonomy = "high"
+        if data.get("route") in ("tool", "planner"):
+            if autonomy == "low":
+                data["requires_confirm"] = True
+            elif autonomy == "absolute":
+                data["requires_confirm"] = False
+            else:
+                data["requires_confirm"] = data.get("risk_level") == "destructive"
+        else:
+            data["requires_confirm"] = False
+
     return data
 
 

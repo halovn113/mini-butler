@@ -7,7 +7,10 @@
    ============================================================ */
 
 :root {
-  --ember-500: #ff4500;
+  /* Accent color — SettingsPage overrides this on documentElement from the
+     accent picker; --ember-500 (the primary accent CSS var) follows it. */
+  --accent: #ff4500;
+  --ember-500: var(--accent);
   --ember-400: #ff6a2a;
   --ember-300: #ff8c00;
   --gold-500: #c9a80c;
@@ -156,4 +159,29 @@ select,
 textarea,
 a {
   -webkit-app-region: no-drag;
+}
+
+/* ============================================================
+   Appearance toggles (driven by SettingsPage → document.body classes)
+   ============================================================ */
+
+/* Night shift — warmer, dimmer palette for low-light hours */
+body.night-shift {
+  filter: sepia(0.3) brightness(0.9);
+}
+
+/* CRT effects — scanline overlay */
+body.crt::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
 }

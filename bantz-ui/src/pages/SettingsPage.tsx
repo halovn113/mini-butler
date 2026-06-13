@@ -109,6 +109,7 @@ export function SettingsPage() {
   const [showKey, setShowKey] = useState(false);
   const [showClaudeKey, setShowClaudeKey] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [restartNeeded, setRestartNeeded] = useState(false);
 
   // Ollama models installed on this machine (fetched from the local API).
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
@@ -203,6 +204,14 @@ export function SettingsPage() {
     for (const [key, value] of changes) {
       wsSend({ type: "set_config", key, value });
     }
+    // These subsystems are initialised once at daemon startup — changing them
+    // persists but only takes effect after a restart.
+    const RESTART_KEYS = ["wake_word_enabled", "tts_enabled", "stt_enabled", "observer_enabled"];
+    setRestartNeeded(
+      changes.some(([k, v]) =>
+        RESTART_KEYS.includes(k) && configValues != null &&
+        (configValues as unknown as Record<string, unknown>)[k] !== v),
+    );
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -214,7 +223,8 @@ export function SettingsPage() {
         title="HOUSEHOLD SETTINGS"
         sub="Adjust Bantz's operational parameters. He will tolerate the changes."
         right={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => { setS(DEFAULTS); }}
@@ -237,6 +247,12 @@ export function SettingsPage() {
               <Save size={11} strokeWidth={1.5} />
               {saved ? "Saved" : wsSend ? "Apply Changes" : "Backend Offline"}
             </button>
+            </div>
+            {restartNeeded && (
+              <div className="border border-gold-500/40 bg-gold-500/5 px-3 py-1 font-terminal text-[10px] text-gold-400">
+                ⚡ Restart required for voice/observer changes to take effect.
+              </div>
+            )}
           </div>
         }
       />
