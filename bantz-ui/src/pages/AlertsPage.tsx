@@ -1,10 +1,9 @@
 import {
   ShieldAlert, ShieldCheck, AlertTriangle, Info, X, Check,
-  ThermometerSun, HardDrive, Clock, Server, Wifi, Package, AlertCircle,
   type LucideIcon,
 } from "lucide-react";
 import { PageTitle, timeAgo } from "../components/primitives";
-import { useAppStore, type AlertItem, type AlertCategory, type AlertSeverity } from "../store/useAppStore";
+import { useAppStore, type Anomaly, type AlertSeverity } from "../store/useAppStore";
 
 const SEV: Record<AlertSeverity, { bar: string; text: string; border: string; bg: string; label: string }> = {
   critical: { bar:"bg-rose-500",   text:"text-rose-300",   border:"border-rose-500/60",   bg:"bg-rose-500/5",   label:"CRITICAL" },
@@ -12,29 +11,28 @@ const SEV: Record<AlertSeverity, { bar: string; text: string; border: string; bg
   info:     { bar:"bg-velvet-200", text:"text-velvet-200", border:"border-velvet-200/40", bg:"bg-velvet-200/5", label:"INFO" },
 };
 
-const CAT_ICON: Record<AlertCategory, LucideIcon> = {
-  thermal: ThermometerSun, disk: HardDrive, session: Clock,
-  service: Server,         network: Wifi,   package: Package,
+const SEV_ICON: Record<AlertSeverity, LucideIcon> = {
+  critical: ShieldAlert, warning: AlertTriangle, info: Info,
 };
 
 export function AlertsPage() {
-  const alerts          = useAppStore((s) => s.alerts);
-  const dismissAlert    = useAppStore((s) => s.dismissAlert);
-  const dismissAllAlerts = useAppStore((s) => s.dismissAllAlerts);
+  const anomalies      = useAppStore((s) => s.anomalies);
+  const dismissAnomaly = useAppStore((s) => s.dismissAnomaly);
+  const dismissAll     = () => anomalies.forEach((a) => dismissAnomaly(a.id));
 
   const counts: Record<AlertSeverity, number> = { critical: 0, warning: 0, info: 0 };
-  for (const a of alerts) counts[a.severity]++;
+  for (const a of anomalies) counts[a.severity]++;
 
   return (
     <div className="flex h-full flex-col">
       <PageTitle
-        eyebrow={`${alerts.length} active`}
+        eyebrow={`${anomalies.length} active`}
         title="ANOMALY WATCH"
         sub="Bantz raises alerts at his own discretion. He is rarely wrong, though often condescending."
         right={
           <button
             type="button"
-            onClick={dismissAllAlerts}
+            onClick={dismissAll}
             className="flex items-center gap-2 border border-obsidian-500 bg-obsidian-800 px-4 py-2 font-ui text-[10px] font-bold uppercase tracking-widest text-obsidian-200 transition-colors hover:border-ember-500 hover:text-ember-500"
           >
             <Check size={12} strokeWidth={1.5} /> Dismiss All
@@ -69,12 +67,12 @@ export function AlertsPage() {
       </div>
 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-        {alerts.length === 0 && (
+        {anomalies.length === 0 && (
           <div className="grid h-full place-items-center">
             <div className="text-center">
               <ShieldCheck size={48} className="mx-auto mb-3 text-[#2E7D32]" />
               <div className="font-ui text-[14px] font-bold uppercase tracking-widest text-fg-primary">
-                All clear.
+                No anomalies detected.
               </div>
               <div className="mt-2 font-terminal text-[12px] italic text-obsidian-200">
                 "I have detected nothing untoward. This is, in my experience, a temporary condition."
@@ -83,9 +81,9 @@ export function AlertsPage() {
           </div>
         )}
 
-        {alerts.map((a: AlertItem) => {
+        {anomalies.map((a: Anomaly) => {
           const st   = SEV[a.severity];
-          const Icon = CAT_ICON[a.category] ?? AlertCircle;
+          const Icon = SEV_ICON[a.severity];
           return (
             <div key={a.id} className={`relative flex items-stretch border ${st.border} ${st.bg}`}>
               <div className={`w-1.5 flex-shrink-0 ${st.bar}`} />
@@ -102,11 +100,11 @@ export function AlertsPage() {
                   </span>
                   <div className="flex-1" />
                   <span className="font-terminal text-[10px] text-obsidian-300">
-                    {timeAgo(a.ts)} · {a.source}
+                    {timeAgo(a.timestamp)} · {a.source}
                   </span>
                 </div>
                 <p className="pl-9 font-terminal text-[13px] leading-relaxed text-fg-secondary">
-                  {a.detail}
+                  {a.description}
                 </p>
                 <div className="mt-3 flex items-center gap-2 pl-9">
                   <button
@@ -125,7 +123,7 @@ export function AlertsPage() {
               </div>
               <button
                 type="button"
-                onClick={() => dismissAlert(a.id)}
+                onClick={() => dismissAnomaly(a.id)}
                 className="m-3 grid h-7 w-7 self-start place-items-center border border-obsidian-500 text-obsidian-200 transition-colors hover:border-rose-500 hover:text-rose-300"
                 aria-label="Dismiss"
               >

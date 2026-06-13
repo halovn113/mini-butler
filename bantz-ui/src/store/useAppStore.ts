@@ -59,6 +59,18 @@ export interface AlertItem {
   source: string;
 }
 
+// Live anomalies derived by the backend (resource pressure + recent error
+// logs) and pushed on the periodic vitals message. Replaced wholesale each
+// tick — stable ids per condition mean no duplicates.
+export interface Anomaly {
+  id: string;
+  title: string;
+  severity: AlertSeverity;
+  description: string;
+  source: string;
+  timestamp: number;
+}
+
 export type ServiceStatus = "online" | "degraded" | "offline";
 
 export interface ServiceItem {
@@ -93,6 +105,7 @@ interface AppState {
   streamingText: string | null;
   logs: LogEntry[];
   alerts: AlertItem[];
+  anomalies: Anomaly[];
   services: ServiceItem[];
   configValues: ConfigValues | null;
   wsSend: ((msg: Record<string, unknown>) => boolean) | null;
@@ -105,6 +118,8 @@ interface AppState {
   pushAlert: (alert: Omit<AlertItem, "id">) => void;
   dismissAlert: (id: string) => void;
   dismissAllAlerts: () => void;
+  setAnomalies: (anomalies: Anomaly[]) => void;
+  dismissAnomaly: (id: string) => void;
   setServices: (services: ServiceItem[]) => void;
   setConfigValues: (cv: ConfigValues) => void;
   setWsSend: (fn: ((msg: Record<string, unknown>) => boolean) | null) => void;
@@ -158,45 +173,6 @@ const SEED_LOGS: Omit<LogEntry, "id">[] = (
   ] as Omit<LogEntry, "id">[]
 ).map((l, i) => ({ ...l, t: Date.now() - (10 - i) * 1800 }));
 
-const SEED_ALERTS: AlertItem[] = [
-  {
-    id: "a1", severity: "critical", category: "thermal", source: "thermal-monitor",
-    ts: Date.now() - 4 * 60 * 1000,
-    title: "GPU junction temperature climbing",
-    detail: "68°C and rising at +0.4°C/min. Throttle threshold (87°C) projected in ~47 minutes if trend continues.",
-  },
-  {
-    id: "a2", severity: "critical", category: "disk", source: "disk-mon",
-    ts: Date.now() - 22 * 60 * 1000,
-    title: "/home partition approaching saturation",
-    detail: "412 / 460 GB consumed (91%). 47 GB attributable to ~/Videos/exports/final_FINAL_v3/. I have my opinions.",
-  },
-  {
-    id: "a3", severity: "warning", category: "session", source: "ego",
-    ts: Date.now() - 9 * 60 * 1000,
-    title: "Marathon session detected",
-    detail: "You have been at the terminal for 11h 23m without a break exceeding 4 minutes. This is, in my opinion, unsustainable.",
-  },
-  {
-    id: "a4", severity: "warning", category: "service", source: "redis",
-    ts: Date.now() - 28 * 60 * 1000,
-    title: "Redis evicting keys aggressively",
-    detail: "142 evictions/s (threshold 50). Cache pressure suggests undersized maxmemory or runaway producer.",
-  },
-  {
-    id: "a5", severity: "warning", category: "network", source: "gemini",
-    ts: Date.now() - 44 * 60 * 1000,
-    title: "Gemini API quota at 87%",
-    detail: "At current consumption rate the daily quota will exhaust in 2h 14m. Consider model fallback.",
-  },
-  {
-    id: "a6", severity: "info", category: "package", source: "package-watch",
-    ts: Date.now() - 2 * 3600 * 1000,
-    title: "Package arriving Thursday",
-    detail: 'Sender: yourself. Contents: coffee. Catalogued under "recurring vanities."',
-  },
-];
-
 const SEED_SERVICES: ServiceItem[] = [
   { name: "Ollama",   port: 11434, status: "offline", uptime: "—", detail: "awaiting probe" },
   { name: "Gemini",   port: null,  status: "offline", uptime: "—", detail: "awaiting probe" },
@@ -224,7 +200,8 @@ export const useAppStore = create<AppState>((set) => ({
   tasks:        SEED_TASKS,
   streamingText: null,
   logs:         SEED_LOGS.map((l) => ({ ...l, id: nid() })),
-  alerts:       SEED_ALERTS,
+  alerts:       [],
+  anomalies:    [],
   services:     SEED_SERVICES,
   configValues: null,
   wsSend:       null,
@@ -255,6 +232,12 @@ export const useAppStore = create<AppState>((set) => ({
     set((s) => ({ alerts: s.alerts.filter((a) => a.id !== id) })),
 
   dismissAllAlerts: () => set({ alerts: [] }),
+
+  // Live anomalies arrive on each vitals push and replace the list wholesale.
+  setAnomalies: (anomalies) => set({ anomalies }),
+  // Local dismiss; the backend re-derives so it reappears next tick if still present.
+  dismissAnomaly: (id) =>
+    set((s) => ({ anomalies: s.anomalies.filter((a) => a.id !== id) })),
 
   setServices: (services) => set({ services }),
 

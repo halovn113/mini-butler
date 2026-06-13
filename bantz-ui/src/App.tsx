@@ -9,7 +9,7 @@ import { LogsPage } from "./pages/LogsPage";
 import { AlertsPage } from "./pages/AlertsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { useWebSocket } from "./hooks/useWebSocket";
-import { useAppStore, type ConfigValues, type ServiceItem, type Task } from "./store/useAppStore";
+import { useAppStore, type Anomaly, type ConfigValues, type ServiceItem, type Task } from "./store/useAppStore";
 
 async function getWindow() {
   try {
@@ -136,8 +136,9 @@ export default function App() {
   const setTasks         = useAppStore((s) => s.setTasks);
   const setServices      = useAppStore((s) => s.setServices);
   const setConfigValues  = useAppStore((s) => s.setConfigValues);
+  const setAnomalies     = useAppStore((s) => s.setAnomalies);
   const setWsSend        = useAppStore((s) => s.setWsSend);
-  const alertCount       = useAppStore((s) => s.alerts.length);
+  const alertCount       = useAppStore((s) => s.anomalies.length);
 
   // Accumulates streaming tokens between "token" and "done" messages.
   const streamAccumRef = useRef<string>("");
@@ -157,7 +158,9 @@ export default function App() {
             cpu: number; ram_used: number; ram_total: number;
             disk_used: number; disk_total: number;
             vram_used: number; vram_total: number;
+            anomalies?: Anomaly[];
           };
+          if (Array.isArray(v.anomalies)) setAnomalies(v.anomalies);
           const ramPct  = v.ram_total  > 0 ? (v.ram_used  / v.ram_total)  * 100 : 0;
           const diskPct = v.disk_total > 0 ? (v.disk_used / v.disk_total) * 100 : 0;
           pushVital({
@@ -254,7 +257,7 @@ export default function App() {
       }
     },
     [pushChat, pushVital, setStreamingText, pushLog, pushAlert,
-     setTasks, setServices, setConfigValues],
+     setTasks, setServices, setConfigValues, setAnomalies],
   );
 
   const { status, attempts, send } = useWebSocket({

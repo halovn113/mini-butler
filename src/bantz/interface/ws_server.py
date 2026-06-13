@@ -56,6 +56,8 @@ import logging
 import os
 import re
 import subprocess
+import time
+from collections import deque
 from pathlib import Path
 from typing import Any
 
@@ -70,6 +72,15 @@ log = logging.getLogger("bantz.ws_server")
 _VITALS_INTERVAL = 2.0
 _SERVICES_INTERVAL = 30.0
 _WS_PORT = 8765
+
+# Rolling buffer of the most recent log payloads, scanned by _compute_anomalies
+# for ERROR/CRITICAL entries. Filled by _log_queue_loop as logs stream through.
+_recent_logs: deque[dict] = deque(maxlen=50)
+
+# Anomaly detection thresholds (percent).
+_CPU_CRIT = 85.0
+_RAM_CRIT = 90.0
+_DISK_CRIT = 90.0
 
 # ── Config key → (env alias, python attr) map ────────────────────────────────
 
@@ -368,6 +379,7 @@ class WsBroadcastServer:
         try:
             while True:
                 payload = await self._log_q.get()
+                _recent_logs.append(payload)  # keep for anomaly scanning
                 await self._broadcast(payload)
         finally:
             bantz_log.removeHandler(handler)
@@ -519,7 +531,69 @@ def _collect_vitals() -> dict:
         "disk_total": round(disk.total / (1024 ** 3), 1),
         "vram_used": round(vram_used, 0),
         "vram_total": round(vram_total, 0),
+        "anomalies": _compute_anomalies(cpu, mem.percent),
     }
+
+
+def _compute_anomalies(cpu: float, ram_pct: float) -> list[dict]:
+    """Derive current anomalies from resource pressure + recent error logs.
+
+    Stable ids per condition so the UI replaces (not duplicates) them each
+    tick. Resource breaches → CRITICAL; recurring log errors → one WARNING
+    per source.
+    """
+    now_ms = int(time.time() * 1000)
+    out: list[dict] = []
+
+    if cpu > _CPU_CRIT:
+        out.append({
+            "id": "cpu-high", "title": "CPU saturated", "severity": "critical",
+            "description": f"CPU usage at {cpu:.0f}% (threshold {_CPU_CRIT:.0f}%).",
+            "source": "system", "timestamp": now_ms,
+        })
+    if ram_pct > _RAM_CRIT:
+        out.append({
+            "id": "ram-high", "title": "Memory pressure", "severity": "critical",
+            "description": f"RAM usage at {ram_pct:.0f}% (threshold {_RAM_CRIT:.0f}%).",
+            "source": "system", "timestamp": now_ms,
+        })
+    # every mounted partition, not just "/"
+    seen_mounts: set[str] = set()
+    for part in psutil.disk_partitions(all=False):
+        mount = part.mountpoint
+        if mount in seen_mounts:
+            continue
+        seen_mounts.add(mount)
+        try:
+            pct = psutil.disk_usage(mount).percent
+        except (PermissionError, OSError):
+            continue
+        if pct > _DISK_CRIT:
+            out.append({
+                "id": f"disk-{mount}", "title": "Disk almost full", "severity": "critical",
+                "description": f"{mount} at {pct:.0f}% (threshold {_DISK_CRIT:.0f}%).",
+                "source": "disk", "timestamp": now_ms,
+            })
+
+    # Recent ERROR/CRITICAL logs → one WARNING per unique source.
+    by_source: dict[str, int] = {}
+    last_msg: dict[str, str] = {}
+    for entry in _recent_logs:
+        if entry.get("level") not in ("error", "critical"):
+            continue
+        msg = str(entry.get("msg", ""))
+        source = msg.split(":", 1)[0].strip() if ":" in msg else "bantz"
+        by_source[source] = by_source.get(source, 0) + 1
+        last_msg[source] = msg
+    for source, count in by_source.items():
+        out.append({
+            "id": f"log-{source}", "title": f"{count} error{'s' if count != 1 else ''} from {source}",
+            "severity": "warning",
+            "description": last_msg[source][:200],
+            "source": source, "timestamp": now_ms,
+        })
+
+    return out
 
 
 def _collect_vram() -> tuple[float, float]:
