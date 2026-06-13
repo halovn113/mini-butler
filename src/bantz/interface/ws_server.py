@@ -74,7 +74,10 @@ _WS_PORT = 8765
 # ── Config key → (env alias, python attr) map ────────────────────────────────
 
 _CONFIG_KEY_MAP: dict[str, tuple[str, str]] = {
+    "llm_provider":               ("BANTZ_LLM_PROVIDER",               "llm_provider"),
     "ollama_model":               ("BANTZ_OLLAMA_MODEL",               "ollama_model"),
+    "anthropic_api_key":          ("BANTZ_ANTHROPIC_API_KEY",          "anthropic_api_key"),
+    "anthropic_model":            ("BANTZ_ANTHROPIC_MODEL",            "anthropic_model"),
     "gemini_enabled":             ("BANTZ_GEMINI_ENABLED",             "gemini_enabled"),
     "gemini_api_key":             ("BANTZ_GEMINI_API_KEY",             "gemini_api_key"),
     "language":                   ("BANTZ_LANGUAGE",                   "language"),
@@ -208,15 +211,28 @@ class WsBroadcastServer:
         # UI shows live progress instead of dead silence during LLM calls.
 
         async def _on_planning_start(event: _Event) -> None:
+            # Structured event for the Operations Center plan view
+            await _send(ws, {"type": "plan_start"})
             tier = _butler_tier()
             phrase = await _to_tr(_PLANNING_START[tier])
             await _send(ws, {"type": "token", "text": phrase + "\n"})
 
         async def _on_planner_step(event: _Event) -> None:
-            if event.data.get("status") != "start":
+            d = event.data
+            # Structured per-step event (start/done/failed) so the desktop
+            # UI can render a live checklist, not just narration prose.
+            await _send(ws, {
+                "type": "plan_step",
+                "step": d.get("step", 0),
+                "total": d.get("total", 0),
+                "tool": d.get("tool", ""),
+                "description": d.get("description", ""),
+                "status": d.get("status", "start"),
+            })
+            if d.get("status") != "start":
                 return
             tier   = _butler_tier()
-            tool   = event.data.get("tool", "")
+            tool   = d.get("tool", "")
             phrase = await _to_tr(_STEP_PHRASES.get(tool, _STEP_FALLBACK)[tier])
             await _send(ws, {"type": "token", "text": phrase + "\n"})
 
@@ -549,7 +565,10 @@ def _collect_config() -> dict:
         return {
             "type": "config",
             "values": {
+                "llm_provider":               config.llm_provider,
                 "ollama_model":               config.ollama_model,
+                "anthropic_api_key":          config.anthropic_api_key,
+                "anthropic_model":            config.anthropic_model,
                 "gemini_enabled":             config.gemini_enabled,
                 "gemini_api_key":             config.gemini_api_key,
                 "language":                   config.language,

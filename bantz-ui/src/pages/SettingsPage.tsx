@@ -13,6 +13,22 @@ const OLLAMA_MODELS = [
   "phi3.5:3.8b",
 ];
 
+// Conversation backend. Must match BANTZ_LLM_PROVIDER values the router accepts.
+const PROVIDERS = [
+  { key: "ollama", label: "Ollama (local)" },
+  { key: "claude", label: "Claude (Anthropic)" },
+  { key: "gemini", label: "Gemini (Google)" },
+  { key: "openai", label: "OpenAI" },
+];
+
+// Anthropic model IDs (latest families).
+const CLAUDE_MODELS = [
+  "claude-opus-4-8",
+  "claude-sonnet-4-6",
+  "claude-haiku-4-5-20251001",
+  "claude-fable-5",
+];
+
 const ACCENTS = [
   { key: "ember",  hex: "#FF4500", label: "Ember" },
   { key: "gold",   hex: "#E2BB0B", label: "Gold" },
@@ -21,7 +37,10 @@ const ACCENTS = [
 ];
 
 interface SettingsState {
+  provider: string;
   ollamaModel: string;
+  claudeKey: string;
+  claudeModel: string;
   geminiKey: string;
   geminiEnabled: boolean;
   ctx: string;
@@ -42,7 +61,10 @@ interface SettingsState {
 }
 
 const DEFAULTS: SettingsState = {
+  provider: "ollama",
   ollamaModel: "llama3.1:70b",
+  claudeKey: "",
+  claudeModel: "claude-sonnet-4-6",
   geminiKey: "",
   geminiEnabled: false,
   ctx: "32k",
@@ -68,6 +90,7 @@ export function SettingsPage() {
 
   const [s, setS]         = useState<SettingsState>(DEFAULTS);
   const [showKey, setShowKey] = useState(false);
+  const [showClaudeKey, setShowClaudeKey] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const set = <K extends keyof SettingsState>(k: K, v: SettingsState[K]) =>
@@ -78,7 +101,10 @@ export function SettingsPage() {
     if (!configValues) return;
     setS((prev) => ({
       ...prev,
+      provider:       configValues.llm_provider     || prev.provider,
       ollamaModel:    configValues.ollama_model     || prev.ollamaModel,
+      claudeKey:      configValues.anthropic_api_key || prev.claudeKey,
+      claudeModel:    configValues.anthropic_model  || prev.claudeModel,
       geminiKey:      configValues.gemini_api_key   || prev.geminiKey,
       geminiEnabled:  configValues.gemini_enabled   ?? prev.geminiEnabled,
       wakeWord:       configValues.wake_word_enabled ?? prev.wakeWord,
@@ -94,7 +120,10 @@ export function SettingsPage() {
   function applyChanges() {
     if (!wsSend) return;
     const changes: [string, unknown][] = [
+      ["llm_provider",               s.provider],
       ["ollama_model",               s.ollamaModel],
+      ["anthropic_api_key",          s.claudeKey],
+      ["anthropic_model",            s.claudeModel],
       ["gemini_enabled",             s.geminiEnabled],
       ["gemini_api_key",             s.geminiKey],
       ["language",                   s.lang.toLowerCase()],
@@ -149,6 +178,15 @@ export function SettingsPage() {
       <div className="grid min-h-0 flex-1 grid-cols-2 gap-5 overflow-y-auto pr-2">
         {/* MODELS */}
         <Section title="Models" hint="LLM backends">
+          <Row label="Conversation Provider" hint="Who answers — applies to UI + CLI">
+            <select
+              value={s.provider}
+              onChange={(e) => set("provider", e.target.value)}
+              className="w-56 border border-obsidian-500 bg-obsidian-850 px-3 py-2 font-terminal text-[12px] text-ember-300 focus:border-ember-500 focus:outline-none"
+            >
+              {PROVIDERS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+            </select>
+          </Row>
           <Row label="Ollama Model" hint="Local inference">
             <select
               value={s.ollamaModel}
@@ -158,6 +196,38 @@ export function SettingsPage() {
               {OLLAMA_MODELS.map((m) => <option key={m}>{m}</option>)}
             </select>
           </Row>
+          {s.provider === "claude" && (
+            <>
+              <Row label="Claude API Key" hint="Anthropic · sk-ant-…">
+                <div className="flex items-center gap-2">
+                  <input
+                    type={showClaudeKey ? "text" : "password"}
+                    value={s.claudeKey}
+                    onChange={(e) => set("claudeKey", e.target.value)}
+                    placeholder="sk-ant-…"
+                    className="w-44 border border-obsidian-500 bg-obsidian-850 px-3 py-2 font-terminal text-[12px] tracking-widest text-gold-400 focus:border-gold-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowClaudeKey((v) => !v)}
+                    className="grid h-9 w-9 place-items-center border border-obsidian-500 text-obsidian-200 transition-colors hover:border-ember-500 hover:text-ember-500"
+                    aria-label={showClaudeKey ? "Hide key" : "Show key"}
+                  >
+                    {showClaudeKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+              </Row>
+              <Row label="Claude Model" hint="Anthropic model">
+                <select
+                  value={s.claudeModel}
+                  onChange={(e) => set("claudeModel", e.target.value)}
+                  className="w-56 border border-obsidian-500 bg-obsidian-850 px-3 py-2 font-terminal text-[12px] text-ember-300 focus:border-ember-500 focus:outline-none"
+                >
+                  {CLAUDE_MODELS.map((m) => <option key={m}>{m}</option>)}
+                </select>
+              </Row>
+            </>
+          )}
           <Row label="Gemini API Key" hint="Remote fallback">
             <div className="flex items-center gap-2">
               <input

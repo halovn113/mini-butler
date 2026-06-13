@@ -17,10 +17,17 @@ class AnthropicClient:
     API_VERSION = "2023-06-01"
 
     def __init__(self) -> None:
-        self._api_key = config.anthropic_api_key
-        self._model   = config.anthropic_model
-        self._enabled = bool(self._api_key)
         self._client: httpx.AsyncClient | None = None
+
+    # Read config live so the UI's set_config (which updates the config
+    # singleton + .env at runtime) takes effect without restarting the daemon.
+    @property
+    def _api_key(self) -> str:
+        return config.anthropic_api_key
+
+    @property
+    def _model(self) -> str:
+        return config.anthropic_model
 
     @property
     def client(self) -> httpx.AsyncClient:
@@ -29,7 +36,7 @@ class AnthropicClient:
         return self._client
 
     def is_enabled(self) -> bool:
-        return self._enabled
+        return bool(config.anthropic_api_key)
 
     def _headers(self) -> dict:
         return {
@@ -39,7 +46,11 @@ class AnthropicClient:
         }
 
     def _convert(self, messages: list[dict]) -> tuple[str, list[dict]]:
-        """Split OpenAI-style messages into (system_prompt, user/assistant turns)."""
+        """Split OpenAI-style messages into (system_prompt, user/assistant turns).
+
+        Vision passthrough: Ollama-style base64 PNGs in a user message's
+        ``images`` list become Anthropic image content blocks.
+        """
         system = ""
         turns: list[dict] = []
         for m in messages:
@@ -47,7 +58,23 @@ class AnthropicClient:
             if role == "system":
                 system += content + "\n"
             elif role in ("user", "assistant"):
-                turns.append({"role": role, "content": content})
+                images = m.get("images") or []
+                if role == "user" and images:
+                    blocks: list[dict] = [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": img_b64,
+                            },
+                        }
+                        for img_b64 in images
+                    ]
+                    blocks.append({"type": "text", "text": content})
+                    turns.append({"role": role, "content": blocks})
+                else:
+                    turns.append({"role": role, "content": content})
         return system.strip(), turns
 
     async def chat(self, messages: list[dict], temperature: float = 0.7) -> str:
