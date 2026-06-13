@@ -703,7 +703,31 @@ _DIRECTIVE_PROMPT = """Parse this directive into a scheduled job. Return JSON on
 }}
 User said: "{user_text}"
 Today is {now}. If they say "every morning at 7am" -> cron hour=7,minute=0. \
-If they say "every 30 minutes" -> interval 1800. If they say "at 7am tomorrow" -> once with fire_at."""
+If they say "every 30 minutes" -> interval 1800. If they say "at 7am tomorrow" -> once with fire_at.
+Return ONLY the JSON object. No explanation, no code, no markdown fences."""
+
+
+def _extract_directive_json(raw: str) -> dict | None:
+    """Pull the schedule JSON out of a (possibly verbose) LLM response.
+
+    Weak models wrap the answer in prose/code and emit multiple ``{...}``
+    blocks (e.g. an empty template + the filled one), so a greedy match
+    fails. Scan fenced blocks then flat objects, and return the first that
+    parses to a dict with a real ``schedule_type``."""
+    candidates: list[str] = re.findall(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.DOTALL)
+    candidates += re.findall(r"\{[^{}]*\}", raw, re.DOTALL)
+    fallback: dict | None = None
+    for cand in candidates:
+        try:
+            data = json.loads(cand)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if isinstance(data, dict):
+            if data.get("schedule_type"):
+                return data
+            if fallback is None and "schedule_type" in data:
+                fallback = data
+    return fallback
 
 
 async def _parse_directive(text: str) -> dict | None:
@@ -714,12 +738,11 @@ async def _parse_directive(text: str) -> dict | None:
     try:
         from bantz.llm.router import get_llm
         raw = await get_llm().chat([{"role": "user", "content": prompt}])
-        m = re.search(r"\{.*\}", raw, re.DOTALL)
-        if not m:
-            return None
-        data = json.loads(m.group(0))
-        if isinstance(data, dict) and data.get("schedule_type"):
+        log.info("directive raw LLM response: %r", raw[:500])
+        data = _extract_directive_json(raw)
+        if data and data.get("schedule_type"):
             return data
+        log.warning("directive parse: no usable JSON in response")
     except Exception as exc:
         log.debug("directive parse failed: %s", exc)
     return None

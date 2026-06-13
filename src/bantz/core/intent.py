@@ -665,6 +665,13 @@ async def cot_route(
         events) injected only when relevant (#275 — avoids bloating the
         prompt when unrelated queries are asked).
     """
+    # "investigate: <anomaly> — <detail>" comes from the Anomaly Watch
+    # Investigate button — Bantz should analyze it conversationally, never
+    # delegate it to a sub-agent.
+    if en_input.strip().lower().startswith("investigate:"):
+        log.debug("cot_route fast-path: pre-route to chat for investigate directive")
+        return {"route": "chat", "tool_name": None, "tool_args": {}, "confidence": 0.97, "reasoning": "pre-route: investigate → conversational analysis"}, None
+
     if _REMINDER_FAST.search(en_input):
         log.debug("cot_route fast-path: pre-route to reminder for: %.80s", en_input)
         _time_m = re.search(r"in (\d+)\s*(minute|hour|second)", en_input, re.IGNORECASE)
