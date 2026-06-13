@@ -24,9 +24,9 @@ class OllamaClient:
                 base = base[: -len(suffix)]
                 break
         self.base_url = base
-        self.model = config.ollama_model
-        # Optional fast model for routing — falls back to main model
-        self.routing_model = config.ollama_routing_model or self.model
+        # Optional fast model for routing — falls back to main model.
+        # (Cached: routing is secondary and verify_connection may downgrade it.)
+        self.routing_model = config.ollama_routing_model or config.ollama_model
 
         # Layer 1: instant URL format check — no I/O, safe in __init__
         from urllib.parse import urlparse
@@ -37,6 +37,12 @@ class OllamaClient:
                 f"Expected format: http://<host>:<port>"
             )
         self._client: httpx.AsyncClient | None = None
+
+    @property
+    def model(self) -> str:
+        """Read live from config so a UI/CLI model change applies without a
+        daemon restart (the conversation model the user picks in Settings)."""
+        return config.ollama_model
 
     @property
     def client(self) -> httpx.AsyncClient:
@@ -101,12 +107,20 @@ class OllamaClient:
             )
             self.routing_model = self.model
 
-    async def chat(self, messages: list[dict], stream: bool = False, *, options: dict | None = None, model_override: str = "") -> str:
-        """Simple chat — returns a single string."""
+    async def chat(self, messages: list[dict], stream: bool = False, *, options: dict | None = None, model_override: str = "", think: bool | None = None) -> str:
+        """Simple chat — returns a single string.
+
+        ``think``: native-thinking control for models that support it
+        (gemma4, deepseek-r1, qwen3). False = off, True = on, None = model
+        default. Non-streaming responses return content only — native
+        thinking, when on, is dropped here by design.
+        """
         try:
             payload: dict = {"model": model_override or self.model, "messages": messages, "stream": False}
             if options:
                 payload["options"] = options
+            if think is not None:
+                payload["think"] = think
             resp = await self.client.post(
                 f"{self.base_url}/api/chat",
                 json=payload,
@@ -120,16 +134,28 @@ class OllamaClient:
             _notify_health(False)
             raise
 
-    async def chat_stream(self, messages: list[dict], *, options: dict | None = None, model_override: str = "") -> AsyncIterator[str]:
+    async def chat_stream(self, messages: list[dict], *, options: dict | None = None, model_override: str = "", think: bool | None = None) -> AsyncIterator[str]:
         """
         Stream tokens from Ollama via NDJSON.
         Ollama /api/chat with stream:true returns lines like:
           {"message": {"content": "token"}, "done": false}
           {"message": {"content": ""}, "done": true}
+
+        ``think`` controls NATIVE thinking on models that support it
+        (gemma4, deepseek-r1, qwen3): False disables it server-side, True
+        forces it, None keeps the model default. When native thinking is
+        on, Ollama streams it as a separate ``message.thinking`` field —
+        we re-wrap those deltas in ``<thinking>…</thinking>`` tags inline,
+        so the existing pipeline (ThinkingPanel streaming, strip_thinking
+        before JSON parse, the force-close budget) handles native
+        reasoning exactly like prompted reasoning.
         """
         payload: dict = {"model": model_override or self.model, "messages": messages, "stream": True}
         if options:
             payload["options"] = options
+        if think is not None:
+            payload["think"] = think
+        in_thinking = False
         async with self.client.stream(
             "POST",
             f"{self.base_url}/api/chat",
@@ -145,10 +171,22 @@ class OllamaClient:
                     data = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                token = data.get("message", {}).get("content", "")
+                msg = data.get("message", {})
+                native_think = msg.get("thinking", "")
+                if native_think:
+                    if not in_thinking:
+                        in_thinking = True
+                        yield "<thinking>"
+                    yield native_think
+                token = msg.get("content", "")
                 if token:
+                    if in_thinking:
+                        in_thinking = False
+                        yield "</thinking>"
                     yield token
                 if data.get("done", False):
+                    if in_thinking:
+                        yield "</thinking>"
                     return
 
     async def is_available(self) -> bool:
