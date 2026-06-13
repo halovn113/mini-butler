@@ -72,6 +72,7 @@ export interface ServiceItem {
 export interface ConfigValues {
   llm_provider: string;
   ollama_model: string;
+  ollama_base_url: string;
   anthropic_api_key: string;
   anthropic_model: string;
   gemini_enabled: boolean;

@@ -567,6 +567,7 @@ def _collect_config() -> dict:
             "values": {
                 "llm_provider":               config.llm_provider,
                 "ollama_model":               config.ollama_model,
+                "ollama_base_url":            config.ollama_base_url,
                 "anthropic_api_key":          config.anthropic_api_key,
                 "anthropic_model":            config.anthropic_model,
                 "gemini_enabled":             config.gemini_enabled,

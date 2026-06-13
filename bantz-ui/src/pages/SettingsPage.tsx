@@ -3,8 +3,8 @@ import { Eye, EyeOff, Check, Save } from "lucide-react";
 import { PageTitle, PanelHeader } from "../components/primitives";
 import { useAppStore } from "../store/useAppStore";
 
-// Ollama's local API — lists models actually installed on this machine.
-const OLLAMA_TAGS_URL = "http://localhost:11434/api/tags";
+// Default Ollama host, used when no base URL has been configured.
+const DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434";
 
 // Conversation backend. Must match BANTZ_LLM_PROVIDER values the router accepts.
 const PROVIDERS = [
@@ -93,12 +93,18 @@ export function SettingsPage() {
   const set = <K extends keyof SettingsState>(k: K, v: SettingsState[K]) =>
     setS((prev) => ({ ...prev, [k]: v }));
 
-  // Fetch the locally-installed Ollama models once on mount.
+  // Ollama host from config (falls back to localhost), trailing slash stripped.
+  const ollamaBaseUrl = (configValues?.ollama_base_url || DEFAULT_OLLAMA_BASE_URL)
+    .replace(/\/+$/, "");
+
+  // Fetch the installed Ollama models. Re-runs if the configured host changes
+  // (e.g. once the backend config arrives over the WebSocket bridge).
   useEffect(() => {
     let cancelled = false;
+    setOllamaStatus("loading");
     (async () => {
       try {
-        const res = await fetch(OLLAMA_TAGS_URL);
+        const res = await fetch(`${ollamaBaseUrl}/api/tags`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as { models?: { name: string }[] };
         if (cancelled) return;
@@ -112,7 +118,7 @@ export function SettingsPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [ollamaBaseUrl]);
 
   // Populate from backend config when it arrives
   useEffect(() => {
