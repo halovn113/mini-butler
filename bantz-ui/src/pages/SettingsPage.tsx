@@ -3,15 +3,8 @@ import { Eye, EyeOff, Check, Save } from "lucide-react";
 import { PageTitle, PanelHeader } from "../components/primitives";
 import { useAppStore } from "../store/useAppStore";
 
-const OLLAMA_MODELS = [
-  "llama3.1:70b",
-  "llama3.1:8b",
-  "qwen2.5-coder:32b",
-  "qwen2.5:14b",
-  "mistral-nemo:12b",
-  "deepseek-r1:32b",
-  "phi3.5:3.8b",
-];
+// Ollama's local API — lists models actually installed on this machine.
+const OLLAMA_TAGS_URL = "http://localhost:11434/api/tags";
 
 // Conversation backend. Must match BANTZ_LLM_PROVIDER values the router accepts.
 const PROVIDERS = [
@@ -93,8 +86,33 @@ export function SettingsPage() {
   const [showClaudeKey, setShowClaudeKey] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Ollama models installed on this machine (fetched from the local API).
+  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  const [ollamaStatus, setOllamaStatus] = useState<"loading" | "ok" | "error">("loading");
+
   const set = <K extends keyof SettingsState>(k: K, v: SettingsState[K]) =>
     setS((prev) => ({ ...prev, [k]: v }));
+
+  // Fetch the locally-installed Ollama models once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(OLLAMA_TAGS_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { models?: { name: string }[] };
+        if (cancelled) return;
+        const names = (data.models ?? [])
+          .map((m) => m.name)
+          .filter((n): n is string => typeof n === "string" && n.length > 0);
+        setOllamaModels(names);
+        setOllamaStatus("ok");
+      } catch {
+        if (!cancelled) setOllamaStatus("error");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Populate from backend config when it arrives
   useEffect(() => {
@@ -188,13 +206,30 @@ export function SettingsPage() {
             </select>
           </Row>
           <Row label="Ollama Model" hint="Local inference">
-            <select
-              value={s.ollamaModel}
-              onChange={(e) => set("ollamaModel", e.target.value)}
-              className="w-56 border border-obsidian-500 bg-obsidian-850 px-3 py-2 font-terminal text-[12px] text-ember-300 focus:border-ember-500 focus:outline-none"
-            >
-              {OLLAMA_MODELS.map((m) => <option key={m}>{m}</option>)}
-            </select>
+            {ollamaStatus === "loading" ? (
+              <span className="font-terminal text-[12px] text-obsidian-300">Loading models…</span>
+            ) : ollamaStatus === "error" ? (
+              <span className="font-terminal text-[12px] text-rose-300">Ollama unreachable</span>
+            ) : (
+              <select
+                value={s.ollamaModel}
+                onChange={(e) => set("ollamaModel", e.target.value)}
+                disabled={ollamaModels.length === 0}
+                className="w-56 border border-obsidian-500 bg-obsidian-850 px-3 py-2 font-terminal text-[12px] text-ember-300 focus:border-ember-500 focus:outline-none"
+              >
+                {ollamaModels.length === 0 ? (
+                  <option disabled>No models installed</option>
+                ) : (
+                  <>
+                    {/* keep the saved model selectable even if not in the local list */}
+                    {s.ollamaModel && !ollamaModels.includes(s.ollamaModel) && (
+                      <option key={s.ollamaModel}>{s.ollamaModel}</option>
+                    )}
+                    {ollamaModels.map((m) => <option key={m}>{m}</option>)}
+                  </>
+                )}
+              </select>
+            )}
           </Row>
           {s.provider === "claude" && (
             <>
