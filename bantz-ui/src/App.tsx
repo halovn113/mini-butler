@@ -135,7 +135,10 @@ function mapBackendTasks(reminders: BackendReminder[], jobs: BackendJob[]): Task
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [active, setActive] = useState<string>("chat");
+  // Active page lives in the store so other pages (e.g. Anomaly Watch's
+  // "Investigate") can navigate here.
+  const active    = useAppStore((s) => s.activePage);
+  const setActive = useAppStore((s) => s.setActivePage);
   const [clock, setClock] = useState(() => fmtClock(new Date()));
 
   const pushChat         = useAppStore((s) => s.pushChat);

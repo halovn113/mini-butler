@@ -18,7 +18,19 @@ const SEV_ICON: Record<AlertSeverity, LucideIcon> = {
 export function AlertsPage() {
   const anomalies      = useAppStore((s) => s.anomalies);
   const dismissAnomaly = useAppStore((s) => s.dismissAnomaly);
+  const snoozeAnomaly  = useAppStore((s) => s.snoozeAnomaly);
+  const setActivePage  = useAppStore((s) => s.setActivePage);
+  const pushChat       = useAppStore((s) => s.pushChat);
+  const wsSend         = useAppStore((s) => s.wsSend);
   const dismissAll     = () => anomalies.forEach((a) => dismissAnomaly(a.id));
+
+  // Ask Bantz about an anomaly in the Broadcast Channel and switch to it.
+  const investigate = (a: Anomaly) => {
+    const text = `investigate: ${a.title} — ${a.description}`;
+    pushChat({ role: "user", text });        // show the request in the channel
+    wsSend?.({ type: "chat", text });          // backend handles type "chat"
+    setActivePage("chat");                     // navigate to Broadcast Channel
+  };
 
   const counts: Record<AlertSeverity, number> = { critical: 0, warning: 0, info: 0 };
   for (const a of anomalies) counts[a.severity]++;
@@ -109,12 +121,14 @@ export function AlertsPage() {
                 <div className="mt-3 flex items-center gap-2 pl-9">
                   <button
                     type="button"
+                    onClick={() => investigate(a)}
                     className="border border-obsidian-500 bg-obsidian-800 px-3 py-1 font-ui text-[9px] font-bold uppercase tracking-widest text-obsidian-200 transition-colors hover:border-ember-500 hover:text-ember-500"
                   >
                     Investigate
                   </button>
                   <button
                     type="button"
+                    onClick={() => snoozeAnomaly(a.id)}
                     className="border border-obsidian-500 bg-obsidian-800 px-3 py-1 font-ui text-[9px] font-bold uppercase tracking-widest text-obsidian-200 transition-colors hover:border-gold-500 hover:text-gold-400"
                   >
                     Snooze 1h

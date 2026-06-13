@@ -110,6 +110,7 @@ interface AppState {
   alerts: AlertItem[];
   anomalies: Anomaly[];
   dismissedIds: Set<string>;
+  activePage: string;
   services: ServiceItem[];
   configValues: ConfigValues | null;
   wsSend: ((msg: Record<string, unknown>) => boolean) | null;
@@ -124,6 +125,8 @@ interface AppState {
   dismissAllAlerts: () => void;
   setAnomalies: (anomalies: Anomaly[]) => void;
   dismissAnomaly: (id: string) => void;
+  snoozeAnomaly: (id: string) => void;
+  setActivePage: (page: string) => void;
   setServices: (services: ServiceItem[]) => void;
   setConfigValues: (cv: ConfigValues) => void;
   setWsSend: (fn: ((msg: Record<string, unknown>) => boolean) | null) => void;
@@ -207,6 +210,7 @@ export const useAppStore = create<AppState>((set) => ({
   alerts:       [],
   anomalies:    [],
   dismissedIds: new Set<string>(),
+  activePage:   "chat",
   services:     SEED_SERVICES,
   configValues: null,
   wsSend:       null,
@@ -263,6 +267,23 @@ export const useAppStore = create<AppState>((set) => ({
         anomalies: s.anomalies.filter((a) => a.id !== id),
       };
     }),
+  // Snooze = dismiss that auto-expires after 1h, so the anomaly can resurface
+  // if the condition still holds. Client-side only.
+  snoozeAnomaly: (id) => {
+    set((s) => {
+      const dismissedIds = new Set(s.dismissedIds);
+      dismissedIds.add(id);
+      return { dismissedIds, anomalies: s.anomalies.filter((a) => a.id !== id) };
+    });
+    setTimeout(() => {
+      set((s) => {
+        const dismissedIds = new Set(s.dismissedIds);
+        dismissedIds.delete(id);
+        return { dismissedIds };
+      });
+    }, 3_600_000);
+  },
+  setActivePage: (page) => set({ activePage: page }),
 
   setServices: (services) => set({ services }),
 
