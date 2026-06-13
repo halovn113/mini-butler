@@ -76,6 +76,21 @@ def strip_markdown(text: str) -> str:
 
 # ── Core functions ─────────────────────────────────────────────────────────
 
+_INSUFFERABLE_HINT = (
+    "\nYou are feeling especially talkative today: add a touch of unsolicited "
+    "editorial commentary, as is your insufferable habit."
+)
+
+
+def _verbosity() -> str:
+    """Personality dial from config (silent|standard|insufferable)."""
+    try:
+        from bantz.config import config
+        return (config.verbosity or "standard").lower()
+    except Exception:
+        return "standard"
+
+
 async def finalize(
     en_input: str,
     result: ToolResult,
@@ -102,6 +117,14 @@ async def finalize(
         return "Done. ✓"
     if len(output) < 800:
         return output
+
+    # Verbosity dial: silent → skip the butler persona entirely (raw output);
+    # insufferable → nudge the persona to ramble a little more.
+    verbosity = _verbosity()
+    if verbosity == "silent":
+        return output
+    if verbosity == "insufferable":
+        style_hint = (style_hint + _INSUFFERABLE_HINT).strip()
 
     # Build memory block: prefer combined (#211), fall back to legacy fields
     _mem = memory_context or "\n".join(
@@ -170,6 +193,14 @@ async def finalize_stream(
         return None
     if len(output) < 800:
         return None
+
+    # Verbosity dial: silent → return None so the caller emits raw output
+    # (no butler stream); insufferable → nudge the persona to ramble more.
+    verbosity = _verbosity()
+    if verbosity == "silent":
+        return None
+    if verbosity == "insufferable":
+        style_hint = (style_hint + _INSUFFERABLE_HINT).strip()
 
     # Build memory block: prefer combined (#211), fall back to legacy fields
     _mem = memory_context or "\n".join(

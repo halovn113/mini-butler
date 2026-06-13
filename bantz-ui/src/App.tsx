@@ -9,7 +9,7 @@ import { LogsPage } from "./pages/LogsPage";
 import { AlertsPage } from "./pages/AlertsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { useWebSocket } from "./hooks/useWebSocket";
-import { useAppStore, type Anomaly, type ConfigValues, type ServiceItem, type Task } from "./store/useAppStore";
+import { useAppStore, type Anomaly, type ConfigValues, type ServiceItem, type Task, type TaskPriority } from "./store/useAppStore";
 
 async function getWindow() {
   try {
@@ -46,6 +46,16 @@ interface BackendJob {
   trigger: string;
 }
 
+// Derive a real priority from a job's name/id so the CRITICAL/HIGH filter
+// chips match live data instead of everything collapsing to "low".
+function jobPriority(job: BackendJob): TaskPriority {
+  const hay = `${job.name} ${job.id}`.toLowerCase();
+  if (/\b(critical|urgent)\b/.test(hay)) return "critical";
+  if (hay.includes("overnight") || hay.includes("poll")) return "high";
+  if (hay.includes("maintenance") || hay.includes("reflection")) return "low";
+  return "low";
+}
+
 function mapBackendTasks(reminders: BackendReminder[], jobs: BackendJob[]): Task[] {
   const now = Date.now();
   const result: Task[] = [];
@@ -70,7 +80,7 @@ function mapBackendTasks(reminders: BackendReminder[], jobs: BackendJob[]): Task
       detail: job.trigger,
       status: "active",
       eta,
-      priority: "low",
+      priority: jobPriority(job),
       progress: 0,
     });
   }
@@ -114,7 +124,7 @@ function mapBackendTasks(reminders: BackendReminder[], jobs: BackendJob[]): Task
       detail,
       status,
       eta,
-      priority: "medium",
+      priority: /\b(critical|urgent)\b/i.test(r.title) ? "critical" : "medium",
       progress: 0,
     });
   }

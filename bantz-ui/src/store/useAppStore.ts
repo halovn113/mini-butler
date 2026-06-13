@@ -96,6 +96,9 @@ export interface ConfigValues {
   distillation_enabled: boolean;
   shell_confirm_destructive: boolean;
   observer_enabled: boolean;
+  verbosity: string;
+  autonomy: string;
+  mood_bias: string;
 }
 
 interface AppState {

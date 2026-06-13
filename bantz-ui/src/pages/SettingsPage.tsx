@@ -29,6 +29,30 @@ const ACCENTS = [
   { key: "rose",   hex: "#CC1111", label: "Rose" },
 ];
 
+// UI uses short autonomy keys; backend (BANTZ_AUTONOMY) uses full words.
+const AUTONOMY_TO_BACKEND: Record<string, string> =
+  { low: "low", med: "medium", high: "high", abs: "absolute" };
+const AUTONOMY_FROM_BACKEND: Record<string, SettingsState["autonomy"]> =
+  { low: "low", medium: "med", high: "high", absolute: "abs" };
+
+// Appearance prefs persist client-side only (no backend config needed).
+const APPEARANCE_LS_KEY = "bantz.appearance";
+
+function loadAppearance(): Partial<SettingsState> {
+  try {
+    const raw = localStorage.getItem(APPEARANCE_LS_KEY);
+    if (!raw) return {};
+    const a = JSON.parse(raw) as Partial<Pick<SettingsState, "accent" | "nightShift" | "crt">>;
+    const out: Partial<SettingsState> = {};
+    if (typeof a.accent === "string") out.accent = a.accent;
+    if (typeof a.nightShift === "boolean") out.nightShift = a.nightShift;
+    if (typeof a.crt === "boolean") out.crt = a.crt;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 interface SettingsState {
   provider: string;
   ollamaModel: string;
@@ -81,7 +105,7 @@ export function SettingsPage() {
   const configValues = useAppStore((s) => s.configValues);
   const wsSend       = useAppStore((s) => s.wsSend);
 
-  const [s, setS]         = useState<SettingsState>(DEFAULTS);
+  const [s, setS]         = useState<SettingsState>(() => ({ ...DEFAULTS, ...loadAppearance() }));
   const [showKey, setShowKey] = useState(false);
   const [showClaudeKey, setShowClaudeKey] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -92,6 +116,18 @@ export function SettingsPage() {
 
   const set = <K extends keyof SettingsState>(k: K, v: SettingsState[K]) =>
     setS((prev) => ({ ...prev, [k]: v }));
+
+  // Appearance prefs: apply to the DOM immediately and persist to localStorage.
+  useEffect(() => {
+    const hex = ACCENTS.find((a) => a.key === s.accent)?.hex ?? ACCENTS[0].hex;
+    document.documentElement.style.setProperty("--accent", hex);
+    document.body.classList.toggle("night-shift", s.nightShift);
+    document.body.classList.toggle("crt", s.crt);
+    localStorage.setItem(
+      APPEARANCE_LS_KEY,
+      JSON.stringify({ accent: s.accent, nightShift: s.nightShift, crt: s.crt }),
+    );
+  }, [s.accent, s.nightShift, s.crt]);
 
   // Ollama host from config (falls back to localhost), trailing slash stripped.
   const ollamaBaseUrl = (configValues?.ollama_base_url || DEFAULT_OLLAMA_BASE_URL)
@@ -138,6 +174,9 @@ export function SettingsPage() {
       distillation:   configValues.distillation_enabled  ?? prev.distillation,
       shellConfirm:   configValues.shell_confirm_destructive ?? prev.shellConfirm,
       observerEnabled: configValues.observer_enabled ?? prev.observerEnabled,
+      verbosity:      (configValues.verbosity as SettingsState["verbosity"]) || prev.verbosity,
+      autonomy:       AUTONOMY_FROM_BACKEND[configValues.autonomy] ?? prev.autonomy,
+      mood:           (configValues.mood_bias as SettingsState["mood"]) || prev.mood,
     }));
   }, [configValues]);
 
@@ -157,6 +196,9 @@ export function SettingsPage() {
       ["distillation_enabled",       s.distillation],
       ["shell_confirm_destructive",  s.shellConfirm],
       ["observer_enabled",           s.observerEnabled],
+      ["verbosity",                  s.verbosity],
+      ["autonomy",                   AUTONOMY_TO_BACKEND[s.autonomy]],
+      ["mood_bias",                  s.mood],
     ];
     for (const [key, value] of changes) {
       wsSend({ type: "set_config", key, value });

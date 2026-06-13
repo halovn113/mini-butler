@@ -31,12 +31,20 @@ class Config(BaseSettings):
     # ── Session Distillation ──────────────────────────────────────────────
     distillation_enabled: bool = Field(True, alias="BANTZ_DISTILLATION_ENABLED")
 
+    # ── Personality dials (affect finalizer persona, routing, affinity) ───
+    verbosity: str = Field("standard", alias="BANTZ_VERBOSITY")       # silent|standard|insufferable
+    autonomy: str = Field("high", alias="BANTZ_AUTONOMY")             # low|medium|high|absolute
+    mood_bias: str = Field("tolerant", alias="BANTZ_MOOD_BIAS")       # tolerant|impatient|resigned
+
     # ── Vision / Remote VLM ───────────────────────────────────────────────
     vlm_enabled: bool = Field(False, alias="BANTZ_VLM_ENABLED")
     vlm_endpoint: str = Field("http://localhost:8090", alias="BANTZ_VLM_ENDPOINT")
     vlm_timeout: int = Field(30, alias="BANTZ_VLM_TIMEOUT")  # 30s for local llava
     vlm_backend: str = Field("ollama", alias="BANTZ_VLM_BACKEND")  # "ollama" | "remote"
     vlm_model: str = Field("llava", alias="BANTZ_VLM_MODEL")  # e.g. llava, llava:13b, bakllava
+    # Vision-guided executor model (Ollama name, or "gemini" for cloud).
+    # Empty = use VISION_MODEL_PRIORITY ladder in bantz/vision_executor.py.
+    vision_model: str = Field("", alias="BANTZ_VISION_MODEL")
     screenshot_quality: int = Field(70, alias="BANTZ_SCREENSHOT_QUALITY")
 
     # ── Input Control (#122) ──────────────────────────────────────────────

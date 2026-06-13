@@ -98,6 +98,9 @@ _CONFIG_KEY_MAP: dict[str, tuple[str, str]] = {
     "distillation_enabled":       ("BANTZ_DISTILLATION_ENABLED",       "distillation_enabled"),
     "shell_confirm_destructive":  ("BANTZ_SHELL_CONFIRM_DESTRUCTIVE",  "shell_confirm_destructive"),
     "observer_enabled":           ("BANTZ_OBSERVER_ENABLED",           "observer_enabled"),
+    "verbosity":                  ("BANTZ_VERBOSITY",                  "verbosity"),
+    "autonomy":                   ("BANTZ_AUTONOMY",                   "autonomy"),
+    "mood_bias":                  ("BANTZ_MOOD_BIAS",                  "mood_bias"),
 }
 
 
@@ -653,6 +656,9 @@ def _collect_config() -> dict:
                 "distillation_enabled":       config.distillation_enabled,
                 "shell_confirm_destructive":  config.shell_confirm_destructive,
                 "observer_enabled":           config.observer_enabled,
+                "verbosity":                  config.verbosity,
+                "autonomy":                   config.autonomy,
+                "mood_bias":                  config.mood_bias,
             },
         }
     except Exception:
