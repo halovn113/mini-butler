@@ -46,6 +46,11 @@ interface BackendJob {
   trigger: string;
 }
 
+// Safety net: strip model reasoning blocks that may leak into the stream.
+function stripThinking(text: string): string {
+  return text.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trimStart();
+}
+
 // Derive a real priority from a job's name/id so the CRITICAL/HIGH filter
 // chips match live data instead of everything collapsing to "low".
 function jobPriority(job: BackendJob): TaskPriority {
@@ -195,12 +200,12 @@ export default function App() {
         case "token": {
           const tok = d as { text?: string };
           streamAccumRef.current += tok.text ?? "";
-          setStreamingText(streamAccumRef.current);
+          setStreamingText(stripThinking(streamAccumRef.current));
           break;
         }
 
         case "done": {
-          const final = streamAccumRef.current;
+          const final = stripThinking(streamAccumRef.current);
           streamAccumRef.current = "";
           setStreamingText(null);
           if (final.trim()) {

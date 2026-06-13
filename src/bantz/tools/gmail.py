@@ -33,7 +33,10 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import logging
+import os
 import re
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Optional
@@ -41,6 +44,45 @@ from typing import Any, Optional
 from bantz.auth.token_store import token_store, TokenNotFoundError
 from bantz.tools import BaseTool, ToolResult, registry
 from bantz.tools.contact_resolver import contact_resolver
+
+_log = logging.getLogger("bantz.gmail")
+
+# bantz-web pipeline (chunk + summarize) lives in the vendor submodule.
+# Append (not insert) so its flat modules can't shadow installed packages.
+_VENDOR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../vendor/bantz-web"))
+if os.path.isdir(_VENDOR) and _VENDOR not in sys.path:
+    sys.path.append(_VENDOR)
+
+# Cap mails summarized per inbox summary to keep it responsive.
+_SUMMARY_MAIL_CAP = 5
+
+
+def _summarize_mail_body(body: str) -> str:
+    """Summarize one mail body via bantz-web's chunker + summarizer.
+
+    Returns "" on any failure (caller falls back to the snippet). Blocking —
+    call from a thread.
+    """
+    body = (body or "").strip()
+    if len(body) < 40:
+        return ""
+    try:
+        from chunker import chunk_text          # noqa: PLC0415
+        from summarizer import summarize_chunk   # noqa: PLC0415
+    except Exception as exc:  # pragma: no cover
+        _log.debug("bantz-web summarizer unavailable: %s", exc)
+        return ""
+    try:
+        chunks = chunk_text(body)
+        if not chunks:
+            return ""
+        parts = [summarize_chunk("Summarize this email in 2-3 sentences", c)
+                 for c in chunks[:2]]
+        out = " ".join(p for p in parts if p and not p.startswith("["))
+        return out.strip()
+    except Exception as exc:
+        _log.debug("mail body summarization failed: %s", exc)
+        return ""
 
 MAX_EMAILS = 10
 CONTACTS_PATH = Path.home() / ".local" / "share" / "bantz" / "contacts.json"
@@ -207,7 +249,8 @@ class GmailTool(BaseTool):
     # ── Summary ───────────────────────────────────────────────────────────
 
     async def _summary(self, creds, limit: int = 10) -> ToolResult:
-        messages = await asyncio.get_event_loop().run_in_executor(
+        loop = asyncio.get_event_loop()
+        messages = await loop.run_in_executor(
             None, self._fetch_messages_sync, creds, build_query(), limit
         )
         if not messages:
@@ -216,15 +259,33 @@ class GmailTool(BaseTool):
                 output="Your inbox is clean — no unread emails. ✓",
                 data={"count": 0},
             )
-        lines = [
-            f"From: {m['from']}  Subject: {m['subject']}  Snippet: {m['snippet'][:100]}"
-            for m in messages
-        ]
-        summary = await self._llm_summarize("\n".join(lines), GMAIL_SUMMARY_PROMPT)
+
+        # Read + summarize the actual body of the most recent mails (capped
+        # for speed). Each body goes through bantz-web's chunk+summarize;
+        # falls back to the snippet if the body can't be fetched/summarized.
+        recent = messages[:_SUMMARY_MAIL_CAP]
+        blocks: list[str] = []
+        for m in recent:
+            summary = ""
+            try:
+                content = await loop.run_in_executor(
+                    None, self._fetch_content_sync, creds, m["id"]
+                )
+                body = (content or {}).get("body", "")
+                if body:
+                    summary = await loop.run_in_executor(None, _summarize_mail_body, body)
+            except Exception as exc:
+                _log.debug("body fetch failed for %s: %s", m.get("id"), exc)
+            if not summary:
+                summary = (m.get("snippet", "") or "(no preview available)")[:200]
+            blocks.append(
+                f"From: {m['from']}\nSubject: {m['subject']}\nSummary: {summary}"
+            )
+
         return ToolResult(
             success=True,
-            output=summary,
-            data={"count": len(messages), "messages": messages},
+            output="\n\n".join(blocks),
+            data={"count": len(recent), "messages": recent},
         )
 
     # ── Read ──────────────────────────────────────────────────────────────
@@ -898,6 +959,14 @@ class GmailTool(BaseTool):
                 body = self._extract_body(part)
                 if body:
                     return body
+        # Fall back to text/html (strip tags) when no text/plain part exists.
+        if mime_type == "text/html":
+            data = payload.get("body", {}).get("data", "")
+            if data:
+                html = base64.urlsafe_b64decode(data + "==").decode("utf-8", errors="replace")
+                text = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.DOTALL | re.IGNORECASE)
+                text = re.sub(r"<[^>]+>", " ", text)
+                return re.sub(r"\s+", " ", text).strip()
         return ""
 
     def _send_sync(
