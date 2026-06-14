@@ -20,6 +20,7 @@ from bantz.core.finalizer import (
     finalize_stream as _finalize_stream_fn,
     hallucination_check as _hallucination_check_fn,
     strip_markdown,
+    strip_internal,
 )
 from bantz.tools import registry, ToolResult
 from bantz.core.context import BantzContext  # noqa: F401  — re-export for compat
@@ -644,6 +645,9 @@ class Brain:
                         self._store_tool_context(q_tool, q_result)
                     q_resp = await self._finalize(en_input, q_result, tc)
                     data_layer.conversations.add("assistant", q_resp, tool_used=q_tool)
+                    # Keep the [CONTEXT:...] block in history (carries IDs for
+                    # follow-ups) but never show it to the user (#276 leak).
+                    q_resp = strip_internal(q_resp)
                     await self._graph_store(user_input, q_resp, q_tool,
                                             q_result.data if q_result else None)
                     self._fire_embeddings()
@@ -933,6 +937,9 @@ class Brain:
         # Short output — non-streaming finalize
         resp = await self._finalize(en_input, result, tc)
         data_layer.conversations.add("assistant", resp, tool_used=tool_name)
+        # Keep the [CONTEXT:...] block in history (carries IDs for follow-ups)
+        # but never show it to the user (#276 leak).
+        resp = strip_internal(resp)
         await self._graph_store(user_input, resp, tool_name,
                                 result.data if result else None)
         self._fire_embeddings()

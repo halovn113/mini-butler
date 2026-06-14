@@ -60,13 +60,26 @@ express your persona through tone and word choice, NOT by renaming real data.{pe
 _SENTENCE_END_RE = re.compile(r"(?<=[.!?])\s+")
 
 
-def strip_markdown(text: str) -> str:
-    """Remove common markdown syntax from LLM responses."""
+def strip_internal(text: str) -> str:
+    """Remove internal metadata that must never reach the user.
+
+    Strips model reasoning blocks and the ``[CONTEXT:...]`` ID block that
+    ``Brain._embed_metadata`` appends for conversation-history follow-ups.
+    Unlike :func:`strip_markdown`, this preserves tool-output formatting
+    (checkmarks, indentation, lists) so short verbatim tool results — which
+    bypass the LLM finalizer — render unchanged apart from the hidden block.
+    """
     # Drop model reasoning blocks that leak into user-facing output.
     text = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL)
     # Drop internal [CONTEXT:...] metadata blobs (e.g. the JSON trailing a
     # "Event added ✓ <title> <datetime> [CONTEXT:{...}]" confirmation).
     text = re.sub(r"\[CONTEXT:.*?\]", "", text, flags=re.DOTALL)
+    return text.strip()
+
+
+def strip_markdown(text: str) -> str:
+    """Remove common markdown syntax from LLM responses."""
+    text = strip_internal(text)
     text = re.sub(r"```(?:\w+)?\s*\n?(.*?)```", r"\1", text, flags=re.DOTALL)
     text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)
     text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
@@ -258,7 +271,7 @@ async def finalize_stream(
                 async for token in llm.chat_stream(messages):
                     yield token
         except Exception:
-            yield output[:1500]
+            yield strip_internal(output[:1500])
 
     return _stream()
 

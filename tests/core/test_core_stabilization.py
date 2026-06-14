@@ -465,3 +465,31 @@ class TestStripMarkdownLinks:
         text = "The answer is [option A]."
         result = strip_markdown(text)
         assert "[option A]" in result
+
+
+class TestStripInternal:
+    """strip_internal() hides metadata from the user but preserves formatting."""
+
+    def test_strips_context_block(self):
+        """The [CONTEXT:{...}] block embedded for follow-ups never reaches the user."""
+        from bantz.core.finalizer import strip_internal
+        text = (
+            "Event added ✓\n  Dinner  2026-06-14 19:00 (60 min)\n"
+            '[CONTEXT: {"event_id": "abc123"}]'
+        )
+        result = strip_internal(text)
+        assert "CONTEXT" not in result
+        assert "abc123" not in result
+        # Tool-output formatting (checkmark, indentation) is preserved verbatim.
+        assert result == "Event added ✓\n  Dinner  2026-06-14 19:00 (60 min)"
+
+    def test_strips_thinking_block(self):
+        from bantz.core.finalizer import strip_internal
+        text = "<thinking>plan the answer</thinking>Done. ✓"
+        assert strip_internal(text) == "Done. ✓"
+
+    def test_preserves_plain_text(self):
+        """No internal markers → unchanged (aside from surrounding whitespace)."""
+        from bantz.core.finalizer import strip_internal
+        text = "3 unread, 2 events today"
+        assert strip_internal(text) == text
