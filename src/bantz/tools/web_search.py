@@ -127,6 +127,7 @@ class WebSearchTool(BaseTool):
         "Search the internet for information — answers factual questions, looks up "
         "people, places, concepts, current events. Params: query (str). "
         "'search X', 'look it up', 'find info about', 'ara', 'google Z' → web_search. "
+        "Pass a specific query, not a vague one. "
         "For a quick lookup, not an in-depth report. NOT for opening apps or clicking."
     )
     risk_level = "safe"

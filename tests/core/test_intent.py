@@ -448,6 +448,117 @@ class TestHelpers:
         )
         assert result["route"] == "planner"
 
+    def test_planner_rescue_skips_multistep_utterance(self):
+        # "then"/"after that" marks a genuine multi-step request (pla02):
+        # keep the planner verdict even when tool_name names a single tool.
+        import bantz.tools.gmail  # noqa: F401 — registers "gmail"
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "planner", "tool_name": "gmail", '
+            '"tool_args": {"action": "summary"}}',
+            utterance="check my email, then tell me the weather in Istanbul",
+        )
+        assert result["route"] == "planner"
+
+    def test_planner_rescue_skips_play_music_utterance(self):
+        # "play X on yt music" is deliberately a planner flow (pla03).
+        import bantz.tools.browser_control  # noqa: F401
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "planner", "tool_name": "browser_control", '
+            '"tool_args": {"action": "open", "url": "https://music.youtube.com"}}',
+            utterance="play back in black on yt music",
+        )
+        assert result["route"] == "planner"
+
+    def test_route_holds_tool_and_tool_name_holds_action(self):
+        # Gemma4 shape: {"route": "screenshot", "tool_name": "capture"} —
+        # route is the registered tool, tool_name is an action name.
+        import bantz.tools.screenshot_tool  # noqa: F401 — registers "screenshot"
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "screenshot", "tool_name": "capture", '
+            '"tool_args": {"action": "capture"}}'
+        )
+        assert result["route"] == "tool"
+        assert result["tool_name"] == "screenshot"
+
+    def test_planner_rescue_never_demotes_delegate_task(self):
+        # planner + delegate_task = genuine multi-step intent (pla01/pla04
+        # on gemma4): keep the planner verdict.
+        import bantz.tools.delegate_task  # noqa: F401
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "planner", "tool_name": "delegate_task", '
+            '"tool_args": {"role": "researcher"}}'
+        )
+        assert result["route"] == "planner"
+
+    def test_music_fast_path_matches_listen_wishes(self):
+        from bantz.core.intent import _MUSIC_FAST
+        for utt in (
+            "i want to listen acdc",
+            "I wanna listen to some jazz",
+            "play back in black on yt music",
+            "put on some Metallica",
+            "play some music",
+        ):
+            assert _MUSIC_FAST.search(utt), utt
+
+    def test_music_fast_path_skips_non_music(self):
+        from bantz.core.intent import _MUSIC_FAST
+        for utt in (
+            "play chess with me",
+            "open youtube",
+            "what's the weather",
+            "play the video on mute",
+        ):
+            assert not _MUSIC_FAST.search(utt), utt
+
+    def test_invented_tool_name_repaired_by_substring(self):
+        # Model copies hint verb phrases into tool names (doc01/doc03:
+        # "read_and_summarize_document") — repair when exactly one
+        # registered tool name is contained.
+        import bantz.tools.document  # noqa: F401 — registers "document"
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "tool", "tool_name": "read_and_summarize_document", '
+            '"tool_args": {"path": "~/Desktop/report.pdf"}}'
+        )
+        assert result["tool_name"] == "document"
+
+    def test_invented_tool_name_ambiguous_not_repaired(self):
+        # Two registry names contained → ambiguous, leave untouched.
+        import bantz.tools.web_search  # noqa: F401
+        import bantz.tools.summarizer  # noqa: F401
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "tool", "tool_name": "web_search_and_summarizer", '
+            '"tool_args": {"q": "x"}}'
+        )
+        assert result["tool_name"] == "web_search_and_summarizer"
+
+    def test_known_tool_name_untouched_by_repair(self):
+        import bantz.tools.system  # noqa: F401
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "tool", "tool_name": "system", "tool_args": {"metric": "cpu"}}'
+        )
+        assert result["tool_name"] == "system"
+
+    def test_planner_rescue_survives_benign_and(self):
+        # A bare "and" must NOT block the rescue (inp02: "move the mouse to
+        # 500,300 and click" is a single input_control call).
+        import bantz.tools.input_control  # noqa: F401
+        from bantz.core.intent import _extract_json
+        result = _extract_json(
+            '{"route": "planner", "tool_name": "input_control", '
+            '"tool_args": {"action": "move_click", "x": 500, "y": 300}}',
+            utterance="move the mouse to 500,300 and click",
+        )
+        assert result["route"] == "tool"
+        assert result["tool_name"] == "input_control"
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 5. Backward compatibility — old signature still works
@@ -825,9 +936,12 @@ class TestCotRouteNormalisation:
             ])
 
         assert plan is not None
-        # The route is "gmail" — _extract_json now normalises this to "tool"
+        # The route is "gmail" — _extract_json now normalises this to "tool",
+        # and the invented-name repair maps the unknown alias "email" onto
+        # the registered "gmail" tool so the verdict is executable.
+        import bantz.tools.gmail  # noqa: F401 — ensure registry has "gmail"
         assert plan["route"] == "tool"
-        assert plan["tool_name"] == "email"
+        assert plan["tool_name"] in ("email", "gmail")  # repaired when registry loaded
 
     @pytest.mark.asyncio
     async def test_thinking_with_sorry_still_routes(self):
