@@ -47,6 +47,7 @@ from telegram.ext import (
 )
 
 from bantz.config import config
+from bantz.core.finalizer import strip_internal
 
 # ── Proxy support (Turkey blocks api.telegram.org) ──────────────────────
 _PROXY = config.telegram_proxy.strip() or os.environ.get("HTTPS_PROXY", "").strip()
@@ -293,6 +294,7 @@ def _chunk_text(text: str, max_len: int = 4000) -> list[str]:
 
 async def _safe_reply(update: Update, text: str) -> None:
     """Send a reply, splitting at paragraph boundaries for Telegram's 4096 limit."""
+    text = strip_internal(text)  # never leak <thinking>/[CONTEXT:...] to the user
     for chunk in _chunk_text(text):
         await update.message.reply_text(chunk)
 
@@ -305,6 +307,7 @@ async def _safe_edit(placeholder, text: str) -> bool:
       2. edit_text(text, parse_mode=None) — force plain text
       3. return False → caller should delete placeholder + reply_text
     """
+    text = strip_internal(text)  # never leak <thinking>/[CONTEXT:...] to the user
     try:
         await placeholder.edit_text(text)
         return True
@@ -379,7 +382,7 @@ async def _stream_to_placeholder(placeholder, stream, *, interval: float = _STRE
         parts.append(chunk)
         now = asyncio.get_event_loop().time()
         if now - last_edit >= interval:
-            current = "".join(parts).strip()
+            current = strip_internal("".join(parts)).strip()
             if current and current != last_text:
                 try:
                     await placeholder.edit_text(current + " ▍")
@@ -391,7 +394,7 @@ async def _stream_to_placeholder(placeholder, stream, *, interval: float = _STRE
                 last_text = current
                 last_edit = now
 
-    return "".join(parts)
+    return strip_internal("".join(parts))
 
 
 # ── Command Handlers ─────────────────────────────────────────────────────────
@@ -740,7 +743,7 @@ async def cmd_key(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def _send_long(update: Update, placeholder, text: str) -> None:
     """Edit *placeholder* with the first chunk, send the rest as new messages."""
-    text = (text or "").strip()
+    text = strip_internal(text or "").strip()
     if not text:
         text = "I'm afraid that yielded nothing, ma'am."
     chunks = _chunk_text(text)
@@ -989,6 +992,20 @@ def _is_rate_limited(user_id: int) -> bool:
     return False
 
 
+# Free-text shorthands that mean "take a screenshot" — routed to the working
+# control.py /screenshot path (cmd_screenshot), NOT brain → ScreenshotTool
+# (which is config-gated off). Matched against the whole normalised message.
+_SCREENSHOT_TRIGGERS: frozenset[str] = frozenset({
+    "ss", "ss al", "ss çek", "ss cek", "ss at",
+    "ekran", "ekran al", "ekran çek", "ekran cek", "ekran at",
+    "ekran görüntüsü", "ekran goruntusu",
+    "ekran görüntüsü al", "ekran goruntusu al",
+    "ekran görüntüsü çek", "ekran goruntusu cek",
+    "ekran görüntüsü at", "ekran goruntusu at",
+    "screenshot", "screenshot al", "take a screenshot", "take screenshot",
+})
+
+
 @_authorized
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Cognitive Wire — route free text through brain.process(is_remote=True).
@@ -1018,6 +1035,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     _active_chats.add(update.effective_chat.id)
     user_text = (update.message.text or "").strip()
     if not user_text:
+        return
+
+    # Turkish/English screenshot shorthand ("ss", "ekran görüntüsü", …) →
+    # route to the working control.py /screenshot path, bypassing the
+    # config-gated ScreenshotTool entirely (#screenshot-disabled).
+    if user_text.lower().strip(" .!?…").strip() in _SCREENSHOT_TRIGGERS:
+        await cmd_screenshot(update, context)
         return
 
     # Step 1: Immediate placeholder — user sees instant feedback (#181)
@@ -1056,7 +1080,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     await _send_photo(update, att.data, att.caption)
 
             if response and response.strip():
-                cleaned = response.strip()
+                # Strip <thinking>/[CONTEXT:...] before chunking so every chunk
+                # (incl. the reply_text extras below) is clean.
+                cleaned = strip_internal(response).strip()
 
                 # If we already sent the response as an image caption, skip
                 # duplicate text — unless the caption was truncated.
