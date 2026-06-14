@@ -99,7 +99,7 @@ Supporting systems run alongside the main loop:
 - Reminder system with repeat support (30s check interval)
 
 **Desktop and computer control**
-- Desktop screenshot + optional VLM analysis (self-hosted endpoint)
+- Desktop screenshot + local VLM analysis (built-in multimodal model; remote endpoint optional)
 - Visual element detection and click via coordinate mapping
 - pyautogui-based GUI automation (mouse, keyboard, window focus)
 - Accessibility tree reading
@@ -170,7 +170,7 @@ Supporting systems run alongside the main loop:
 
 **Wake word**: requires a Porcupine access key from Picovoice. Without it the voice pipeline silently disables itself. There's no fallback wake word engine.
 
-**VLM / vision analysis**: screenshot capture works, but VLM analysis requires a self-hosted endpoint (`BANTZ_VLM_ENDPOINT`). No built-in vision model — you bring your own.
+**VLM / vision analysis**: runs locally by default via Ollama (`BANTZ_VLM_BACKEND=ollama`). Bantz uses a built-in multimodal path — the same local model that handles chat also reads the screen (e.g. `gemma4:e4b-it-qat`), with `moondream` as a lightweight fallback. A remote VLM endpoint (`BANTZ_VLM_BACKEND=remote` + `BANTZ_VLM_ENDPOINT`, e.g. a Jetson/Colab box) is optional for offloading.
 
 **Mood history display**: `bantz --mood-history` prints a stub message. Mood data is recorded in SQLite but there's no display command since the Textual TUI was removed.
 
@@ -241,11 +241,15 @@ bantz --setup telegram
 Create a `.env` file in your working directory (or `~/.local/share/bantz/.env`). Minimum working config:
 
 ```env
-BANTZ_OLLAMA_MODEL=llama3.1:8b
+# gemma4:e4b-it-qat is recommended: one multimodal model (~4B active / ~7.5B
+# resident) serves chat, routing, finalizing AND screen vision — leanest on
+# memory-constrained machines. Any Ollama chat model works (e.g. llama3.1:8b).
+BANTZ_OLLAMA_MODEL=gemma4:e4b-it-qat
 BANTZ_OLLAMA_BASE_URL=http://localhost:11434
 
-# Optional: faster routing via a smaller model
-BANTZ_OLLAMA_ROUTING_MODEL=qwen2.5:3b
+# Optional: route through a separate smaller model. Empty (default) = routing
+# uses BANTZ_OLLAMA_MODEL; an uninstalled model also falls back to it.
+BANTZ_OLLAMA_ROUTING_MODEL=
 
 # Conversation provider: ollama (local, default) | claude | gemini | openai
 # Switchable live from Settings → Conversation Provider (persists to .env).
@@ -403,7 +407,7 @@ pytest tests/core/       # core modules only
 pytest --cov=bantz       # coverage report (target: 65%)
 ```
 
-48 pre-existing failures in prompt content and routing regex tests — these test specific LLM output strings that drift with model changes. Everything structural (core, data, agent, cli) passes.
+The test suite passes on Python 3.11 and 3.12 (the `Tests` CI workflow is required green before any PR merges to `main`).
 
 ---
 
