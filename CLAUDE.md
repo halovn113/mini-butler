@@ -23,7 +23,7 @@ Persistent notes for Claude Code sessions working on this repo. Read this first.
 - **Tokens**: `~/.local/share/bantz/tokens/` (calendar_token.json, gmail_token.json, credentials.json). Telegram bot `@bantzclaw_bot`, creds in parent `bantzv2/.env` (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS`).
 
 ## Key files changed in recent sessions
-- `core/finalizer.py` — FACTS grounding block, `<thinking>` strip, `[CONTEXT:...]` strip (in `strip_markdown`).
+- `core/finalizer.py` — FACTS grounding block; `strip_internal()` (`<thinking>` + `[CONTEXT:...]` strip, preserves tool formatting) used by `strip_markdown` and applied to user-facing short/verbatim output in `brain.py`.
 - `tools/gmail.py` — `build_query` default capped to `label:unread newer_than:7d`; `_summary` groups by `categorize()` (personal/institutional/services/payments/notifications) with emoji headers; `briefing=True` filter.
 - `tools/calendar.py` — `_create_sync` logs+raises instead of swallowing to `""`; `_create` surfaces the real error as a ToolResult.
 - `tools/web_search.py` — bantz-web integration: `web_search` (quick), `web_research` (deep, async, progress streamed to chat via `chat_token` bus event + cancel), `web_news`. Appends `vendor/bantz-web` to `sys.path` (append, NOT insert(0) — avoids shadowing `telegram` pkg); neutralizes bantz-web `git_commit`.
@@ -35,9 +35,9 @@ Persistent notes for Claude Code sessions working on this repo. Read this first.
 - `bantz-ui/src/pages/SettingsPage.tsx` — provider selector + Claude key/model, appearance prefs (localStorage + CSS), personality dials, restart-required notice, live Ollama model list.
 
 ## Known issues (open)
-- **`[CONTEXT:...]` may still leak**: `strip_markdown` strips it, but `finalize()` returns short tool output (<800 chars) **verbatim** without `strip_markdown`, and the streaming chat path emits tokens directly — so CONTEXT can reach the UI through those paths. The App.tsx-side `stripThinking` does not strip CONTEXT. Fix would be to also strip in the verbatim/short path and/or frontend.
-- **Calendar events reportedly not appearing on Google Calendar** despite the tool returning `success=True` with an `event_id` (POST returns 200). Likely an account/calendar mismatch (OAuth account vs. the user's primary calendar). Needs investigation.
-- **Duplicate "Dinner"/"Test Event" entries** created by repeated calendar test runs — pending deletion.
+- **~~`[CONTEXT:...]` may still leak~~** (FIXED): `finalizer.strip_internal()` strips `<thinking>` + `[CONTEXT:...]` while preserving tool formatting; applied to the user-facing response at both short-path `finalize` call sites in `brain.py` (the full text is still stored to conversation history so follow-up IDs survive). `strip_markdown` delegates to it; streaming finalize fallback strips too.
+- **Calendar wrong account** (ROOT CAUSE FOUND): the `calendar` token authenticates as **`230291026@firat.edu.tr`** (Fırat University account), not the user's personal `m.iclaldogan@gmail.com`. `calendarId="primary"` therefore writes to the school calendar, which the user isn't viewing — hence "created OK but not visible". **Fix: re-auth** with `bantz --setup google calendar`, signing in with the personal Google account (the OAuth flow overwrites `~/.local/share/bantz/tokens/calendar_token.json`). Diagnose account with `calendarList().list()` / `calendars().get(calendarId="primary")`.
+- **~~Duplicate "Dinner" entries~~** (DELETED 2026-06-14): 5 identical Dinner@19:00 events on the firat.edu.tr primary calendar were the test-run duplicates; deleted 4, kept `hqjjgqj2ak3ltdfl9f9fa08vng`.
 - **Autonomy dial not enforced**: `requires_confirm` is set on the routing decision but the executor doesn't act on it (only shell's own `DESTRUCTIVE_COMMANDS` confirm runs).
 - **Briefing category filter not wired**: `categorize()`/`briefing=True` exist in gmail.py, but the morning briefing fetches via `agent/workflows/overnight_poll.py` (+ `greeting.py`), which don't call them yet.
 - **web_research is Ollama-bound**: deep research makes many local-model calls; on a memory-constrained machine Ollama can stall mid-run (it falls back, but a full report needs healthy Ollama).
