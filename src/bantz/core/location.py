@@ -3,15 +3,20 @@ Bantz v2 — Location Service
 
 Priority order:
 1. .env manual override (BANTZ_CITY, BANTZ_LAT, BANTZ_LON)
-2. Live GPS from phone (via gps_server HTTP endpoint)
+2. Live GPS from phone (via gps_server) — reverse-geocoded to a real city
 3. WiFi SSID → places.json mapping
 4. places.json primary location
-5. GeoClue2 (system location service — primary automatic source, tried
-   before IP geolocation)
-6. ipinfo.io IP geolocation (works without permission, online only)
-7. If everything fails: location unknown (no wrong-city guess)
+5. Cached phone GPS city (last good fix, persisted — survives the live TTL
+   so the correct city sticks between phone pushes)
+6. WiFi-BSSID geolocation (nmcli scan → beaconDB, the free MLS successor;
+   far more accurate than IP where the APs are mapped)
+7. GeoClue2 (system location service)
+8. ipinfo.io IP geolocation (online only; unreliable in TR — ISPs route via
+   Istanbul, so this is a last resort)
+9. If everything fails: location unknown (no wrong-city guess)
 
-Fetched once per session, cached in memory.
+GeoIP is unreliable in Turkey, so phone GPS (live or cached) and WiFi-BSSID
+geolocation are preferred over IP. Fetched once per session, cached in memory.
 Call reset() to re-resolve (e.g. after receiving new GPS data).
 """
 from __future__ import annotations
@@ -39,7 +44,15 @@ def _get_client() -> httpx.AsyncClient:
     return _shared_client
 
 IPINFO_URL = "https://ipinfo.io/json"
+# beaconDB — free, community MLS successor; no API key required. Accepts the
+# Mozilla/Google geolocate schema ({wifiAccessPoints:[{macAddress,signalStrength}]}).
+BEACONDB_URL = "https://api.beacondb.net/v1/geolocate"
 TIMEOUT = 5.0
+
+# Persisted reverse-geocoded phone-GPS city — lets the correct city survive the
+# 30-min live-GPS TTL so it doesn't decay back to a wrong GeoIP guess.
+GPS_CITY_CACHE = Path.home() / ".local" / "share" / "bantz" / "gps_city.json"
+GPS_CACHE_MAX_AGE = 7 * 24 * 3600  # 7 days — stale enough is still better than IP
 
 
 def _system_timezone() -> str:
@@ -75,7 +88,10 @@ class Location:
     @property
     def is_live(self) -> bool:
         """True when location comes from a real-time source (GPS, WiFi, GeoClue)."""
-        return self.source in ("phone_gps", "geoclue") or self.source.startswith("wifi:")
+        return (
+            self.source in ("phone_gps", "geoclue", "wifi")
+            or self.source.startswith("wifi:")
+        )
 
     @property
     def is_turkey(self) -> bool:
@@ -110,7 +126,7 @@ class LocationService:
             return loc
 
         # 2. Live GPS from phone (highest real-time priority)
-        if loc := self._from_live_gps():
+        if loc := await self._from_live_gps():
             return loc
 
         # 3. WiFi SSID → places.json match
@@ -121,15 +137,25 @@ class LocationService:
         if loc := self._from_places():
             return loc
 
-        # 5. GeoClue2 (Linux system location)
+        # 5. Cached phone GPS city — last good fix, so the correct city sticks
+        #    between phone pushes instead of decaying to a wrong GeoIP guess.
+        if loc := self._from_gps_cache():
+            return loc
+
+        # 6. WiFi-BSSID geolocation (nmcli → beaconDB). Accurate where the
+        #    nearby access points are mapped; silently skipped otherwise.
+        if loc := await self._from_wifi_geolocation():
+            return loc
+
+        # 7. GeoClue2 (Linux system location)
         if loc := await self._from_geoclue():
             return loc
 
-        # 6. ipinfo.io
+        # 8. ipinfo.io (last resort — unreliable in TR)
         if loc := await self._from_ipinfo():
             return loc
 
-        # 7. Nothing worked — be honest rather than guessing a wrong city.
+        # 9. Nothing worked — be honest rather than guessing a wrong city.
         #    Keep a valid system timezone so time-dependent tools still run.
         logger.warning("All location sources failed — location unknown")
         return Location(
@@ -193,30 +219,175 @@ class LocationService:
             logger.debug(f"places.json read failed: {exc}")
             return None
 
-    def _from_live_gps(self) -> Optional[Location]:
-        """Read live GPS from phone (via gps_server's saved location file)."""
+    async def _from_live_gps(self) -> Optional[Location]:
+        """Read live GPS from the phone relay (gps_server) and name the city.
+
+        GPS is ground truth — the only reliable source where GeoIP/WiFi
+        databases are blind (e.g. Elazığ). The raw fix is reverse-geocoded to
+        a real city and the result persisted so it survives the live TTL.
+        """
         try:
             from bantz.core.gps_server import gps_server
             loc_data = gps_server.latest
             if not loc_data:
                 return None
-            lat = loc_data.get("lat", 0.0)
-            lon = loc_data.get("lon", 0.0)
+            lat = float(loc_data.get("lat", 0.0))
+            lon = float(loc_data.get("lon", 0.0))
             if lat == 0.0 and lon == 0.0:
                 return None
             acc = round(loc_data.get("accuracy", 0))
             logger.info(f"Live GPS: {lat:.6f}, {lon:.6f} (±{acc}m)")
-            return Location(
-                city=f"GPS ({lat:.4f}, {lon:.4f})",
-                country="TR",
-                timezone="Europe/Istanbul",
-                lat=lat,
-                lon=lon,
-                source="phone_gps",
+
+            # Reverse-geocode coords → real city/country (best effort, off-loop).
+            city, country, tz = await asyncio.get_event_loop().run_in_executor(
+                None, self._reverse_geocode_sync, lat, lon
             )
+            loc = Location(
+                city=city, country=country, timezone=tz,
+                lat=lat, lon=lon, source="phone_gps",
+            )
+            self._save_gps_city(loc)  # persist so the city sticks (see #5)
+            return loc
         except Exception as exc:
             logger.debug(f"Live GPS read failed: {exc}")
             return None
+
+    @staticmethod
+    def _save_gps_city(loc: "Location") -> None:
+        """Persist a reverse-geocoded GPS fix for use beyond the live TTL."""
+        try:
+            import time
+            GPS_CITY_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            GPS_CITY_CACHE.write_text(_json_mod.dumps({
+                "city": loc.city, "country": loc.country,
+                "timezone": loc.timezone, "region": loc.region,
+                "lat": loc.lat, "lon": loc.lon, "ts": time.time(),
+            }, ensure_ascii=False), encoding="utf-8")
+        except Exception as exc:
+            logger.debug(f"GPS city cache write failed: {exc}")
+
+    def _from_gps_cache(self) -> Optional[Location]:
+        """Return the last reverse-geocoded phone-GPS city, if still recent.
+
+        A GPS fix from earlier today (or this week) is a far better guess than
+        GeoIP, which mislocates Turkish ISPs to Istanbul. Refreshed whenever
+        the phone pushes a new fix.
+        """
+        try:
+            import time
+            if not GPS_CITY_CACHE.exists():
+                return None
+            data = _json_mod.loads(GPS_CITY_CACHE.read_text(encoding="utf-8"))
+            age = time.time() - float(data.get("ts", 0))
+            if age > GPS_CACHE_MAX_AGE:
+                return None
+            if not data.get("city"):
+                return None
+            logger.info(
+                "Cached GPS city: %s (age %dh)", data["city"], int(age / 3600)
+            )
+            return Location(
+                city=data.get("city", ""),
+                country=data.get("country", ""),
+                timezone=data.get("timezone") or _system_timezone(),
+                region=data.get("region", ""),
+                lat=float(data.get("lat", 0.0)),
+                lon=float(data.get("lon", 0.0)),
+                source="phone_gps_cached",
+            )
+        except Exception as exc:
+            logger.debug(f"GPS city cache read failed: {exc}")
+            return None
+
+    async def _from_wifi_geolocation(self) -> Optional[Location]:
+        """Locate via nearby WiFi BSSIDs (nmcli scan → beaconDB).
+
+        Sends MAC addresses + signal strengths of nearby access points to
+        beaconDB (the free Mozilla-Location-Service successor). Much more
+        accurate than IP geolocation where the access points are mapped;
+        returns None when they aren't (beaconDB 404). Bounded by a timeout.
+        """
+        try:
+            return await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(
+                    None, self._wifi_geolocation_sync
+                ),
+                timeout=10.0,
+            )
+        except asyncio.TimeoutError:
+            logger.debug("WiFi geolocation timed out")
+            return None
+        except Exception as exc:
+            logger.debug(f"WiFi geolocation failed: {exc}")
+            return None
+
+    def _wifi_geolocation_sync(self) -> Optional[Location]:
+        import json as _json
+        import urllib.error
+        import urllib.request
+
+        aps = self._scan_wifi_aps()
+        if len(aps) < 2:  # need a couple APs for a meaningful fix
+            logger.debug("WiFi geolocation: only %d AP(s), skipping", len(aps))
+            return None
+
+        body = _json.dumps(
+            {"considerIp": False, "wifiAccessPoints": aps}
+        ).encode()
+        req = urllib.request.Request(
+            BEACONDB_URL, data=body,
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=8) as r:
+                res = _json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            # 404 = APs not in the database (common outside well-mapped areas)
+            logger.debug("beaconDB HTTP %s — APs likely unmapped", e.code)
+            return None
+
+        loc = res.get("location") or {}
+        lat = loc.get("lat")
+        lon = loc.get("lng")
+        if lat is None or lon is None:
+            return None
+        logger.info(
+            "WiFi geolocation: %.5f, %.5f (±%sm, %d APs)",
+            lat, lon, round(res.get("accuracy", 0)), len(aps),
+        )
+        city, country, tz = self._reverse_geocode_sync(lat, lon)
+        return Location(
+            city=city, country=country, timezone=tz,
+            lat=float(lat), lon=float(lon), source="wifi",
+        )
+
+    @staticmethod
+    def _scan_wifi_aps() -> list[dict]:
+        """Nearby APs as [{macAddress, signalStrength(dBm)}] via nmcli."""
+        aps: list[dict] = []
+        try:
+            result = subprocess.run(
+                ["nmcli", "-t", "-f", "BSSID,SIGNAL", "dev", "wifi", "list"],
+                capture_output=True, text=True, timeout=8,
+            )
+            for line in result.stdout.splitlines():
+                line = line.replace("\\:", ":")  # nmcli escapes BSSID colons
+                bssid, _, sig = line.rpartition(":")
+                if len(bssid) != 17:  # not a MAC
+                    continue
+                try:
+                    pct = int(sig)
+                except ValueError:
+                    continue
+                # nmcli SIGNAL is 0-100%; approximate dBm for the API schema.
+                dbm = (pct // 2) - 100
+                aps.append({
+                    "macAddress": bssid.lower(),
+                    "signalStrength": dbm,
+                })
+        except Exception as exc:
+            logger.debug(f"nmcli wifi scan failed: {exc}")
+        return aps
 
     @staticmethod
     def _current_ssid() -> Optional[str]:
