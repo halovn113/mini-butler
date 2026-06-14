@@ -801,7 +801,13 @@ class Brain:
 
         # ── Step 5: route == "chat" → streaming chat ──────────────────
         if route != "tool" or not tool_name:
-            stream = self._chat_stream(en_input, tc)
+            # Anomaly Watch "Investigate" directives must analyse REAL system
+            # state, not free-associate. Run live read-only diagnostics and
+            # ground the LLM on the actual output (#anomaly-hallucination).
+            if en_input.strip().lower().startswith("investigate:"):
+                stream = self._investigate_stream(en_input, tc)
+            else:
+                stream = self._chat_stream(en_input, tc)
             return BrainResult(response="", tool_used=None, stream=stream)
 
         # ── Step 5b: Internal tools (prefixed with "_") → dispatch_internal
@@ -1146,6 +1152,120 @@ class Brain:
                 yield token
         except Exception as exc:
             log.error("LLM stream error: %s", exc)
+            yield _BUTLER_LLM_ERROR
+
+    # ── System-anomaly investigation (grounded in live diagnostics) ───────
+    # Read-only command sets, selected by keywords in the anomaly directive.
+    # Hardcoded (no user input is interpolated) so there is no injection risk.
+    _DIAG_MEMORY = (
+        "free -h",
+        "swapon --show",
+        "ps -eo pid,comm,rss,%mem --sort=-%mem | head -n 12",
+    )
+    _DIAG_CPU = (
+        "uptime",
+        "ps -eo pid,comm,%cpu --sort=-%cpu | head -n 12",
+    )
+    _DIAG_DISK = (
+        "df -h -x tmpfs -x devtmpfs",
+        "du -xh --max-depth=1 \"$HOME\" 2>/dev/null | sort -rh | head -n 10",
+    )
+
+    _INVESTIGATE_SYSTEM = (
+        "You are Bantz, a 1920s English butler who also keeps a sharp eye on "
+        "the household's mechanical contraptions (this computer). An anomaly "
+        "was flagged. Below is REAL diagnostic output captured just now by "
+        "running live system commands. Report to your employer:\n"
+        "- State what the data actually shows (cite the real numbers and "
+        "process names).\n"
+        "- Identify the most likely cause (e.g. which process is consuming "
+        "the memory or CPU).\n"
+        "- Recommend ONE concrete next action.\n"
+        "RULES:\n"
+        "- Use ONLY the diagnostic data shown. NEVER invent process names, "
+        "PIDs, or numbers that are not present in it.\n"
+        "- If the data is inconclusive, say so honestly rather than guessing.\n"
+        "- Be concise: 3-6 sentences. Plain text, no markdown. Address the "
+        "user as 'ma'am'.{persona_state}"
+    )
+
+    @staticmethod
+    async def _run_diag(cmd: str) -> str:
+        """Run a single read-only diagnostic command, capturing combined output."""
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "bash", "-c", cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+            )
+            out, _ = await asyncio.wait_for(proc.communicate(), timeout=10)
+            return out.decode("utf-8", errors="replace").strip()
+        except Exception as exc:  # never let a probe crash the investigation
+            return f"(failed: {exc})"
+
+    async def _gather_diagnostics(self, directive: str) -> str:
+        """Run the read-only diagnostics relevant to an anomaly directive."""
+        low = directive.lower()
+        cmds: list[str] = []
+        if any(k in low for k in (
+            "swap", "memory", "ram", "paging", "pressure", "oom",
+        )):
+            cmds += self._DIAG_MEMORY
+        if any(k in low for k in ("cpu", "saturat", "load")):
+            cmds += self._DIAG_CPU
+        if any(k in low for k in ("disk", "full", "storage", "space")):
+            cmds += self._DIAG_DISK
+        if not cmds:  # unknown anomaly → broad system snapshot
+            cmds = [
+                "free -h", "uptime",
+                "ps -eo pid,comm,rss,%mem,%cpu --sort=-%mem | head -n 10",
+            ]
+        # De-dup while preserving order (memory+CPU sets share nothing today,
+        # but a combined "memory pressure" directive could request both).
+        seen: set[str] = set()
+        ordered = [c for c in cmds if not (c in seen or seen.add(c))]
+        results = await asyncio.gather(*(self._run_diag(c) for c in ordered))
+        return "\n\n".join(f"$ {c}\n{r}" for c, r in zip(ordered, results))
+
+    async def _investigate_stream(
+        self, en_input: str, tc: dict,
+    ) -> AsyncIterator[str]:
+        """Stream a grounded analysis of a system anomaly.
+
+        Unlike ``_chat_stream``, this runs live read-only diagnostics and
+        feeds the real output to the LLM as ground truth, so Bantz reports on
+        actual swap/memory/CPU/disk state instead of hallucinating one.
+        """
+        directive = en_input.split(":", 1)[1].strip() if ":" in en_input else en_input
+        diagnostics = await self._gather_diagnostics(directive)
+
+        # Persona flavour (best-effort; never block the analysis on it).
+        persona_state = ""
+        try:
+            from bantz.personality.persona import persona_builder
+            persona_state = persona_builder.build()
+        except Exception:
+            pass
+
+        messages = [
+            {"role": "system", "content": self._INVESTIGATE_SYSTEM.format(
+                persona_state=persona_state,
+            )},
+            {"role": "user", "content": (
+                f"ANOMALY: {directive}\n\n"
+                f"LIVE DIAGNOSTICS (ground truth — captured just now):\n"
+                f"{diagnostics[:4000]}\n\n"
+                "Analyse the anomaly using ONLY the diagnostics above and advise."
+            )},
+        ]
+
+        from bantz.llm.router import get_provider
+        try:
+            provider = get_provider()
+            async for token in provider.chat_stream(messages):
+                yield token
+        except Exception as exc:
+            log.error("investigate stream error: %s", exc)
             yield _BUTLER_LLM_ERROR
 
     async def _finalize(self, en_input: str, result: ToolResult, tc: dict) -> str:
