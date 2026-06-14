@@ -297,7 +297,28 @@ class OmniMemoryManager:
 
     @staticmethod
     async def _vector_search(user_msg: str, limit: int = 3) -> str:
-        """Semantic search over past conversations + distillations."""
+        """Semantic search over stored memories.
+
+        Primary store is MemPalace L3 (ChromaDB) — that is where
+        ``bridge.store_exchange()`` actually writes, so it MUST be queried
+        here. The legacy SQLite ``hybrid_search`` path the bridge replaced is
+        kept only as a fallback for when MemPalace is disabled/unavailable.
+        (Without this, recall silently returned nothing despite memories
+        being stored — the layers wrote to ChromaDB but read from SQLite.)
+        """
+        # ── Primary: MemPalace L3 semantic search (current store) ──────
+        try:
+            from bantz.memory.bridge import palace_bridge
+            if palace_bridge and palace_bridge.enabled:
+                hit = await asyncio.get_event_loop().run_in_executor(
+                    None, palace_bridge.vector_context, user_msg, limit,
+                )
+                if hit and hit.strip():
+                    return hit
+        except Exception as exc:
+            log.debug("MemPalace vector search failed: %s", exc)
+
+        # ── Fallback: legacy SQLite hybrid store (pre-MemPalace) ───────
         try:
             from bantz.core.memory import memory
             results = await memory.hybrid_search(user_msg, limit=limit)
