@@ -6,9 +6,10 @@ Priority order:
 2. Live GPS from phone (via gps_server HTTP endpoint)
 3. WiFi SSID → places.json mapping
 4. places.json primary location
-5. GeoClue2 via D-Bus (system location service, requires user permission)
+5. GeoClue2 (system location service — primary automatic source, tried
+   before IP geolocation)
 6. ipinfo.io IP geolocation (works without permission, online only)
-7. Hardcoded fallback (Ankara, TR)
+7. If everything fails: location unknown (no wrong-city guess)
 
 Fetched once per session, cached in memory.
 Call reset() to re-resolve (e.g. after receiving new GPS data).
@@ -40,14 +41,25 @@ def _get_client() -> httpx.AsyncClient:
 IPINFO_URL = "https://ipinfo.io/json"
 TIMEOUT = 5.0
 
-FALLBACK = {
-    "city": "Ankara",
-    "country": "TR",
-    "timezone": "Europe/Istanbul",
-    "region": "Ankara",
-    "lat": 39.9208,
-    "lon": 32.8541,
-}
+
+def _system_timezone() -> str:
+    """Best-effort IANA timezone for this machine.
+
+    Used when geolocation can't name a city but the app still needs a valid
+    tz (calendar.py feeds Location.timezone straight into pytz.timezone()).
+    Never invents a city — only the local clock's zone.
+    """
+    # /etc/localtime is usually a symlink into …/zoneinfo/<Area>/<City>.
+    try:
+        parts = Path("/etc/localtime").resolve().parts
+        if "zoneinfo" in parts:
+            tz = "/".join(parts[parts.index("zoneinfo") + 1:])
+            if tz:
+                return tz
+    except Exception:
+        pass
+    import os
+    return os.environ.get("TZ") or "UTC"
 
 
 @dataclass
@@ -58,7 +70,7 @@ class Location:
     region: str = ""
     lat: float = 0.0
     lon: float = 0.0
-    source: str = "unknown"   # "config" | "geoclue" | "ipinfo" | "fallback"
+    source: str = "unknown"   # "config" | "geoclue" | "ipinfo" | "unknown"
 
     @property
     def is_live(self) -> bool:
@@ -72,6 +84,8 @@ class Location:
     @property
     def display(self) -> str:
         parts = [p for p in [self.city, self.region, self.country] if p]
+        if not parts:
+            return "location unknown"
         return ", ".join(parts)
 
 
@@ -115,9 +129,14 @@ class LocationService:
         if loc := await self._from_ipinfo():
             return loc
 
-        # 7. Fallback
-        logger.warning("All location sources failed — using fallback (Ankara, TR)")
-        return Location(**FALLBACK, source="fallback")
+        # 7. Nothing worked — be honest rather than guessing a wrong city.
+        #    Keep a valid system timezone so time-dependent tools still run.
+        logger.warning("All location sources failed — location unknown")
+        return Location(
+            city="", country="", region="",
+            timezone=_system_timezone(),
+            lat=0.0, lon=0.0, source="unknown",
+        )
 
     def _from_config(self) -> Optional[Location]:
         """Read BANTZ_CITY / BANTZ_LAT / BANTZ_LON from config."""
@@ -246,46 +265,66 @@ class LocationService:
         return None
 
     async def _from_geoclue(self) -> Optional[Location]:
-        """Try GeoClue2 via D-Bus. Requires geoclue2 installed and user permission."""
+        """Try GeoClue2 (system location service). Primary automatic source.
+
+        Bounded by a timeout so a stalled geoclue can't block startup; on
+        timeout/failure the caller falls through to IP geolocation.
+        """
         try:
-            # Run in executor — dbus calls are blocking
-            result = await asyncio.get_event_loop().run_in_executor(
-                None, self._geoclue_sync
+            return await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(
+                    None, self._geoclue_sync
+                ),
+                timeout=8.0,
             )
-            return result
+        except asyncio.TimeoutError:
+            logger.debug("GeoClue2 timed out")
+            return None
         except Exception as exc:
             logger.debug(f"GeoClue2 unavailable: {exc}")
             return None
 
     def _geoclue_sync(self) -> Optional[Location]:
-        """Blocking GeoClue2 lookup via python-dbus or gi.repository."""
+        """Blocking GeoClue2 lookup via gi.repository (Geoclue.Simple).
+
+        The `gdbus` CLI cannot be used here: GeoClue2 binds each Client to the
+        D-Bus connection that created it, so a Client made in one `gdbus call`
+        is destroyed the instant that process exits ("Object does not exist").
+        Geoclue.Simple holds a single connection open and blocks until the
+        first fix is available.
+        """
         try:
             import gi
             gi.require_version("Geoclue", "2.0")
-            from gi.repository import Geoclue, GLib
+            from gi.repository import Geoclue
+        except Exception as exc:
+            logger.debug(f"GeoClue2 gi bindings unavailable: {exc}")
+            return None
 
-            loop = GLib.MainLoop()
-            result: list = []
-
-            def on_location(client, _):
-                loc = client.get_location()
-                result.append((loc.get_property("latitude"),
-                                loc.get_property("longitude")))
-                loop.quit()
-
-            client = Geoclue.Simple.new_sync(
-                "bantz", Geoclue.AccuracyLevel.CITY, None
+        try:
+            simple = Geoclue.Simple.new_sync(
+                "bantz", Geoclue.AccuracyLevel.CITY, None,
             )
-            lat = client.get_location().get_property("latitude")
-            lon = client.get_location().get_property("longitude")
+            loc = simple.get_location()
+            if loc is None:
+                logger.debug("GeoClue2 returned no location fix")
+                return None
+
+            lat = float(loc.get_property("latitude"))
+            lon = float(loc.get_property("longitude"))
+            if lat == 0.0 and lon == 0.0:
+                return None
+            acc = round(loc.get_property("accuracy"))
+            logger.info("GeoClue2 fix: %.6f, %.6f (±%sm)", lat, lon, acc)
 
             # Reverse geocode lat/lon → city (best effort)
             city, country, tz = self._reverse_geocode_sync(lat, lon)
             return Location(
                 city=city, country=country, timezone=tz,
-                lat=lat, lon=lon, source="geoclue"
+                lat=lat, lon=lon, source="geoclue",
             )
-        except Exception:
+        except Exception as exc:
+            logger.debug(f"GeoClue2 lookup failed: {exc}")
             return None
 
     def _reverse_geocode_sync(self, lat: float, lon: float) -> tuple[str, str, str]:
@@ -302,9 +341,9 @@ class LocationService:
         addr = data.get("address", {})
         city = (addr.get("city") or addr.get("town") or
                 addr.get("village") or addr.get("county") or "Unknown")
-        country = addr.get("country_code", "").upper() or "TR"
-        # Timezone from ipinfo for the lat/lon
-        tz = FALLBACK["timezone"]
+        country = addr.get("country_code", "").upper()
+        # Nominatim doesn't return a tz; use the machine's local zone.
+        tz = _system_timezone()
         return city, country, tz
 
     async def _from_ipinfo(self) -> Optional[Location]:
@@ -320,10 +359,15 @@ class LocationService:
                 if len(parts) == 2:
                     lat, lon = float(parts[0]), float(parts[1])
 
+            # No usable data → let the caller fall through to "unknown"
+            # rather than emitting a blank/half-filled location.
+            if not data.get("city") and lat == 0.0 and lon == 0.0:
+                return None
+
             return Location(
-                city=data.get("city", FALLBACK["city"]),
-                country=data.get("country", FALLBACK["country"]),
-                timezone=data.get("timezone", FALLBACK["timezone"]),
+                city=data.get("city", ""),
+                country=data.get("country", ""),
+                timezone=data.get("timezone") or _system_timezone(),
                 region=data.get("region", ""),
                 lat=lat, lon=lon,
                 source="ipinfo",
