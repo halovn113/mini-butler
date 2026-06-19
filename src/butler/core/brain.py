@@ -1155,22 +1155,7 @@ class Brain:
             yield _BUTLER_LLM_ERROR
 
     # ── System-anomaly investigation (grounded in live diagnostics) ───────
-    # Read-only command sets, selected by keywords in the anomaly directive.
-    # Hardcoded (no user input is interpolated) so there is no injection risk.
-    _DIAG_MEMORY = (
-        "free -h",
-        "swapon --show",
-        "ps -eo pid,comm,rss,%mem --sort=-%mem | head -n 12",
-    )
-    _DIAG_CPU = (
-        "uptime",
-        "ps -eo pid,comm,%cpu --sort=-%cpu | head -n 12",
-    )
-    _DIAG_DISK = (
-        "df -h -x tmpfs -x devtmpfs",
-        "du -xh --max-depth=1 \"$HOME\" 2>/dev/null | sort -rh | head -n 10",
-    )
-
+    # Uses psutil via butler.platform.diagnostics — cross-platform safe.
     _INVESTIGATE_SYSTEM = (
         "You are Bantz, a 1920s English butler who also keeps a sharp eye on "
         "the household's mechanical contraptions (this computer). An anomaly "
@@ -1189,43 +1174,32 @@ class Brain:
         "user as 'ma'am'.{persona_state}"
     )
 
-    @staticmethod
-    async def _run_diag(cmd: str) -> str:
-        """Run a single read-only diagnostic command, capturing combined output."""
-        try:
-            proc = await asyncio.create_subprocess_exec(
-                "bash", "-c", cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-            )
-            out, _ = await asyncio.wait_for(proc.communicate(), timeout=10)
-            return out.decode("utf-8", errors="replace").strip()
-        except Exception as exc:  # never let a probe crash the investigation
-            return f"(failed: {exc})"
-
     async def _gather_diagnostics(self, directive: str) -> str:
         """Run the read-only diagnostics relevant to an anomaly directive."""
+        from butler.platform.diagnostics import (
+            cpu_load_summary,
+            disk_summary,
+            full_snapshot,
+            home_disk_usage,
+            memory_summary,
+            top_memory_processes,
+        )
+
         low = directive.lower()
-        cmds: list[str] = []
+        parts: list[str] = []
         if any(k in low for k in (
             "swap", "memory", "ram", "paging", "pressure", "oom",
         )):
-            cmds += self._DIAG_MEMORY
+            parts.append(memory_summary())
+            parts.append(top_memory_processes(12))
         if any(k in low for k in ("cpu", "saturat", "load")):
-            cmds += self._DIAG_CPU
+            parts.append(cpu_load_summary())
         if any(k in low for k in ("disk", "full", "storage", "space")):
-            cmds += self._DIAG_DISK
-        if not cmds:  # unknown anomaly → broad system snapshot
-            cmds = [
-                "free -h", "uptime",
-                "ps -eo pid,comm,rss,%mem,%cpu --sort=-%mem | head -n 10",
-            ]
-        # De-dup while preserving order (memory+CPU sets share nothing today,
-        # but a combined "memory pressure" directive could request both).
-        seen: set[str] = set()
-        ordered = [c for c in cmds if not (c in seen or seen.add(c))]
-        results = await asyncio.gather(*(self._run_diag(c) for c in ordered))
-        return "\n\n".join(f"$ {c}\n{r}" for c, r in zip(ordered, results))
+            parts.append(disk_summary())
+            parts.append(home_disk_usage(10))
+        if not parts:  # unknown anomaly → broad system snapshot
+            parts.append(full_snapshot())
+        return "\n\n".join(parts)
 
     async def _investigate_stream(
         self, en_input: str, tc: dict,
