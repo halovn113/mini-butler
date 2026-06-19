@@ -2,7 +2,7 @@
 Butler v2 — CLI setup wizards, diagnostics, and configuration display.
 
 All interactive --setup commands, --doctor, --config, and --cache-stats
-live here so __main__.py stays focused on running Bantz.
+live here so __main__.py stays focused on running Butler.
 """
 from __future__ import annotations
 
@@ -52,26 +52,26 @@ def _handle_setup(parts: list[str]) -> None:
     else:
         print(f"Unknown setup target: {' '.join(parts)}")
         print("Available:")
-        print("  bantz --setup onboarding")
-        print("  bantz --setup profile")
-        print("  bantz --setup google [gmail|classroom|calendar]")
-        print("  bantz --setup schedule")
-        print("  bantz --setup telegram")
-        print("  bantz --setup places")
-        print("  bantz --setup claude        ← Anthropic Claude API")
-        print("  bantz --setup openai        ← OpenAI / compatible API")
-        print("  bantz --setup gemini        ← Google Gemini API")
-        print("  bantz --setup voice")
-        print("  bantz --setup systemd")
-        print("  bantz --setup systemd --check")
+        print("  butler --setup onboarding")
+        print("  butler --setup profile")
+        print("  butler --setup google [gmail|classroom|calendar]")
+        print("  butler --setup schedule")
+        print("  butler --setup telegram")
+        print("  butler --setup places")
+        print("  butler --setup claude        ← Anthropic Claude API")
+        print("  butler --setup openai        ← OpenAI / compatible API")
+        print("  butler --setup gemini        ← Google Gemini API")
+        print("  butler --setup voice")
+        print("  butler --setup systemd")
+        print("  butler --setup systemd --check")
 
 
 def _setup_onboarding() -> None:
-    """Run the first-run onboarding wizard (bantz --setup onboarding)."""
+    """Run the first-run onboarding wizard (butler --setup onboarding)."""
     from pathlib import Path
     from butler.config import config
 
-    print("\n🧠 Bantz — First-Run Onboarding")
+    print("\n🧠 Butler — First-Run Onboarding")
     print("─" * 40)
 
     config.ensure_dirs()
@@ -110,7 +110,7 @@ def _setup_onboarding() -> None:
         registry=registry,
         palace_parent=palace_parent,
     )
-    print("\n✅ Onboarding complete. Bantz now knows who you are.")
+    print("\n✅ Onboarding complete. Butler now knows who you are.")
 
 
 def _setup_telegram() -> None:
@@ -192,7 +192,7 @@ def _write_env(updates: dict[str, str], *, prefix_strip: list[str] | None = None
 
 def _setup_claude() -> None:
     """Interactive Claude (Anthropic) API key setup."""
-    print("\nBantz — Claude Setup")
+    print("\nButler — Claude Setup")
     print("─" * 40)
     print("1. Go to https://console.anthropic.com/settings/keys")
     print("2. Create an API key")
@@ -222,12 +222,12 @@ def _setup_claude() -> None:
     })
     print("   Provider: Claude / Anthropic")
     print(f"   Model:    {model}")
-    print("\nRun 'bantz --doctor' to verify the connection.")
+    print("\nRun 'butler --doctor' to verify the connection.")
 
 
 def _setup_openai() -> None:
     """Interactive OpenAI API key setup."""
-    print("\nBantz — OpenAI Setup")
+    print("\nButler — OpenAI Setup")
     print("─" * 40)
     print("1. Go to https://platform.openai.com/api-keys")
     print("2. Create an API key")
@@ -262,12 +262,12 @@ def _setup_openai() -> None:
     _write_env(updates)
     print("   Provider: OpenAI")
     print(f"   Model:    {model}")
-    print("\nRun 'bantz --doctor' to verify the connection.")
+    print("\nRun 'butler --doctor' to verify the connection.")
 
 
 def _setup_gemini() -> None:
     """Interactive Gemini API key setup."""
-    print("\nBantz — Gemini Setup")
+    print("\nButler — Gemini Setup")
     print("─" * 40)
     print("1. Go to https://aistudio.google.com/apikey")
     print("2. Create an API key")
@@ -289,7 +289,7 @@ def _setup_gemini() -> None:
     })
     print("   Provider: Gemini")
     print(f"   Model:    {model}")
-    print("\nRun 'bantz --doctor' to verify the connection.")
+    print("\nRun 'butler --doctor' to verify the connection.")
 
 
 # ── Voice packages checked by _setup_voice ──────────────────────────────────
@@ -313,7 +313,7 @@ _VOICE_ENV_PREFIXES: tuple[str, ...] = (
 
 
 def _setup_voice() -> None:
-    """Guided voice setup wizard (`bantz --setup voice`).
+    """Guided voice setup wizard (`butler --setup voice`).
 
     1. Checks which of faster-whisper, pyaudio, webrtcvad, pvporcupine
        are installed.
@@ -330,7 +330,7 @@ def _setup_voice() -> None:
     import sys
     from pathlib import Path
 
-    print("\n🎤 Bantz — Voice Setup Wizard")
+    print("\n🎤 Butler — Voice Setup Wizard")
     print("─" * 40)
     print("Sets up voice input (STT / wake-word) and TTS output.")
     print()
@@ -419,7 +419,7 @@ def _setup_voice() -> None:
         print("✅ All voice components ready.")
     else:
         print("⚠  Some components failed — see above for details.")
-    print("Restart Bantz for settings to take effect: bantz")
+    print("Restart Butler for settings to take effect: butler")
     print()
 
 
@@ -822,7 +822,7 @@ def _setup_schedule() -> None:
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(content)
     print(f"\n✅ Schedule saved: {path}")
-    print("Test: bantz --once 'my classes today'")
+    print("Test: butler --once 'my classes today'")
 
 
 def _cache_stats() -> None:
@@ -991,7 +991,7 @@ async def _doctor() -> None:
             else:
                 print("❌ Claude: UNREACHABLE — check BUTLER_ANTHROPIC_API_KEY")
         else:
-            print("❌ Claude: API key not set  → bantz --setup claude")
+            print("❌ Claude: API key not set  → butler --setup claude")
     elif _provider == "openai":
         from butler.llm.openai_client import openai_client as _oai
         if _oai.is_enabled():
@@ -1001,7 +1001,7 @@ async def _doctor() -> None:
             else:
                 print("❌ OpenAI: UNREACHABLE — check BUTLER_OPENAI_API_KEY")
         else:
-            print("❌ OpenAI: API key not set  → bantz --setup openai")
+            print("❌ OpenAI: API key not set  → butler --setup openai")
     elif _provider == "gemini":
         from butler.llm.gemini import gemini as _gem
         _ok = await _gem.is_available()
@@ -1056,17 +1056,17 @@ async def _doctor() -> None:
     # Tools — import modules so they register themselves (#432: count was 0 at import time)
     import importlib as _importlib
     for _mod in (
-        "bantz.tools.shell", "bantz.tools.system", "bantz.tools.filesystem",
-        "bantz.tools.weather", "bantz.tools.web_search", "bantz.tools.web_reader",
-        "bantz.tools.gmail", "bantz.tools.calendar", "bantz.tools.classroom",
-        "bantz.tools.reminder",
+        "butler.tools.shell", "butler.tools.system", "butler.tools.filesystem",
+        "butler.tools.weather", "butler.tools.web_search", "butler.tools.web_reader",
+        "butler.tools.gmail", "butler.tools.calendar", "butler.tools.classroom",
+        "butler.tools.reminder",
     ):
         _importlib.import_module(_mod)
     for _opt in (
-        "bantz.tools.news", "bantz.tools.document", "bantz.tools.accessibility",
-        "bantz.tools.visual_click", "bantz.tools.browser_control",
-        "bantz.tools.screenshot_tool", "bantz.tools.desktop",
-        "bantz.tools.delegate_task",
+        "butler.tools.news", "butler.tools.document", "butler.tools.accessibility",
+        "butler.tools.visual_click", "butler.tools.browser_control",
+        "butler.tools.screenshot_tool", "butler.tools.desktop",
+        "butler.tools.delegate_task",
     ):
         try:
             _importlib.import_module(_opt)
@@ -1108,7 +1108,7 @@ async def _doctor() -> None:
         icon = "✅" if st == "ok" else "⚪"
         print(f"  {icon} Google {svc}: {st}")
     if any(st != "ok" for st in g_status.values()):
-        print("     → bantz --setup google gmail  /  bantz --setup google classroom")
+        print("     → butler --setup google gmail  /  butler --setup google classroom")
 
     # Memory DB
     config.ensure_dirs()
@@ -1132,7 +1132,7 @@ async def _doctor() -> None:
     if _prof.is_configured():
         print(f"✅ Profile: {_prof.status_line()}")
     else:
-        print("⚪ Profile: not configured  → bantz --setup profile")
+        print("⚪ Profile: not configured  → butler --setup profile")
 
     # AT-SPI Accessibility
     try:
@@ -1401,7 +1401,7 @@ async def _doctor() -> None:
     if config.telegram_bot_token:
         print("✅ Telegram: token set")
     else:
-        print("⚪ Telegram: not configured  → bantz --setup telegram")
+        print("⚪ Telegram: not configured  → butler --setup telegram")
 
     # Habits
     from butler.core.habits import habits as _hab
@@ -1412,7 +1412,7 @@ async def _doctor() -> None:
     if _plc.is_configured():
         print(f"✅ Places: {_plc.status_line()}")
     else:
-        print("⚪ Places: not configured  → bantz --setup places")
+        print("⚪ Places: not configured  → butler --setup places")
 
     # GPS
     from butler.core.gps_server import gps_server
@@ -1448,21 +1448,21 @@ async def _doctor() -> None:
         _backend = get_daemon_backend()
         if _backend.is_active():
             _linger = "linger=yes" if _check_linger(_user) else "linger=no"
-            print(f"✅ systemd: active ({_linger})  → bantz --setup systemd --check")
+            print(f"✅ systemd: active ({_linger})  → butler --setup systemd --check")
         else:
             print("⚪ systemd: inactive  → systemctl --user start butler.service")
     else:
-        print("⚪ systemd: not installed  → bantz --setup systemd")
+        print("⚪ systemd: not installed  → butler --setup systemd")
 
     print("─" * 52)
 
 
 def _setup_systemd() -> None:
-    """Install Bantz systemd user service with linger + verification."""
+    """Install Butler systemd user service with linger + verification."""
     import os
     from pathlib import Path
 
-    print("\n🦌 Bantz — systemd Service Setup")
+    print("\n🦌 Butler — systemd Service Setup")
     print("─" * 52)
 
     user = os.environ.get("USER", "")
@@ -1488,6 +1488,7 @@ def _setup_systemd() -> None:
     print()
 
     # Ask if user wants to enable + start now
+    answer = input("Enable + start service now? [Y/n] ").strip().lower()
     if answer in ("", "y", "yes"):
         ok = True
         ok = backend.daemon_reload() and ok
@@ -1535,7 +1536,7 @@ def _ensure_linger(user: str) -> bool:
         return True
 
     print("⚠  Linger is NOT enabled.")
-    print("   Without linger, Bantz stops when you log out.")
+    print("   Without linger, Butler stops when you log out.")
     print(f"   This will run: loginctl enable-linger {user}")
     answer = input("   Enable linger for 24/7 operation? [Y/n] ").strip().lower()
     if answer not in ("", "y", "yes"):
@@ -1591,12 +1592,12 @@ def _verify_service() -> None:
 
 
 def _systemd_check() -> None:
-    """Full systemd health diagnostic (bantz --setup systemd --check)."""
+    """Full systemd health diagnostic (butler --setup systemd --check)."""
     import os
     import subprocess
     from pathlib import Path
 
-    print("\nBantz — systemd Health Check")
+    print("\nButler — systemd Health Check")
     print("─" * 52)
 
     user = os.environ.get("USER", "")
@@ -1606,7 +1607,7 @@ def _systemd_check() -> None:
     if service_path.exists():
         print(f"✅ Service file: {service_path}")
     else:
-        print("❌ Service file: NOT FOUND — run: bantz --setup systemd")
+        print("❌ Service file: NOT FOUND — run: butler --setup systemd")
         return
 
     # 2. Linger

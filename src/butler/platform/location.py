@@ -284,6 +284,17 @@ def _linux_timezone() -> str:
 
 
 def _windows_timezone() -> str:
+    # tzlocal returns an IANA name on Windows (ZoneInfo)
+    try:
+        from tzlocal import get_localzone
+        tz = str(get_localzone())
+        if tz:
+            return tz
+    except ImportError:
+        pass
+    except Exception:
+        pass
+    # Fallback: Windows registry (non-IANA — only when tzlocal not installed)
     try:
         result = subprocess.run(
             ["powershell", "-Command",
@@ -293,16 +304,6 @@ def _windows_timezone() -> str:
         tz = result.stdout.strip()
         if tz:
             return tz
-    except Exception:
-        pass
-    # Fallback: tzlocal
-    try:
-        from tzlocal import get_localzone
-        tz = str(get_localzone())
-        if tz:
-            return tz
-    except ImportError:
-        pass
     except Exception:
         pass
     return os.environ.get("TZ", "UTC")
