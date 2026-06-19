@@ -477,6 +477,16 @@ async def _daemon() -> None:
     except Exception as _hk_exc:
         log.debug("Hotkey registration skipped: %s", _hk_exc)
 
+    # Start clipboard monitor
+    try:
+        from butler.interface.clipboard_monitor import clipboard_monitor
+        from butler.data.clipboard_store import ClipboardStore
+        from butler.data.layer import data_layer
+        clipboard_monitor.start(ClipboardStore(data_layer.kv))
+        log.info("Clipboard monitor started")
+    except Exception as _cb_exc:
+        log.debug("Clipboard monitor skipped: %s", _cb_exc)
+
     import os
     log.info("Daemon running — APScheduler=%s. PID: %d",
              "active" if config.job_scheduler_enabled else "off", os.getpid())

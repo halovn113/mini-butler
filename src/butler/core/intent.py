@@ -75,6 +75,17 @@ _ROUTING_HINTS: dict[str, str] = {
     "run_macro": "Execute a saved macro by name. 'run X macro', 'execute Y', 'çalıştır Z' → run_macro name=<name>.",
     "create_macro": "Create or update a macro with a sequence of steps. 'create a macro to X', 'record a macro', 'makro oluştur' → create_macro.",
     "delete_macro": "Delete a saved macro. 'delete X macro', 'remove Y', 'makro sil' → delete_macro name=<name>.",
+    # Phase 2 — Clipboard
+    "clip_history": "list clipboard history, recent copies, what did I copy",
+    "clip_get":     "get clipboard item number N, paste old clip",
+    "clip_clear":   "clear clipboard history",
+    # Phase 2 — Disk cleanup
+    "disk_scan":    "scan disk for junk, find large files, check node_modules, cleanup space",
+    "disk_clean":   "delete node_modules, clean pycache, free up disk space",
+    # Phase 2 — Project launcher
+    "list_projects":"list my projects, show projects",
+    "open_project": "open project X, start working on X, go to project X",
+    "add_project":  "add project X at path Y, save project",
 }
 
 
