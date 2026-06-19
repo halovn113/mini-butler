@@ -132,7 +132,7 @@ class GhostLoop:
                 bus.emit_threadsafe("stt_model_ready")
                 log.info("Ghost Loop: STT model ready")
             else:
-                error = "faster-whisper not installed — run: pip install 'bantz[voice]'"
+                error = "faster-whisper not installed — run: pip install 'butler[voice]'"
                 log.warning("Ghost Loop: STT unavailable — %s", error)
                 bus.emit_threadsafe("stt_model_failed", error=error)
         except Exception as exc:

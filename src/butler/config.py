@@ -43,7 +43,7 @@ class Config(BaseSettings):
     vlm_backend: str = Field("ollama", alias="BUTLER_VLM_BACKEND")  # "ollama" | "remote"
     vlm_model: str = Field("llava", alias="BUTLER_VLM_MODEL")  # e.g. llava, llava:13b, bakllava
     # Vision-guided executor model (Ollama name, or "gemini" for cloud).
-    # Empty = use VISION_MODEL_PRIORITY ladder in bantz/vision_executor.py.
+    # Empty = use VISION_MODEL_PRIORITY ladder in butler/vision_executor.py.
     vision_model: str = Field("", alias="BUTLER_VISION_MODEL")
     screenshot_quality: int = Field(70, alias="BUTLER_SCREENSHOT_QUALITY")
 

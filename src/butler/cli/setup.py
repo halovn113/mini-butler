@@ -79,7 +79,7 @@ def _setup_onboarding() -> None:
         from mempalace.entity_registry import EntityRegistry
     except ImportError:
         print("⚠  MemPalace is not installed.")
-        print("   Run: pip install 'bantz[memory]'")
+        print("   Run: pip install 'butler[memory]'")
         return
 
     from butler.memory.onboarding import is_onboarding_done, run_onboarding
@@ -1081,7 +1081,7 @@ async def _doctor() -> None:
             from transformers import AutoTokenizer  # noqa: F401
             print("✅ MarianMT: available")
         except ImportError:
-            print("❌ MarianMT: NOT installed  → pip install 'bantz[translation]'")
+            print("❌ MarianMT: NOT installed  → pip install 'butler[translation]'")
     else:
         print(f"⚪ Translation: {'disabled' if not config.translation_enabled else f'not needed (lang={config.language})'}")
 

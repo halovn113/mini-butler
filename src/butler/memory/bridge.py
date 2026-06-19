@@ -544,7 +544,10 @@ class MemPalaceBridge:
         tool_data: dict | None,
     ) -> None:
         """Synchronous store — runs in executor."""
-        from mempalace.miner import get_collection, add_drawer
+        try:
+            from mempalace.miner import get_collection, add_drawer
+        except ImportError:
+            return
 
         cfg = _get_config()
         palace_path = cfg.resolved_palace_path
@@ -892,8 +895,11 @@ class MemPalaceBridge:
 
     def _distill_session_sync(self, session_id: int) -> dict:
         """Synchronous distillation — runs in executor."""
+        try:
+            from mempalace.miner import get_collection, add_drawer
+        except ImportError:
+            return {"summary": "", "drawers_added": 0}
         from butler.data.connection_pool import get_pool
-        from mempalace.miner import get_collection, add_drawer
 
         cfg = _get_config()
 

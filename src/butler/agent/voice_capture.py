@@ -89,7 +89,7 @@ class VoiceCapture:
         if _missing:
             log.warning(
                 "VoiceCapture: missing voice dependencies: %s — "
-                "run: pip install 'bantz[voice]'",
+                "run: pip install 'butler[voice]'",
                 ", ".join(_missing),
             )
 

@@ -36,15 +36,19 @@ from io import BytesIO
 from pathlib import Path
 from typing import Callable, Coroutine
 
-from telegram import Update
-from telegram.constants import ChatAction
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    ContextTypes,
-    MessageHandler,
-    filters,
-)
+try:
+    from telegram import Update
+    from telegram.constants import ChatAction
+    from telegram.ext import (
+        Application,
+        CommandHandler,
+        ContextTypes,
+        MessageHandler,
+        filters,
+    )
+    _TELEGRAM_AVAILABLE = True
+except ImportError:
+    _TELEGRAM_AVAILABLE = False
 
 from butler.config import config
 from butler.core.finalizer import strip_internal
@@ -1144,11 +1148,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 # ── Bot runner ────────────────────────────────────────────────────────────────
 
 def run_bot() -> None:
+    if not _TELEGRAM_AVAILABLE:
+        print("❌ python-telegram-bot is not installed.")
+        print("   Run: pip install 'butler[telegram]'")
+        return
     token = config.telegram_bot_token
     if not token:
         print("❌ TELEGRAM_BOT_TOKEN not set!")
         print("   → Add TELEGRAM_BOT_TOKEN=... to .env")
-        print("   → or run: bantz --setup telegram")
+        print("   → or run: butler --setup telegram")
         return
 
     global _current_app

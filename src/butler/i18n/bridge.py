@@ -54,7 +54,7 @@ class _Translator:
         except ImportError:
             raise RuntimeError(
                 "transformers package not installed. "
-                "Install with: pip install 'bantz[translation]'"
+                "Install with: pip install 'butler[translation]'"
             )
 
     def translate(self, text: str) -> str:
