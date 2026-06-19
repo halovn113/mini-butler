@@ -3,8 +3,8 @@ Butler v2 — Google OAuth2 Flow
 Single-command browser-based setup.
 
 Usage:
-    bantz --setup google gmail
-    bantz --setup google classroom   ← can be different Google account
+    butler --setup google gmail
+    butler --setup google classroom   ← can be different Google account
 
 Flow:
     1. Check credentials.json exists
@@ -111,4 +111,4 @@ def _print_credentials_help(path: Path) -> None:
     print("  6. Download JSON → rename to 'credentials.json'")
     print(f"  7. Move to: {path}")
     print()
-    print("Then run: bantz --setup google gmail")
+    print("Then run: butler --setup google gmail")

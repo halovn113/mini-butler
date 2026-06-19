@@ -1,5 +1,5 @@
 """
-Bantz — Core type definitions (hotfix #228)
+Butler — Core type definitions (hotfix #228)
 
 Houses ``BrainResult`` and other shared response types so that
 **no module needs to import brain.py** just to reference the

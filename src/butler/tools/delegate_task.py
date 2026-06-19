@@ -1,5 +1,5 @@
 """
-Bantz — Delegate Task Tool (#321)
+Butler — Delegate Task Tool (#321)
 
 Allows the Brain orchestrator to delegate sub-tasks to specialised
 sub-agents (Researcher, Developer, Reviewer) via the AgentManager.

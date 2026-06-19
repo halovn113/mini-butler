@@ -1,7 +1,7 @@
 """
-Bantz — Wake Word Listener (#165)
+Butler — Wake Word Listener (#165)
 
-Always-on "Hey Bantz" detection via Picovoice Porcupine.
+Always-on "Hey Butler" detection via Picovoice Porcupine.
 Runs in a dedicated daemon thread with its own audio stream —
 completely independent of APScheduler and the Textual event loop.
 
@@ -24,8 +24,8 @@ Key decisions:
   - Dedicated thread (NOT APScheduler) — audio stream.read() is blocking
     and continuous; an interval job would overflow the audio buffer.
   - Mic stays open during TTS — Porcupine is excellent at rejecting
-    non-wake-word audio.  This lets users interrupt Bantz mid-speech
-    with "Hey Bantz" → tts.stop() → immediate silence.
+    non-wake-word audio.  This lets users interrupt Butler mid-speech
+    with "Hey Butler" → tts.stop() → immediate silence.
   - No STT in this issue — wake word detection only.  Speech-to-text
     (Whisper/Ollama) is a separate future issue.
   - Graceful degradation: if pvporcupine or pyaudio are missing,
@@ -49,7 +49,7 @@ log = logging.getLogger("butler.wake_word")
 _COOLDOWN_SECONDS = 2.0
 
 # Default built-in keyword (Porcupine ships "Hey Google", "Alexa", etc.
-# but for a custom "Hey Bantz" we need a .ppn file trained on Picovoice Console).
+# but for a custom "Hey Butler" we need a .ppn file trained on Picovoice Console).
 # If no custom keyword file exists, fall back to "Computer" (built-in).
 _FALLBACK_KEYWORD = "computer"
 
@@ -376,13 +376,13 @@ class WakeWordListener:
             return ""
 
     def _find_keyword_path(self) -> Optional[str]:
-        """Look for a custom Bantz .ppn wake word model.
+        """Look for a custom Butler .ppn wake word model.
 
         Search order:
           1. Data dir (data_dir() or BUTLER_DATA_DIR)
           2. Project / working directory
 
-        Patterns: hey-bantz*.ppn, hey_bantz*.ppn, Bantz*.ppn, bantz*.ppn
+        Patterns: hey-butler*.ppn, hey_butler*.ppn, Butler*.ppn, butler*.ppn
 
         Returns None to use built-in fallback keyword.
         """

@@ -2,7 +2,7 @@
 Butler v2 — Butler Greeting
 
 Context-aware proactive greeting on app launch.
-Bantz is an Operations Director — direct, specific, data-driven.
+Butler is an Operations Director — direct, specific, data-driven.
 Combines absence awareness, time-of-day, and live service summaries.
 """
 from __future__ import annotations
@@ -69,7 +69,7 @@ class Butler:
         tag = profile.name or "boss"
 
         if is_first:
-            return f"{greeting}, {tag}. Bantz here — ready to go."
+            return f"{greeting}, {tag}. Butler here — ready to go."
 
         if absence_hours < 1:
             return f"Welcome back, {tag}."

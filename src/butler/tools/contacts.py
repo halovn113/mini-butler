@@ -1,5 +1,5 @@
 """
-Bantz v3 — Google Contacts Tool
+Butler v3 — Google Contacts Tool
 Read and search contacts via Google People API.
 
 Actions:
@@ -76,7 +76,7 @@ class ContactsTool(BaseTool):
         if contacts is None:
             return ToolResult(
                 success=False, output="",
-                error="Google Contacts not configured. Run: bantz --setup google gmail",
+                error="Google Contacts not configured. Run: butler --setup google gmail",
             )
 
         q_lower = query.lower()

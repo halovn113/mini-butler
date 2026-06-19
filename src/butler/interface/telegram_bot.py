@@ -1,5 +1,5 @@
 """
-Bantz v3 — Telegram Bot
+Butler v3 — Telegram Bot
 
 Dual-path remote telegraph for phone access:
   1. Express Wire (/commands) — fast, LLM-free direct tool calls
@@ -62,7 +62,7 @@ if _PROXY:
     os.environ.setdefault("HTTP_PROXY", _PROXY)
 
 logging.basicConfig(
-    format="%(asctime)s [bantz-tg] %(levelname)s — %(message)s",
+    format="%(asctime)s [butler-tg] %(levelname)s — %(message)s",
     level=logging.INFO,
 )
 log = logging.getLogger(__name__)
@@ -407,11 +407,11 @@ async def _stream_to_placeholder(placeholder, stream, *, interval: float = _STRE
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     _active_chats.add(update.effective_chat.id)
     llm_hint = (
-        "\n\n💬 Or just type any message — Bantz will respond "
+        "\n\n💬 Or just type any message — Butler will respond "
         "with the full power of his brain."
     ) if config.telegram_llm_mode else ""
     await update.message.reply_text(
-        "🦌 Bantz is live!\n\n"
+        "🦌 Butler is live!\n\n"
         "Commands:\n"
         "/briefing — daily summary\n"
         "/hava — weather report\n"
@@ -803,7 +803,7 @@ async def cmd_news(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle incoming photos — pass to VLM for description/analysis.
 
-    Ma'am can send a screenshot to Bantz and ask him to analyse it.
+    Ma'am can send a screenshot to Butler and ask him to analyse it.
     The caption (if any) becomes the user's question about the image.
     """
     if not config.telegram_llm_mode:
@@ -1251,7 +1251,7 @@ def run_bot() -> None:
         _rotate_session, time=_session_rotate_time, name="session_rotation",
     )
 
-    log.info("🦌 Bantz Telegram bot starting...")
+    log.info("🦌 Butler Telegram bot starting...")
     if _PROXY:
         log.info(f"   Proxy: {_PROXY}")
     if _ALLOWED:

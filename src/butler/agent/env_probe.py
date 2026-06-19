@@ -1,5 +1,5 @@
 """
-Bantz environment probe — runs once at import time and caches the result.
+Butler environment probe — runs once at import time and caches the result.
 
 Builds a lightweight snapshot of the host environment so the planner can
 make informed decisions (right browser, right terminal, right editor) without

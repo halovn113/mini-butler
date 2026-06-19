@@ -1,5 +1,5 @@
 """
-Bantz v3 — Remote VLM Client (#120)
+Butler v3 — Remote VLM Client (#120)
 
 REST client for analysing screenshots via a remote Vision Language Model.
 The VLM can run on:

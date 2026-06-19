@@ -1,5 +1,5 @@
 """
-Bantz v3 — Proactive Engagement Engine (#167)
+Butler v3 — Proactive Engagement Engine (#167)
 
 Initiates context-aware conversations during idle periods.  Uses APScheduler
 cron job with jitter, context gate (AppDetector), vector DB with time-decay

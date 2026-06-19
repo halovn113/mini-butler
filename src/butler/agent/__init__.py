@@ -1,1 +1,1 @@
-# bantz.agent — proactive background agents
+# butler.agent — proactive background agents

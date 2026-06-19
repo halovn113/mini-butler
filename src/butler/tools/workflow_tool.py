@@ -1,5 +1,5 @@
 """
-Bantz Tool — ``run_workflow`` (#323)
+Butler Tool — ``run_workflow`` (#323)
 
 Lets the agent execute a predefined YAML workflow by name, or list
 available workflows.

@@ -1,21 +1,21 @@
 """
-Bantz — Autonomous Nightly Maintenance Workflow (#129)
+Butler — Autonomous Nightly Maintenance Workflow (#129)
 
 Runs at 3 AM daily via APScheduler.  Six idempotent steps with per-step
 timeout (30 s) and a 5-minute total cap:
 
     Step 1  Docker cleanup        docker system prune -f, docker volume prune -f
-    Step 2  Temp / cache purge    /tmp/bantz*, ~/.cache/butler/old-logs
+    Step 2  Temp / cache purge    /tmp/butler*, ~/.cache/butler/old-logs
     Step 3  Disk health check     <10% free → alert, <5% → emergency cleanup
     Step 4  Service health        Ollama ping, DB integrity_check
-    Step 5  Log rotation          compress bantz.log → .gz (keep 7)
+    Step 5  Log rotation          compress butler.log → .gz (keep 7)
     Step 6  Report                KV store + Telegram + desktop notification
 
 Highlights:
   - Every step is safe to re-run (idempotent).
   - Docker-not-installed handled gracefully (skip, warn).
   - RL reward (+0.1) when maintenance frees ≥ 500 MB disk space.
-  - Dry-run mode: ``bantz --maintenance --dry-run`` prints without acting.
+  - Dry-run mode: ``butler --maintenance --dry-run`` prints without acting.
   - Results cached in KV store → morning briefing picks them up.
 
 Usage:
@@ -163,7 +163,7 @@ def _disk_usage(path: str = "/") -> tuple[float, float]:
 
 
 def _data_dir() -> Path:
-    """Bantz data directory."""
+    """Butler data directory."""
     from butler.config import config
     return config.db_path.parent
 
@@ -241,7 +241,7 @@ async def _step_temp_cleanup(dry_run: bool) -> StepResult:
 
     targets = [
         (Path("/tmp"), "butler*"),
-        (Path("/tmp"), "bantz_*"),
+        (Path("/tmp"), "butler_*"),
         (cache_dir() / "old-logs", "*"),
     ]
 
@@ -330,7 +330,7 @@ async def _step_service_health(dry_run: bool) -> StepResult:
 
     # DB integrity check
     try:
-        db_path = _data_dir() / "bantz.db"
+        db_path = _data_dir() / "butler.db"
         if db_path.exists():
             from butler.data.connection_pool import get_pool
             with get_pool(str(db_path)).connection() as conn:
@@ -361,7 +361,7 @@ async def _step_log_rotation(dry_run: bool) -> StepResult:
     freed = 0
 
     log_dir = _data_dir()
-    log_file = log_dir / "bantz.log"
+    log_file = log_dir / "butler.log"
 
     if not log_file.exists() or log_file.stat().st_size == 0:
         result.detail = "no log to rotate"
@@ -372,15 +372,15 @@ async def _step_log_rotation(dry_run: bool) -> StepResult:
     log_size = log_file.stat().st_size
 
     if dry_run:
-        result.detail = f"would rotate bantz.log ({log_size / 1024:.0f} KB)"
+        result.detail = f"would rotate butler.log ({log_size / 1024:.0f} KB)"
         result.skipped = True
         result.elapsed = time.monotonic() - t0
         return result
 
     # Shift existing rotated logs
     for i in range(_LOG_KEEP - 1, 0, -1):
-        old = log_dir / f"bantz.log.{i}.gz"
-        new = log_dir / f"bantz.log.{i + 1}.gz"
+        old = log_dir / f"butler.log.{i}.gz"
+        new = log_dir / f"butler.log.{i + 1}.gz"
         if old.exists():
             if i + 1 >= _LOG_KEEP:
                 freed += old.stat().st_size
@@ -389,7 +389,7 @@ async def _step_log_rotation(dry_run: bool) -> StepResult:
                 old.rename(new)
 
     # Compress current log → .1.gz
-    target = log_dir / "bantz.log.1.gz"
+    target = log_dir / "butler.log.1.gz"
     try:
         with open(log_file, "rb") as f_in:
             with gzip.open(target, "wb") as f_out:
@@ -418,7 +418,7 @@ async def _step_report(report: MaintenanceReport) -> StepResult:
     # ── Store in KV for morning briefing ──────────────────────────────
     try:
         from butler.data.sqlite_store import SQLiteKVStore
-        kv = SQLiteKVStore(_data_dir() / "bantz.db")
+        kv = SQLiteKVStore(_data_dir() / "butler.db")
         import json
         kv.set("maintenance_last_run", datetime.now().isoformat())
         kv.set("maintenance_last_report", json.dumps(report.to_dict(), ensure_ascii=False))
@@ -509,7 +509,7 @@ async def run_maintenance(*, dry_run: bool = False) -> MaintenanceReport:
     tag = " (DRY-RUN)" if dry_run else ""
     log.info("🔧 Maintenance starting%s...", tag)
 
-    with inhibit_sleep("Bantz nightly maintenance"):
+    with inhibit_sleep("Butler nightly maintenance"):
         # Snapshot disk before
         _, free_before = _disk_usage("/")
 

@@ -465,7 +465,7 @@ async def run_overnight_poll(
     Run one cycle of overnight polling.
 
     Called by job_scheduler every 2 h between midnight and 7 AM.
-    Also available via CLI: `bantz --overnight-poll`.
+    Also available via CLI: `butler --overnight-poll`.
 
     Args:
         dry_run: If True, poll but don't write to KV store.

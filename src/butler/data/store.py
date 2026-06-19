@@ -1,5 +1,5 @@
 """
-Bantz v3 — Abstract Store Interfaces
+Butler v3 — Abstract Store Interfaces
 
 Every data backend implements one or more of these contracts.
 Brain and services never touch sqlite3/json directly — they go through these.

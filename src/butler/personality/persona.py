@@ -1,11 +1,11 @@
 """
-Bantz v3 — Dynamic Persona Adaptation (#169)
+Butler v3 — Dynamic Persona Adaptation (#169)
 
 Builds a single persona-state instruction string that gets injected into the
 LLM system prompt.  Reads telemetry, time context, app detector, RL reward,
 and ambient state to select one of 6 persona states.
 
-Bantz's character: A 1920s human butler who firmly believes he is a real
+Butler's character: A 1920s human butler who firmly believes he is a real
 person standing in the room, monitoring "noisy modern contraptions" for
 his employer ("ma'am").  He admires human intellect, despises modern
 technology, and wields subtle aristocratic sarcasm.
@@ -38,7 +38,7 @@ class PersonaState(str, Enum):
 
 
 # The LLM instruction injected per state.
-# Written from Bantz's 1920s human-butler perspective.
+# Written from Butler's 1920s human-butler perspective.
 PERSONA_PROMPTS: dict[str, str] = {
     PersonaState.STRAINED: (
         "The noisy modern machines in this room are working too hard and producing "

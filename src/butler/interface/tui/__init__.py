@@ -1,1 +1,1 @@
-"""Bantz — Textual TUI package."""
+"""Butler — Textual TUI package."""

@@ -1,7 +1,7 @@
 """
-Bantz — Memory Injector (#227, refactored for #211)
+Butler — Memory Injector (#227, refactored for #211)
 
-Gathers all **context signals** into a single ``BantzContext`` object
+Gathers all **context signals** into a single ``ButlerContext`` object
 ready for ``prompt_builder``.
 
 Architecture split (Issue #211 — Architect's Revision):
@@ -36,7 +36,7 @@ Key design decisions:
 
 Public API (unchanged)
 ----------------------
-- ``inject(ctx, en_input)`` → populate ``BantzContext`` memory fields
+- ``inject(ctx, en_input)`` → populate ``ButlerContext`` memory fields
 - Individual helpers also exported for fine-grained use.
 """
 from __future__ import annotations
@@ -45,7 +45,7 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from butler.core.context import BantzContext
+    from butler.core.context import ButlerContext
 
 log = logging.getLogger("butler.memory_injector")
 
@@ -242,7 +242,7 @@ async def deep_memory_context(user_msg: str) -> str:
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-async def inject(ctx: "BantzContext", en_input: str) -> None:
+async def inject(ctx: "ButlerContext", en_input: str) -> None:
     """Populate all memory/persona fields on *ctx* concurrently.
 
     Historical memory (graph, vector, deep) is gathered via

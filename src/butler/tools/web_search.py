@@ -1,14 +1,14 @@
 """Web tools backed by the bundled bantz-web pipeline (vendor/ submodule).
 
-Wraps bantz-web's search / deep-research / news functions so bantzv2 calls
+Wraps bantz-web's search / deep-research / news functions so butler calls
 them in-process — no HTTP, no subprocess.
 
 Import-isolation note: the vendor dir is *appended* to sys.path (not
 inserted at 0). bantz-web ships flat modules with generic names — notably
-``telegram.py`` — and prepending would shadow bantzv2's installed
+``telegram.py`` — and prepending would shadow butler's installed
 ``python-telegram-bot`` (`import telegram`). Appending lets installed
 packages win while bantz-web's own modules (``searcher``, ``config`` …)
-still resolve, since bantzv2 has no top-level modules by those names.
+still resolve, since butler has no top-level modules by those names.
 """
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ if os.path.isdir(_VENDOR) and _VENDOR not in sys.path:
 _GIT_SILENCED = False
 
 
-def _silence_bantz_web_git() -> None:
+def _silence_butler_web_git() -> None:
     global _GIT_SILENCED
     if _GIT_SILENCED:
         return
@@ -111,7 +111,7 @@ def execute_web_research(topic: str, max_results: int = DEFAULT_RESEARCH_RESULTS
     import main as bw_main  # noqa: PLC0415
     import storage  # noqa: PLC0415
 
-    _silence_bantz_web_git()
+    _silence_butler_web_git()
     session = storage.new_session(topic, "research")
     sess_path = storage.session_path(topic)
     storage.save(sess_path, session)

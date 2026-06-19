@@ -1,5 +1,5 @@
 """
-Bantz — Central SQLite Connection Pool (#222)
+Butler — Central SQLite Connection Pool (#222)
 
 Singleton pool enforcing:
   - Single-writer via application-level ``_write_lock`` (threading.Lock)

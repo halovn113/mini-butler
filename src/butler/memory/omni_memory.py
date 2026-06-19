@@ -1,5 +1,5 @@
 """
-Bantz — OmniMemoryManager (#211)
+Butler — OmniMemoryManager (#211)
 
 Unified memory orchestrator that replaces the scatter-shot context gathering
 with a **budget-aware, parallel hybrid search** pipeline.

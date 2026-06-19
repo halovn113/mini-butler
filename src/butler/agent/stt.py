@@ -1,5 +1,5 @@
 """
-Bantz — Local STT via faster-whisper (#36, The Ghost Loop)
+Butler — Local STT via faster-whisper (#36, The Ghost Loop)
 
 Transcribes raw PCM audio to text using faster-whisper, a CTranslate2-
 accelerated Whisper implementation.  Runs completely offline on CPU
@@ -141,7 +141,7 @@ class STTEngine:
                 ),
                 # Initial prompt biases the model toward expected vocabulary,
                 # reducing common Whisper errors like "what" → "but".
-                initial_prompt="The user is speaking a command to Bantz.",
+                initial_prompt="The user is speaking a command to Butler.",
             )
 
             # Collect all segment texts
@@ -155,7 +155,7 @@ class STTEngine:
 
             # Whisper sometimes regurgitates the initial_prompt verbatim when
             # audio is unclear or silent. Detect and discard those.
-            _PROMPT_ECHO = "The user is speaking a command to Bantz"
+            _PROMPT_ECHO = "The user is speaking a command to Butler"
             if _PROMPT_ECHO.lower() in result.lower():
                 log.warning("STT: discarding prompt-echo transcript: %r", result[:80])
                 return None

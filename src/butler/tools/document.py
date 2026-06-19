@@ -1,5 +1,5 @@
 """
-Bantz v3 — Document Tool
+Butler v3 — Document Tool
 Reads, summarizes, and answers questions about documents.
 Supports PDF (text + tables), DOCX, TXT, MD, CSV, and more.
 

@@ -1,5 +1,5 @@
 """
-Bantz — Desktop notification dispatcher (#153).
+Butler — Desktop notification dispatcher (#153).
 
 Zero-dependency Linux desktop notifications via ``notify-send``.
 Integrates with the Intervention Queue (#126) and AppDetector (#127)
@@ -153,12 +153,12 @@ class Notifier:
             title_lower = win.title.lower()
 
             # Check if TUI-like window is active
-            # TUI runs as "python -m bantz" so active window is usually
+            # TUI runs as "python -m butler" so active window is usually
             # the terminal with "butler" in the title
             if "butler" in title_lower:
                 return True
 
-            # Also check if it's a terminal running bantz
+            # Also check if it's a terminal running butler
             if name_lower in _TUI_IDENTIFIERS:
                 return "butler" in title_lower
 

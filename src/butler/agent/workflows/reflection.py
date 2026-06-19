@@ -1,5 +1,5 @@
 """
-Bantz — Nightly Memory Reflection Workflow (#130)
+Butler — Nightly Memory Reflection Workflow (#130)
 
 Runs at 11 PM daily via APScheduler.  Compresses the day's conversations
 into a coherent daily reflection with entity extraction and graph updates.
@@ -36,9 +36,9 @@ Usage:
     report = await run_reflection(dry_run=False)
 
     # CLI
-    bantz --reflect              # run now
-    bantz --reflect --dry-run    # simulate
-    bantz --reflections          # view past reflections
+    butler --reflect              # run now
+    butler --reflect --dry-run    # simulate
+    butler --reflections          # view past reflections
 """
 from __future__ import annotations
 
@@ -77,7 +77,7 @@ _REFLECTION_RETENTION_DAYS = 0  # 0 = keep forever
 # ── Prompts ──────────────────────────────────────────────────────────────
 
 _REFLECTION_SYSTEM = """\
-You are Bantz's nightly self-reflection engine.  Given today's conversation \
+You are Butler's nightly self-reflection engine.  Given today's conversation \
 summaries, produce a structured daily reflection in JSON format.
 
 OUTPUT — valid JSON only, no markdown fences:
@@ -597,7 +597,7 @@ async def _store_reflection(
     # KV store for --reflections and morning briefing
     try:
         from butler.data.sqlite_store import SQLiteKVStore
-        kv = SQLiteKVStore(_data_dir() / "bantz.db")
+        kv = SQLiteKVStore(_data_dir() / "butler.db")
         kv.set(f"reflection_{result.date}", json.dumps(result.to_dict(), ensure_ascii=False))
         kv.set("reflection_latest", json.dumps(result.to_dict(), ensure_ascii=False))
         kv.set("reflection_latest_date", result.date)
@@ -750,7 +750,7 @@ def list_reflections(limit: int = 10) -> list[dict]:
     """List recent daily reflections from KV store."""
     try:
         from butler.data.sqlite_store import SQLiteKVStore
-        kv = SQLiteKVStore(_data_dir() / "bantz.db")
+        kv = SQLiteKVStore(_data_dir() / "butler.db")
         all_keys = kv.all()
         reflection_keys = sorted(
             [k for k in all_keys if k.startswith("reflection_2")],
@@ -794,7 +794,7 @@ async def run_reflection(
 
     result = ReflectionResult(date=date_str)
 
-    with inhibit_sleep("Bantz nightly reflection"):
+    with inhibit_sleep("Butler nightly reflection"):
         deadline = time.monotonic() + _TOTAL_TIMEOUT
 
         # ── 1. Collect today's data ──────────────────────────────────────

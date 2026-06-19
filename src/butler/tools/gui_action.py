@@ -1,5 +1,5 @@
 """
-Bantz v3 — GUI Action Tool (#123)
+Butler v3 — GUI Action Tool (#123)
 
 Unified tool for natural-language GUI interactions.
 Bridges the Navigator pipeline (AT-SPI → Cache → VLM → fallback) with

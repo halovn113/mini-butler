@@ -1,5 +1,5 @@
 """
-Bantz — ComputerUseTool: visual desktop/web automation via AutonomousVisionLoop (#188)
+Butler — ComputerUseTool: visual desktop/web automation via AutonomousVisionLoop (#188)
 
 Registered in the tool registry as "computer_use".  Allows the planner and
 cot_route() to delegate visual navigation tasks to the VLM loop.

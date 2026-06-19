@@ -1,7 +1,7 @@
 """
 Butler v2 — Time Context
 Pure Python time-of-day awareness. No LLM, no API.
-Gives Bantz context about when it is so responses feel natural.
+Gives Butler context about when it is so responses feel natural.
 """
 from __future__ import annotations
 

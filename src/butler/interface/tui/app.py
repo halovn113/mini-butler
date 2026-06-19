@@ -1,16 +1,16 @@
 """
-Bantz — Textual TUI Application (#431, Ghost Loop integration)
+Butler — Textual TUI Application (#431, Ghost Loop integration)
 
-Main Textual App class for the Bantz assistant.  Bridges the EventBus
-(background threads) with the Textual UI thread via a ``BantzEventMessage``
+Main Textual App class for the Butler assistant.  Bridges the EventBus
+(background threads) with the Textual UI thread via a ``ButlerEventMessage``
 Textual Message, keeping all widget mutations on the correct thread.
 
 Event flow:
     Background thread
         └─ bus.emit_threadsafe("voice_input", text=...)
              └─ _bus_handler(event) — registered in _subscribe_event_bus
-                  └─ app.call_from_thread(app.post_message, BantzEventMessage(event))
-                       └─ on_bantz_event_message(self, msg)   ← Textual main thread
+                  └─ app.call_from_thread(app.post_message, ButlerEventMessage(event))
+                       └─ on_butler_event_message(self, msg)   ← Textual main thread
                             └─ _on_bus_voice_input / _on_bus_ghost_listening / …
 """
 from __future__ import annotations
@@ -30,7 +30,7 @@ log = logging.getLogger("butler.tui")
 # Message carrier — bridges bus events to the Textual main thread
 # ═══════════════════════════════════════════════════════════════════════════
 
-class BantzEventMessage(Message):
+class ButlerEventMessage(Message):
     """Carries an EventBus Event from a background thread to the Textual thread."""
 
     def __init__(self, event: Event) -> None:
@@ -39,11 +39,11 @@ class BantzEventMessage(Message):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# BantzApp — main Textual application
+# ButlerApp — main Textual application
 # ═══════════════════════════════════════════════════════════════════════════
 
-class BantzApp(App):
-    """Main Textual application for the Bantz assistant."""
+class ButlerApp(App):
+    """Main Textual application for the Butler assistant."""
 
     CSS = """
     Screen {
@@ -110,7 +110,7 @@ class BantzApp(App):
 
         def _handler(event: Event) -> None:
             try:
-                self.call_from_thread(self.post_message, BantzEventMessage(event))
+                self.call_from_thread(self.post_message, ButlerEventMessage(event))
             except Exception:
                 pass
 
@@ -140,7 +140,7 @@ class BantzApp(App):
 
     # ── Textual message handler (runs on Textual main thread) ────────────
 
-    def on_bantz_event_message(self, message: BantzEventMessage) -> None:
+    def on_butler_event_message(self, message: ButlerEventMessage) -> None:
         """Dispatch incoming bus events to the appropriate handler."""
         name = message.event.name
         if name == "voice_input":

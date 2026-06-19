@@ -1,5 +1,5 @@
 """
-Bantz v3 — Screenshot Capture (#120)
+Butler v3 — Screenshot Capture (#120)
 
 Captures the full screen or the active window, with optional ROI
 (Region Of Interest) cropping.  Outputs JPEG bytes at configurable

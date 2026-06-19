@@ -1,5 +1,5 @@
 """
-Bantz v3 — Unified Contact Resolver (#254)
+Butler v3 — Unified Contact Resolver (#254)
 
 Single source of truth for resolving human names → email addresses.
 Eliminates the "Two-Headed Dragon" problem where gmail.py and contacts.py

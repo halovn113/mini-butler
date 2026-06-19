@@ -1,5 +1,5 @@
 """
-Bantz — Ambient Sound Analyser (#166)
+Butler — Ambient Sound Analyser (#166)
 
 Passive environmental audio classifier that piggybacks on the
 WakeWordListener's existing microphone stream.  **No new pyaudio

@@ -1,5 +1,5 @@
 """
-Bantz — secure local file writes.
+Butler — secure local file writes.
 
 Sensitive data files (GPS coordinates, saved places, user profile, session
 state) must never exist on disk — even momentarily — with world-readable

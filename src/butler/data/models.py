@@ -1,7 +1,7 @@
 """
-Bantz v3 — Data Models
+Butler v3 — Data Models
 
-Pydantic models for all persistent entities in the Bantz ecosystem.
+Pydantic models for all persistent entities in the Butler ecosystem.
 These replace the raw dicts that were passed around in v2.
 
 Usage:

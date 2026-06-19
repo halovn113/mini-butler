@@ -1,11 +1,11 @@
 """
-Bantz — Location Handler (#225)
+Butler — Location Handler (#225)
 
 Extracts all GPS / place-management side-effects from ``brain.py`` into a
 standalone module.  These functions interact with:
-  - ``bantz.core.location``   — IP / GeoClue location service
-  - ``bantz.core.gps_server`` — phone GPS relay
-  - ``bantz.core.places``     — named-place CRUD (PlaceStore)
+  - ``butler.core.location``   — IP / GeoClue location service
+  - ``butler.core.gps_server`` — phone GPS relay
+  - ``butler.core.places``     — named-place CRUD (PlaceStore)
 
 None of them touch the LLM, routing, or memory — they are pure
 side-effect handlers that return formatted strings for the assistant.

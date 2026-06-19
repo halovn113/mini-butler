@@ -1,5 +1,5 @@
 """
-Bantz v3 — Accessibility Tool (#119)
+Butler v3 — Accessibility Tool (#119)
 
 Linux AT-SPI2 accessibility reader for instant UI element location.
 Uses the OS accessibility tree to find UI elements with bounding boxes —

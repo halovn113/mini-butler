@@ -1,5 +1,5 @@
 """
-Bantz — Sub-Agent Base & Specialized Roles (#321)
+Butler — Sub-Agent Base & Specialized Roles (#321)
 
 Multi-Agent Hierarchy inspired by JARVIS.  The main Brain orchestrator
 can delegate sub-tasks to specialized agents that have their own system
@@ -330,7 +330,7 @@ class ResearcherAgent(SubAgent):
     }
 
     system_prompt = """\
-You are a Research Agent — a specialised sub-agent within the Bantz system.
+You are a Research Agent — a specialised sub-agent within the Butler system.
 Your job is to find accurate, up-to-date information using web search and
 URL reading tools.
 
@@ -377,7 +377,7 @@ class DeveloperAgent(SubAgent):
     }
 
     system_prompt = """\
-You are a Developer Agent — a specialised sub-agent within the Bantz system.
+You are a Developer Agent — a specialised sub-agent within the Butler system.
 Your job is to write code, run shell commands, and handle file operations.
 
 RULES:
@@ -425,7 +425,7 @@ class ReviewerAgent(SubAgent):
     max_tool_calls = 3  # reviewers should be focused
 
     system_prompt = """\
-You are a Reviewer Agent — a specialised sub-agent within the Bantz system.
+You are a Reviewer Agent — a specialised sub-agent within the Butler system.
 Your job is to check work quality, validate information, and provide
 constructive feedback.
 

@@ -1,5 +1,5 @@
 """
-Bantz — Thread-Safe Async EventBus (#220, Sprint 3 Part 1)
+Butler — Thread-Safe Async EventBus (#220, Sprint 3 Part 1)
 
 A **singleton** publish/subscribe event bus that bridges background
 sensor threads (wake_word, observer, ambient) with the asyncio-based
@@ -21,7 +21,7 @@ Design constraints solved here
 3. **Zero coupling.**  Sensors import *only* this module; they never
    import brain.py, tui/app.py, or each other.
 
-Public API (all importable from ``bantz.core.event_bus``)
+Public API (all importable from ``butler.core.event_bus``)
 ---------------------------------------------------------
 .. code-block:: python
 
@@ -45,8 +45,8 @@ Public API (all importable from ``bantz.core.event_bus``)
     # ── Unsubscribe ───────────────────────────────
     bus.off("WAKE_WORD_DETECTED", on_wake)
 
-This module is **dependency-free** within the ``bantz`` package — it
-imports nothing from ``bantz.*`` and can be safely imported anywhere.
+This module is **dependency-free** within the ``butler`` package — it
+imports nothing from ``butler.*`` and can be safely imported anywhere.
 """
 from __future__ import annotations
 

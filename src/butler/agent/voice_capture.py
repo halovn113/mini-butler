@@ -1,5 +1,5 @@
 """
-Bantz — Voice Capture with VAD (#36, The Ghost Loop)
+Butler — Voice Capture with VAD (#36, The Ghost Loop)
 
 Records microphone audio and uses Voice Activity Detection (WebRTC VAD)
 to automatically stop recording when the user finishes speaking.

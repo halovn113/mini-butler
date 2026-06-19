@@ -1,5 +1,5 @@
 """
-Bantz — RL Hooks (#226, updated for #221 Affinity Engine)
+Butler — RL Hooks (#226, updated for #221 Affinity Engine)
 
 Extracted from ``brain.py``: reward signals that fire after tool
 execution and sentiment feedback.

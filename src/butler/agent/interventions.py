@@ -1,5 +1,5 @@
 """
-Bantz — Proactive intervention queue (#126).
+Butler — Proactive intervention queue (#126).
 
 Bridges RL engine, observer, and scheduler into a unified intervention
 system with priority queue, rate limiting, focus/quiet modes, and

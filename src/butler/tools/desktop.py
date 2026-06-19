@@ -1,5 +1,5 @@
 """
-Bantz v3 — Desktop Automation Tool (#322)
+Butler v3 — Desktop Automation Tool (#322)
 
 Unified tool for computer use & desktop automation.  Bridges the AT-SPI
 accessibility tree (read) with input_control (act) to provide a single

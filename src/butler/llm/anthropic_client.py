@@ -1,5 +1,5 @@
 """
-Bantz — Anthropic Claude client
+Butler — Anthropic Claude client
 Raw httpx implementation — no SDK dependency.
 Supports claude-opus-4-8, claude-sonnet-4-6, claude-haiku-4-5-20251001.
 """

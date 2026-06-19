@@ -1,7 +1,7 @@
 """
-Bantz — Audio Ducking (#171)
+Butler — Audio Ducking (#171)
 
-Lowers other applications' audio volume while Bantz speaks via TTS,
+Lowers other applications' audio volume while Butler speaks via TTS,
 then restores it afterwards — like car navigation ducking the music.
 
 Architecture:
@@ -24,7 +24,7 @@ Key decisions:
   - pactl ONLY — works on both PulseAudio and PipeWire (via
     pipewire-pulse bridge).  No wpctl parsing nightmare.
   - PULSE_PROP tagging: tts.py sets PULSE_PROP=application.name='ButlerTTS'
-    on aplay so the ducker can filter Bantz's own audio by name.
+    on aplay so the ducker can filter Butler's own audio by name.
     No unreliable PID matching.
   - Sync-only: instant volume set (no async fade in MVP).  Fast 3-step
     fade with time.sleep(15ms) optional enhancement.
@@ -50,7 +50,7 @@ _FADE_STEP_MS = 15
 
 
 class AudioDucker:
-    """Ducks other applications' audio while Bantz's TTS is active.
+    """Ducks other applications' audio while Butler's TTS is active.
 
     Usage (called internally by TTSEngine):
         ducker.duck()     # lower other apps' volume
@@ -76,7 +76,7 @@ class AudioDucker:
         return self._ducked
 
     def duck(self) -> bool:
-        """Lower volume of all non-Bantz audio streams.
+        """Lower volume of all non-Butler audio streams.
 
         Returns True if ducking was applied (at least one stream ducked).
         Safe to call multiple times — second call is a no-op.

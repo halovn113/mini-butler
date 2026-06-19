@@ -1,5 +1,5 @@
 """
-Bantz v3 — Deep Web Reader Tool (#182 / Plan A)
+Butler v3 — Deep Web Reader Tool (#182 / Plan A)
 
 "The Butler Reads the Full Article"
 

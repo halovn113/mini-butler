@@ -1,5 +1,5 @@
 """
-Bantz v3 — Daily & Weekly Digest (#88)
+Butler v3 — Daily & Weekly Digest (#88)
 
 Evening daily digest and Sunday weekly digest combining all data sources.
 Gemini Flash synthesises the raw data into a natural language summary.

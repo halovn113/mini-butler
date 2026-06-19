@@ -1,5 +1,5 @@
 """
-Bantz v3 — Browser Vision Module
+Butler v3 — Browser Vision Module
 
 VLM-based browser automation:
   1. wait_for_load    — take screenshots until the page stops changing (loaded)

@@ -1,5 +1,5 @@
 """
-Bantz v3 — Google Calendar Tool
+Butler v3 — Google Calendar Tool
 Full CRUD with smart time parsing, recurring events, attendees,
 conflict detection, and morning-briefing integration.
 

@@ -1,5 +1,5 @@
 """
-Bantz — Routing Engine (#228, #272)
+Butler — Routing Engine (#228, #272)
 
 Owns routing logic that decides *what* the brain should do for a given
 user utterance.

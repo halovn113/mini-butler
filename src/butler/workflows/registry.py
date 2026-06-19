@@ -3,7 +3,7 @@ Workflow Registry — discovers and caches WorkflowDef from YAML files.
 
 Scans:
   1. ``<data_dir>/workflows/`` (user-defined)
-  2. ``src/butler/workflows/builtins/`` (shipped with Bantz)
+  2. ``src/butler/workflows/builtins/`` (shipped with Butler)
 
 If two files share the same ``name:`` field, the user-defined version wins.
 """

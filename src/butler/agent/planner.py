@@ -1,5 +1,5 @@
 """
-Bantz v3 — Plan-and-Solve Multi-Step Decomposition (#187, #273)
+Butler v3 — Plan-and-Solve Multi-Step Decomposition (#187, #273)
 
 "The Butler's Itinerary"
 

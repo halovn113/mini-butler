@@ -1,5 +1,5 @@
 """
-Bantz v3 — Unified Navigation Pipeline (#123)
+Butler v3 — Unified Navigation Pipeline (#123)
 
 Orchestrates AT-SPI → Spatial Cache → Remote VLM → fallback chain into a
 single pipeline that ``Brain`` calls with natural language like
@@ -15,7 +15,7 @@ Why cache first?  It's O(1) with high confidence after the first lookup.
 AT-SPI tree walks cost 50-200 ms and can fail on Electron/custom-drawn UIs.
 VLM is the most expensive but works on *any* visible UI.
 
-Analytics are stored per-app so Bantz learns which method works best for
+Analytics are stored per-app so Butler learns which method works best for
 each application over time.
 
 Usage:

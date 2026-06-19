@@ -1,5 +1,5 @@
 """
-Bantz v3 — BrowserTool (#288)
+Butler v3 — BrowserTool (#288)
 
 Terminal-native web fetching via curl + pup + readability-cli.
 No API keys, no rate limits, no external Python dependencies.

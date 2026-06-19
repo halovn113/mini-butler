@@ -1,5 +1,5 @@
 """
-Bantz — Streaming TTS Pipeline (#131, #427)
+Butler — Streaming TTS Pipeline (#131, #427)
 
 Sentence-by-sentence text-to-speech using Piper + aplay.
 Designed for audio morning briefings with interrupt support.
@@ -604,7 +604,7 @@ class TTSEngine:
                stdin → player  (no processing)
 
         Sets PULSE_PROP so PulseAudio/PipeWire labels the stream as
-        'ButlerTTS' so the audio ducker skips Bantz's own output.
+        'ButlerTTS' so the audio ducker skips Butler's own output.
         """
         if not wav_data or not self._aplay_path:
             return

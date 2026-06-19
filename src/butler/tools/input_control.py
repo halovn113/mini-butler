@@ -1,5 +1,5 @@
 """
-Bantz v3 — Input Control Tool (#122)
+Butler v3 — Input Control Tool (#122)
 
 PyAutoGUI / pynput input simulation — mouse, keyboard, scroll.
 Wraps input actions with a safety model matching shell.py's patterns.

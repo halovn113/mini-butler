@@ -1,1 +1,1 @@
-"""Bantz — Interface layer (TUI + Telegram)."""
+"""Butler — Interface layer (TUI + Telegram)."""

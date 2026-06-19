@@ -1,5 +1,5 @@
 """
-Bantz — OpenAI-compatible client
+Butler — OpenAI-compatible client
 Works with OpenAI, any OpenAI-compatible endpoint (local vLLM, LM Studio, etc.)
 via BUTLER_OPENAI_BASE_URL.
 """

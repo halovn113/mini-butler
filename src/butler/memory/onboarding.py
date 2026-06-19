@@ -1,7 +1,7 @@
 """
-Bantz MemPalace Onboarding — First-run user knowledge seeding.
+Butler MemPalace Onboarding — First-run user knowledge seeding.
 
-When Bantz starts and no onboarding has been completed, this module
+When Butler starts and no onboarding has been completed, this module
 runs a natural LLM-powered conversation to learn about the user:
 
   - Name / how to address them
@@ -10,7 +10,7 @@ runs a natural LLM-powered conversation to learn about the user:
   - Interests / work areas
   - Tools / technologies
 
-Instead of a rigid Q&A form, Bantz asks conversational questions and
+Instead of a rigid Q&A form, Butler asks conversational questions and
 the LLM extracts structured facts from the user's natural responses.
 
 Answers are stored in three places:
@@ -18,7 +18,7 @@ Answers are stored in three places:
   - KnowledgeGraph     (entities + triples)
   - EntityRegistry     (people seed)
 
-A flag file (~/.mempalace/.bantz_onboarding_done) prevents re-asking.
+A flag file (~/.mempalace/.butler_onboarding_done) prevents re-asking.
 """
 from __future__ import annotations
 
@@ -175,11 +175,11 @@ def _ask_conversational(*, locale: str = "tr") -> dict[str, str]:
     print()
     print("=" * 50)
     if locale.startswith("tr"):
-        print("  🧠 Bantz — Tanışma")
+        print("  🧠 Butler — Tanışma")
         print("=" * 50)
         print("  Birkaç soru soracağım, sizi daha iyi tanıyayım.")
     else:
-        print("  🧠 Bantz — Getting to Know You")
+        print("  🧠 Butler — Getting to Know You")
         print("=" * 50)
         print("  Let me ask a few questions so I can get to know you.")
     print()
@@ -215,11 +215,11 @@ async def _ask_conversational_async(*, locale: str = "tr") -> dict[str, str]:
     print()
     print("=" * 50)
     if locale.startswith("tr"):
-        print("  🧠 Bantz — Tanışma")
+        print("  🧠 Butler — Tanışma")
         print("=" * 50)
         print("  Birkaç soru soracağım, sizi daha iyi tanıyayım.")
     else:
-        print("  🧠 Bantz — Getting to Know You")
+        print("  🧠 Butler — Getting to Know You")
         print("=" * 50)
         print("  Let me ask a few questions so I can get to know you.")
     print()

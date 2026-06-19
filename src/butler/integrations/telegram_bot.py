@@ -1,7 +1,7 @@
 """
-Bantz — Telegram Bot (backward-compatibility shim)
+Butler — Telegram Bot (backward-compatibility shim)
 
-The Telegram bot has moved to bantz.interface.telegram_bot.
+The Telegram bot has moved to butler.interface.telegram_bot.
 This file re-exports for backward compatibility.
 """
 from butler.interface.telegram_bot import run_bot  # noqa: F401

@@ -1,5 +1,5 @@
 """
-Bantz v3 — Data Migration Utility
+Butler v3 — Data Migration Utility
 
 Validates existing v2 JSON data files and imports them into the unified
 SQLite schema.  Runs automatically on first launch (via DataLayer) or
@@ -105,7 +105,7 @@ def migrate_to_sqlite(
     """Import JSON data into unified SQLite tables.
 
     Parameters:
-        db_path  – target SQLite database (can be the same as bantz.db)
+        db_path  – target SQLite database (can be the same as butler.db)
         data_dir – directory containing the JSON files
         dry_run  – if True, validate but don't write
 
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser(description="Bantz data migration utility")
+    parser = argparse.ArgumentParser(description="Butler data migration utility")
     parser.add_argument("--validate", action="store_true", help="Validate JSON files")
     parser.add_argument("--migrate", action="store_true", help="Migrate JSON → SQLite")
     parser.add_argument("--dry-run", action="store_true", help="Validate only, don't write")
@@ -250,7 +250,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if args.migrate:
-        db = args.db or (args.data_dir / "bantz.db")
+        db = args.db or (args.data_dir / "butler.db")
         results = migrate_to_sqlite(db, args.data_dir, dry_run=args.dry_run)
         tag = " (dry-run)" if args.dry_run else ""
         for name, info in results.items():

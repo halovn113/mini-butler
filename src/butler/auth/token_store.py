@@ -79,7 +79,7 @@ class TokenStore:
         if not path.exists():
             raise TokenNotFoundError(
                 f"No token found for '{service}'.\n"
-                f"Run: bantz --setup google {service}"
+                f"Run: butler --setup google {service}"
             )
 
         creds = Credentials.from_authorized_user_file(str(path))
@@ -93,7 +93,7 @@ class TokenStore:
             except Exception as exc:
                 raise TokenNotFoundError(
                     f"Token for '{service}' expired and refresh failed: {exc}\n"
-                    f"Run: bantz --setup google {service}"
+                    f"Run: butler --setup google {service}"
                 )
 
         return creds

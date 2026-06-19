@@ -1,5 +1,5 @@
 """
-Bantz LLM router — returns the active provider based on BUTLER_LLM_PROVIDER.
+Butler LLM router — returns the active provider based on BUTLER_LLM_PROVIDER.
 
 Provider       Config key              Required env var
 ─────────────────────────────────────────────────────

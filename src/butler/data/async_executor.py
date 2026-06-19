@@ -1,5 +1,5 @@
 """
-Bantz — AsyncDBExecutor: non-blocking DB access for async callers (#224)
+Butler — AsyncDBExecutor: non-blocking DB access for async callers (#224)
 
 Wraps blocking ``SQLitePool.connection()`` calls in a
 ``ThreadPoolExecutor`` so that coroutines never stall the

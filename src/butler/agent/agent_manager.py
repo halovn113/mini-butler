@@ -1,5 +1,5 @@
 """
-Bantz — Agent Manager (Orchestrator for Sub-Agents) (#321)
+Butler — Agent Manager (Orchestrator for Sub-Agents) (#321)
 
 The AgentManager coordinates delegation to specialised sub-agents.
 It tracks active delegations, enforces rate limits, and provides

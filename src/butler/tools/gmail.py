@@ -1,5 +1,5 @@
 """
-Bantz v3 — Gmail Tool
+Butler v3 — Gmail Tool
 Full OAuth v3: read, write, search, label, forward, thread view.
 
 Features:
@@ -641,7 +641,7 @@ class GmailTool(BaseTool):
             return subj
         # Fallback: first 5 words of body, capped
         words = body.split()[:5]
-        return " ".join(words).rstrip(".,;:!?") if words else "Message from Bantz"
+        return " ".join(words).rstrip(".,;:!?") if words else "Message from Butler"
 
     # ── Reply ─────────────────────────────────────────────────────────────
 

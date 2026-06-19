@@ -2,7 +2,7 @@
 
 Exposes the unified navigation pipeline (Cache -> AT-SPI -> VLM) to the
 LLM as a callable tool.  The LLM can now say "click the Send button"
-and Bantz will find it on screen and physically click it.
+and Butler will find it on screen and physically click it.
 
 Supported actions: click, double_click, right_click, hover
 
@@ -159,7 +159,7 @@ class VisualClickTool(BaseTool):
 async def _describe_visible(target: str, screenshot_b64: str) -> str:
     """Return a plain-text description of what's visible on screen.
 
-    Called when the element cannot be found, so the user knows what Bantz
+    Called when the element cannot be found, so the user knows what Butler
     sees and can correct the request. Uses VLM if enabled, AT-SPI list
     otherwise, and falls back to a generic message.
     """

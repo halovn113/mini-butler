@@ -174,7 +174,7 @@ class Profile:
     def status_line(self) -> str:
         """Short status for --doctor output."""
         if not self.is_configured():
-            return "not configured  → bantz --setup profile"
+            return "not configured  → butler --setup profile"
         name = self._data.get("name", "?")
         style = self.response_style
         return f"{name} ({style})"

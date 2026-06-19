@@ -1,5 +1,5 @@
 """
-Bantz — The Ghost Loop (#36)
+Butler — The Ghost Loop (#36)
 
 Hands-free voice interaction loop that ties together:
   1. Wake word detection (Porcupine via ``wake_word.py``)

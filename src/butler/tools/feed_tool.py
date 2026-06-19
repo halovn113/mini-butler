@@ -37,10 +37,11 @@ log = logging.getLogger("butler.tool.feed")
 # Look for feeds.yaml in these locations (first match wins):
 #   1. <project_root>/config/feeds.yaml  (dev / repo checkout)
 #   2. ~/.config/butler/feeds.yaml        (user override)
+from butler.platform.paths import config_dir
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]  # src/butler/tools → project root
 _REGISTRY_PATHS = [
     _PROJECT_ROOT / "config" / "feeds.yaml",
-    Path.home() / ".config" / "butler" / "feeds.yaml",
+    config_dir() / "feeds.yaml",
 ]
 
 # ── Default feeds (used when no feeds.yaml exists) ────────────────────────────

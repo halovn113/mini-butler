@@ -210,7 +210,7 @@ class WorkflowRunner:
     # ── action handlers ───────────────────────────────────────────────────
 
     async def _run_tool(self, step: StepDef, ctx: dict[str, Any]) -> StepResult:
-        """Invoke a Bantz tool from the global registry."""
+        """Invoke a Butler tool from the global registry."""
         from butler.tools import registry as tool_registry
 
         tool = tool_registry.get(step.tool)
@@ -296,7 +296,7 @@ class WorkflowRunner:
             )
 
     async def _run_llm(self, step: StepDef, ctx: dict[str, Any]) -> StepResult:
-        """Generate text via the Bantz LLM layer."""
+        """Generate text via the Butler LLM layer."""
         prompt = self._interpolate(step.prompt, ctx)
         try:
             from butler.llm.ollama_client import generate

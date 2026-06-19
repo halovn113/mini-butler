@@ -1,5 +1,5 @@
 """
-Bantz v3 — Time Parser
+Butler v3 — Time Parser
 Resolves natural-language time expressions to HH:MM format.
 
 Handles:

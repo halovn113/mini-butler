@@ -53,7 +53,7 @@ class OllamaClient:
     async def verify_connection(self) -> None:
         """Layers 2+3: connectivity + model availability check.
 
-        Call at startup or via `bantz --doctor`. Never call from __init__
+        Call at startup or via `butler --doctor`. Never call from __init__
         (network I/O on the main thread would freeze the TUI).
         """
         try:

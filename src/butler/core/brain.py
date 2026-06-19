@@ -23,7 +23,7 @@ from butler.core.finalizer import (
     strip_internal,
 )
 from butler.tools import registry, ToolResult
-from butler.core.context import BantzContext  # noqa: F401  — re-export for compat
+from butler.core.context import ButlerContext  # noqa: F401  — re-export for compat
 from butler.core.types import BrainResult, Attachment  # noqa: F401  — canonical def in types.py
 from butler.core.routing_engine import (
     quick_route as _quick_route_fn,
@@ -51,7 +51,7 @@ from butler.core.translation_layer import (  # noqa: F401
     POSITIVE_FEEDBACK_KWS,
     NEGATIVE_FEEDBACK_KWS,
     detect_feedback as _detect_feedback,
-    get_bridge,  # exposed at module level so tests can patch bantz.core.brain.get_bridge (#435)
+    get_bridge,  # exposed at module level so tests can patch butler.core.brain.get_bridge (#435)
 )
 # Toast compat shim — canonical impl in notification_manager.py (#225)
 import butler.core.notification_manager as _notif_mod
@@ -1075,7 +1075,7 @@ class Brain:
         prior = self._gate_history(prior, en_input)
 
         # Concurrent context injection (#227)
-        ctx = BantzContext(en_input=en_input)
+        ctx = ButlerContext(en_input=en_input)
         ctx.feedback_hint = getattr(self, "_feedback_ctx", "")
         self._feedback_ctx = ""  # clear after consumption
         await _inject_memory(ctx, en_input)
@@ -1118,7 +1118,7 @@ class Brain:
         prior = self._gate_history(prior, en_input)
 
         # Concurrent context injection (#227)
-        ctx = BantzContext(en_input=en_input)
+        ctx = ButlerContext(en_input=en_input)
         ctx.feedback_hint = getattr(self, "_feedback_ctx", "")
         self._feedback_ctx = ""  # clear after consumption
         await _inject_memory(ctx, en_input)
@@ -1157,7 +1157,7 @@ class Brain:
     # ── System-anomaly investigation (grounded in live diagnostics) ───────
     # Uses psutil via butler.platform.diagnostics — cross-platform safe.
     _INVESTIGATE_SYSTEM = (
-        "You are Bantz, a 1920s English butler who also keeps a sharp eye on "
+        "You are Butler, a 1920s English butler who also keeps a sharp eye on "
         "the household's mechanical contraptions (this computer). An anomaly "
         "was flagged. Below is REAL diagnostic output captured just now by "
         "running live system commands. Report to your employer:\n"
@@ -1207,7 +1207,7 @@ class Brain:
         """Stream a grounded analysis of a system anomaly.
 
         Unlike ``_chat_stream``, this runs live read-only diagnostics and
-        feeds the real output to the LLM as ground truth, so Bantz reports on
+        feeds the real output to the LLM as ground truth, so Butler reports on
         actual swap/memory/CPU/disk state instead of hallucinating one.
         """
         directive = en_input.split(":", 1)[1].strip() if ":" in en_input else en_input

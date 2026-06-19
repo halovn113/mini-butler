@@ -1,5 +1,5 @@
 """
-Bantz — SystemTool: unified subprocess + process management interface (#291)
+Butler — SystemTool: unified subprocess + process management interface (#291)
 
 Low-level infrastructure class (not a BaseTool) used by other tools that need
 to run shell commands, list/kill processes, or launch applications.

@@ -1,5 +1,5 @@
 """
-Bantz — ScreenshotTool: capture the luminous glass pane (#189)
+Butler — ScreenshotTool: capture the luminous glass pane (#189)
 
 Captures a JPEG daguerreotype of the desktop (full screen, specific window,
 or a rectangular region) and returns the raw bytes in ToolResult.data so

@@ -1,1 +1,1 @@
-"""Bantz workflow sub-package — autonomous night tasks."""
+"""Butler workflow sub-package — autonomous night tasks."""

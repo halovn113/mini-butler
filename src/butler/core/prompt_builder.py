@@ -1,7 +1,7 @@
 """
-Bantz — Prompt Builder (#227)
+Butler — Prompt Builder (#227)
 
-Assembles the final system-prompt string from a ``BantzContext`` whose
+Assembles the final system-prompt string from a ``ButlerContext`` whose
 memory / persona fields have already been populated by ``memory_injector``.
 
 This module owns the **prompt templates** (``CHAT_SYSTEM``,
@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from butler.core.context import BantzContext
+    from butler.core.context import ButlerContext
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -121,7 +121,7 @@ or interact with screen elements.\
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-def _legacy_memory_block(ctx: "BantzContext") -> str:
+def _legacy_memory_block(ctx: "ButlerContext") -> str:
     """Fallback: combine individual memory fields when memory_combined is empty.
 
     This handles callers that populate graph_context / vector_context /
@@ -137,12 +137,12 @@ def _legacy_memory_block(ctx: "BantzContext") -> str:
     return "\n".join(parts)
 
 
-def build_chat_system(ctx: "BantzContext", tc: dict) -> str:
+def build_chat_system(ctx: "ButlerContext", tc: dict) -> str:
     """Render the ``CHAT_SYSTEM`` template from populated context fields.
 
     Parameters
     ----------
-    ctx : BantzContext
+    ctx : ButlerContext
         Must have memory / persona / style fields already filled
         (typically by ``memory_injector.inject``).
     tc : dict

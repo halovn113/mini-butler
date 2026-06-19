@@ -1,10 +1,10 @@
 """
-Bantz — Affinity Engine (#221)
+Butler — Affinity Engine (#221)
 
 Replaces the 670-LOC Q-learning ``RLEngine`` with a simple cumulative
 score that persists across restarts via ``SQLiteKVStore``.
 
-The score represents how the user treats Bantz over time:
+The score represents how the user treats Butler over time:
   - Positive interactions (thank-you, accepted suggestions) → add_reward(+N)
   - Negative interactions (dismissals, anger)                → add_reward(-N)
 

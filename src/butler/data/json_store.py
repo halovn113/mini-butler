@@ -1,5 +1,5 @@
 """
-Bantz v3 — JSON File Store Implementations
+Butler v3 — JSON File Store Implementations
 
 Backward-compatible JSON adapters for profile, places, schedule, and session.
 These read/write the same files as v2, ensuring seamless migration.

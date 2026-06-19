@@ -1,4 +1,4 @@
-"""Bantz — Memory Layer (MemPalace).
+"""Butler — Memory Layer (MemPalace).
 
 Sub-modules:
     bridge          — MemPalace adapter (palace_bridge singleton)

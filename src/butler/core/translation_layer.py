@@ -1,5 +1,5 @@
 """
-Bantz — Translation Layer (#226)
+Butler — Translation Layer (#226)
 
 Extracted from ``brain.py``: language-bridge helpers that run
 *before* the intent router sees the user's message.
@@ -30,7 +30,7 @@ _bridge_cache: object | None = None  # None = not probed, False = unavailable
 def get_bridge():
     """Return the i18n Bridge instance, or *None* if unavailable.
 
-    Lazily imports ``bantz.i18n.bridge`` on first call and caches the
+    Lazily imports ``butler.i18n.bridge`` on first call and caches the
     result so subsequent calls are free.
     """
     global _bridge_cache

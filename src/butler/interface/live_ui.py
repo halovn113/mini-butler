@@ -1,9 +1,9 @@
 """
-Bantz v3 — Rich Live TUI
+Butler v3 — Rich Live TUI
 
 Design
 ──────
-• Single ``Live`` context that never stops while bantz runs.
+• Single ``Live`` context that never stops while butler runs.
 • ``auto_refresh=False`` — panels are refreshed explicitly so the
   terminal is never redrawn while the user is typing.
 • User input via a daemon thread calling ``sys.stdin.readline()``
@@ -13,7 +13,7 @@ Design
   cursor-escape sequence before the next Live refresh so the render
   position stays correct.
 • ``screen=False, transient=False`` — TUI renders inline and stays
-  visible after bantz exits.
+  visible after butler exits.
 """
 from __future__ import annotations
 
@@ -183,7 +183,7 @@ class _StdinReader:
 # ═══════════════════════════════════════════════════════════════════════════
 
 class LiveUI:
-    """Rich Live-based terminal UI for Bantz v3.
+    """Rich Live-based terminal UI for Butler v3.
 
     The Live context is opened once in ``run()`` and never stopped.
     User input is read by a daemon thread (``sys.stdin.readline()``),
@@ -314,7 +314,7 @@ class LiveUI:
         info_parts.append(f"[bold]{now}[/]")
         info_line = "  [dim]│[/]  ".join(info_parts)
         content = Text.from_markup(
-            f"  [bold]BANTZ // OPERATIONS CENTER[/]\n"
+            f"  [bold]BUTLER // OPERATIONS CENTER[/]\n"
             f"  {dots}\n"
             f"  {info_line}"
         )
@@ -1200,9 +1200,9 @@ class LiveUI:
 
         handler = _QueueLogHandler()
         handler.setFormatter(logging.Formatter("%(name)s: %(message)s"))
-        bantz_logger = logging.getLogger("butler")
-        bantz_logger.addHandler(handler)
-        bantz_logger.propagate = False
+        butler_logger = logging.getLogger("butler")
+        butler_logger.addHandler(handler)
+        butler_logger.propagate = False
 
         self._subscribe_bus()
 
@@ -1242,8 +1242,8 @@ class LiveUI:
             except Exception:
                 pass
             try:
-                bantz_logger.removeHandler(handler)
-                bantz_logger.propagate = True
+                butler_logger.removeHandler(handler)
+                butler_logger.propagate = True
             except Exception:
                 pass
 
@@ -1268,6 +1268,6 @@ class LiveUI:
 # ═══════════════════════════════════════════════════════════════════════════
 
 def run() -> None:
-    """Launch the Bantz Rich Live TUI."""
+    """Launch the Butler Rich Live TUI."""
     ui = LiveUI()
     asyncio.run(ui.run())

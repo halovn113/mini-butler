@@ -1,5 +1,5 @@
 """
-Bantz — Continuous Awareness Pipeline (#325)
+Butler — Continuous Awareness Pipeline (#325)
 
 Collects ambient desktop context every N seconds:
   • Active window title + process name (via xdotool + psutil)
@@ -13,7 +13,7 @@ and exposed via two clean methods:
   • ``get_screenshot_for_vlm()``  → latest screenshot path (only when explicitly requested)
 
 All subprocess calls are best-effort: any failure is logged at DEBUG level
-and silently skipped — awareness must never crash Bantz.
+and silently skipped — awareness must never crash Butler.
 """
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ class AwarenessCollector:
 
     The ``run()`` coroutine loops forever until cancelled.  It is designed
     to be launched with ``asyncio.create_task()`` so it runs concurrently
-    with the rest of Bantz without blocking the event loop.  All
+    with the rest of Butler without blocking the event loop.  All
     subprocess I/O is dispatched to the default executor so the loop is
     never blocked.
     """

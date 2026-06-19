@@ -1,5 +1,5 @@
 """
-Bantz v3 — Spatial Cache (#121)
+Butler v3 — Spatial Cache (#121)
 
 Persistent SQLite cache for UI element coordinates per application.
 Prevents repeated AT-SPI / VLM lookups for the same element.

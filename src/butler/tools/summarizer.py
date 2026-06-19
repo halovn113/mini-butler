@@ -1,5 +1,5 @@
 """
-Bantz — Summarizer Tool (Architect's Revision for Planner #187)
+Butler — Summarizer Tool (Architect's Revision for Planner #187)
 
 Native text-processing tool that replaces the virtual ``process_text``
 hook.  Unlike the old ``__llm__`` approach (which gave the model

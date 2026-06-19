@@ -1,5 +1,5 @@
 """
-Bantz — Proactive Health & Break Interventions (#168)
+Butler — Proactive Health & Break Interventions (#168)
 
 Rule-driven health monitoring engine that combines telemetry, time context,
 app detection, and ambient state to deliver empathetic, non-intrusive

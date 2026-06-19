@@ -1,5 +1,5 @@
 """
-Bantz — Notification Manager (#225)
+Butler — Notification Manager (#225)
 
 Centralises all UI / desktop / sound notification side-effects that were
 previously scattered across ``brain.py``.
@@ -37,7 +37,7 @@ def notify_toast(title: str, reason: str = "", toast_type: str = "info") -> None
     Resolution order:
       1. ``toast_callback`` (set by TUI on mount)
       2. ``App.current.push_toast`` (Textual's thread-safe call)
-      3. ``notify-send`` via ``bantz.agent.notifier`` (desktop fallback)
+      3. ``notify-send`` via ``butler.agent.notifier`` (desktop fallback)
       4. Silent no-op
 
     Never raises — all exceptions are swallowed so the main pipeline

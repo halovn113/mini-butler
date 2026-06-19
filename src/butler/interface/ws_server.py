@@ -1,5 +1,5 @@
 """
-Bantz — WebSocket broadcast server for the Tauri Operations Center UI.
+Butler — WebSocket broadcast server for the Tauri Operations Center UI.
 
 Listens on ws://localhost:8765 (configurable via WS_PORT env var).
 
@@ -38,7 +38,7 @@ Server → Client pushes
       Redis, Neo4j.  Also pushed immediately on new-client connect.
 
   {"type": "log", "msg": "…", "level": "info|warning|error|debug"}
-      Every bantz.* log record forwarded to the UI.
+      Every butler.* log record forwarded to the UI.
 
   {"type": "alert", "title": "…", "reason": "…", "source": "health|observer"}
       Fired when health.py emits "health_alert" or observer.py emits
@@ -420,15 +420,15 @@ class WsBroadcastServer:
     async def _log_queue_loop(self) -> None:
         handler = _WSLogHandler(self._log_q)
         handler.setFormatter(logging.Formatter("%(name)s: %(message)s"))
-        bantz_log = logging.getLogger("butler")
-        bantz_log.addHandler(handler)
+        butler_log = logging.getLogger("butler")
+        butler_log.addHandler(handler)
         try:
             while True:
                 payload = await self._log_q.get()
                 _recent_logs.append(payload)  # keep for anomaly scanning
                 await self._broadcast(payload)
         finally:
-            bantz_log.removeHandler(handler)
+            butler_log.removeHandler(handler)
 
     # ── event bus callbacks ────────────────────────────────────────────────
 

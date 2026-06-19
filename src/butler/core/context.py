@@ -1,5 +1,5 @@
 """
-Bantz — BantzContext: request-scoped data carrier (#224)
+Butler — ButlerContext: request-scoped data carrier (#224)
 
 A plain dataclass that travels through every stage of the brain pipeline
 (translation → routing → tool-execution → finalisation → response).
@@ -10,7 +10,7 @@ By **carrying** all intermediate data the context object:
   - gives each future sub-module a clean, typed contract.
 
 This module is intentionally dependency-free — it imports nothing from
-the ``bantz`` package so it can be imported from anywhere without risk.
+the ``butler`` package so it can be imported from anywhere without risk.
 
 Closes #224 (Part 1-A of #218).
 """
@@ -23,7 +23,7 @@ from typing import Any
 
 
 @dataclass
-class BantzContext:
+class ButlerContext:
     """Immutable-ish carrier for one request→response cycle.
 
     Every field has a safe default so callers only need to set the

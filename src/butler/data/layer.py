@@ -1,5 +1,5 @@
 """
-Bantz v3 — Data Access Layer (Singleton)
+Butler v3 — Data Access Layer (Singleton)
 
 Composes all stores behind a single entry point.
 Initialized once during app startup — replaces scattered init() calls.

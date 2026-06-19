@@ -1,9 +1,9 @@
 """
-Bantz v3 — RL-Based Bonding Meter (#172)
+Butler v3 — RL-Based Bonding Meter (#172)
 
 Maps cumulative RL reward to a formality index (0.0 = ultra-formal,
 1.0 = bonded old retainer).  A shifted sigmoid ensures Day 1 is stiff
-and distant while months of positive interaction unlock Bantz's full
+and distant while months of positive interaction unlock Butler's full
 unfiltered sarcasm—without ever breaking his 1920s butler character.
 
 Highwater mark with 10 % drop-limit prevents a few bad interactions

@@ -58,7 +58,7 @@ class StepDef(BaseModel):
     """A single step in a workflow.
 
     Supported actions:
-      - ``tool``           : invoke a registered Bantz tool
+      - ``tool``           : invoke a registered Butler tool
       - ``shell_command``  : run a bash command (wraps shell tool)
       - ``http_request``   : make an HTTP request (GET/POST)
       - ``ask_llm``        : generate text via the LLM

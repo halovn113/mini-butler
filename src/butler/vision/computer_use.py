@@ -1,5 +1,5 @@
 """
-Bantz — Autonomous VLM Web/Desktop Navigation Loop (#188)
+Butler — Autonomous VLM Web/Desktop Navigation Loop (#188)
 
 Provides a closed-loop Observe → Analyze → Act → Verify cycle that chains
 VLM perception with input control to complete multi-step visual tasks.

@@ -1,5 +1,5 @@
 """
-Bantz v3 — Browser Control Tool
+Butler v3 — Browser Control Tool
 
 Visual + keyboard browser automation.
 

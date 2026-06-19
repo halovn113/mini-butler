@@ -1,5 +1,5 @@
 """
-Bantz v3 — Data Access Layer
+Butler v3 — Data Access Layer
 
 Unified entry point for all persistence. Import the singleton and go:
 

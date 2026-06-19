@@ -1,9 +1,9 @@
 """
-Bantz — APScheduler-based Job Scheduler (#128)
+Butler — APScheduler-based Job Scheduler (#128)
 
 Replaces the simple polling loop in _daemon() with a real job scheduling
 engine.  Provides cron-style night workflows, one-shot/interval triggers,
-persistent job store (SQLAlchemy → same bantz.db), retry with exponential
+persistent job store (SQLAlchemy → same butler.db), retry with exponential
 backoff, misfire grace, and sleep-inhibit for long-running night tasks.
 
 Architecture:
@@ -19,7 +19,7 @@ Architecture:
     │  └─ <dynamic reminders>  │   user-added via brain.py
     └──────────────────────────┘
               ↓ persists to
-        bantz.db (SQLAlchemy)
+        butler.db (SQLAlchemy)
 
 Key design decisions:
   - misfire_grace_time=86400  → laptop can sleep; job runs on wake
@@ -98,7 +98,7 @@ def inhibit_sleep(reason: str = "Butler night task"):
             [
                 "systemd-inhibit",
                 "--what=sleep:idle",
-                "--who=bantz",
+                "--who=butler",
                 "--why=" + reason,
                 "--mode=block",
                 "sleep", "infinity",
@@ -399,11 +399,11 @@ async def _job_health_check() -> None:
 # ═══════════════════════════════════════════════════════════════════════════
 
 class JobScheduler:
-    """APScheduler-based job engine for Bantz daemon.
+    """APScheduler-based job engine for Butler daemon.
 
     Provides:
     - Cron-style night workflows
-    - Persistent job store (SQLAlchemy → same bantz.db)
+    - Persistent job store (SQLAlchemy → same butler.db)
     - Retry with exponential backoff
     - Misfire grace for laptop sleep
     - Sleep-inhibit for long tasks
@@ -848,7 +848,7 @@ class JobScheduler:
         return f"jobs={len(jobs)} ok={ok} err={err}"
 
     def format_jobs(self) -> str:
-        """Human-readable job listing for `bantz --jobs`."""
+        """Human-readable job listing for `butler --jobs`."""
         jobs = self.list_jobs()
         if not jobs:
             return "No scheduled jobs."

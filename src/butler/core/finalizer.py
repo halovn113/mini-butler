@@ -1,5 +1,5 @@
 """
-Bantz v3 — Finalizer
+Butler v3 — Finalizer
 
 Post-processes tool output through an LLM to produce clean, user-friendly
 responses.  Also runs a hallucination check to catch fabricated data.

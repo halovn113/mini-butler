@@ -6,7 +6,7 @@ Compare current GPS to known places.  Travel hints for schedule.
 Geofence detection, stationary tracking, proactive place-learning.
 
 Data stored via DAL (SQLite), with JSON fallback for backward compat.
-Setup: bantz --setup places
+Setup: butler --setup places
 
 Usage:
     from butler.core.places import places
@@ -402,7 +402,7 @@ class PlaceService:
         """Short summary for --doctor."""
         self._load()
         if not self._data:
-            return "not configured  → bantz --setup places"
+            return "not configured  → butler --setup places"
         n = len(self._data)
         names = ", ".join(p.get("label", k) for k, p in list(self._data.items())[:4])
         if n > 4:

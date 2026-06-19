@@ -1,5 +1,5 @@
 """
-Bantz v3 — SQLite Store Implementations
+Butler v3 — SQLite Store Implementations
 
 Concrete SQLite-backed stores for conversations and reminders.
 Schema matches the existing v2 tables — zero-migration upgrade.

@@ -89,7 +89,7 @@ def _build_compact_schemas(tool_schemas: list[dict]) -> str:
 
 
 COT_SYSTEM = """\
-You are Bantz's intent router. Pick the best tool for the user's request.
+You are Butler's intent router. Pick the best tool for the user's request.
 
 TOOLS:
 {tool_schemas}
@@ -670,7 +670,7 @@ async def cot_route(
         prompt when unrelated queries are asked).
     """
     # "investigate: <anomaly> — <detail>" comes from the Anomaly Watch
-    # Investigate button — Bantz should analyze it conversationally, never
+    # Investigate button — Butler should analyze it conversationally, never
     # delegate it to a sub-agent.
     if en_input.strip().lower().startswith("investigate:"):
         log.debug("cot_route fast-path: pre-route to chat for investigate directive")

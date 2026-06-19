@@ -1,5 +1,5 @@
 """
-Bantz — MemPalace Bridge Adapter
+Butler — MemPalace Bridge Adapter
 
 Drop-in adapter that replaces the old memory subsystem (Neo4j graph + SQLite
 vectors + Ollama embeddings + deep_probe + distiller) with MemPalace's unified
