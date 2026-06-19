@@ -59,21 +59,10 @@ GPS_CACHE_MAX_AGE = 7 * 24 * 3600  # 7 days — stale enough is still better tha
 def _system_timezone() -> str:
     """Best-effort IANA timezone for this machine.
 
-    Used when geolocation can't name a city but the app still needs a valid
-    tz (calendar.py feeds Location.timezone straight into pytz.timezone()).
-    Never invents a city — only the local clock's zone.
+    Delegates to butler.platform.location — cross-platform.
     """
-    # /etc/localtime is usually a symlink into …/zoneinfo/<Area>/<City>.
-    try:
-        parts = Path("/etc/localtime").resolve().parts
-        if "zoneinfo" in parts:
-            tz = "/".join(parts[parts.index("zoneinfo") + 1:])
-            if tz:
-                return tz
-    except Exception:
-        pass
-    import os
-    return os.environ.get("TZ") or "UTC"
+    from butler.platform.location import system_timezone as _tz
+    return _tz()
 
 
 @dataclass
@@ -362,48 +351,15 @@ class LocationService:
 
     @staticmethod
     def _scan_wifi_aps() -> list[dict]:
-        """Nearby APs as [{macAddress, signalStrength(dBm)}] via nmcli."""
-        aps: list[dict] = []
-        try:
-            result = subprocess.run(
-                ["nmcli", "-t", "-f", "BSSID,SIGNAL", "dev", "wifi", "list"],
-                capture_output=True, text=True, timeout=8,
-            )
-            for line in result.stdout.splitlines():
-                line = line.replace("\\:", ":")  # nmcli escapes BSSID colons
-                bssid, _, sig = line.rpartition(":")
-                if len(bssid) != 17:  # not a MAC
-                    continue
-                try:
-                    pct = int(sig)
-                except ValueError:
-                    continue
-                # nmcli SIGNAL is 0-100%; approximate dBm for the API schema.
-                dbm = (pct // 2) - 100
-                aps.append({
-                    "macAddress": bssid.lower(),
-                    "signalStrength": dbm,
-                })
-        except Exception as exc:
-            logger.debug(f"nmcli wifi scan failed: {exc}")
-        return aps
+        """Nearby APs as [{macAddress, signalStrength(dBm)}]."""
+        from butler.platform.location import wifi_scan_aps
+        return wifi_scan_aps()
 
     @staticmethod
     def _current_ssid() -> Optional[str]:
-        """Get the currently connected WiFi SSID via nmcli."""
-        try:
-            result = subprocess.run(
-                ["nmcli", "-t", "-f", "active,ssid", "dev", "wifi"],
-                capture_output=True, text=True, timeout=3,
-            )
-            for line in result.stdout.splitlines():
-                if line.startswith("yes:"):
-                    ssid = line.split(":", 1)[1].strip()
-                    if ssid:
-                        return ssid
-        except Exception:
-            pass
-        return None
+        """Get the currently connected WiFi SSID."""
+        from butler.platform.location import current_ssid
+        return current_ssid()
 
     def _from_wifi_ssid(self) -> Optional[Location]:
         """Match current WiFi SSID against places.json ssid field."""
@@ -435,86 +391,19 @@ class LocationService:
         return None
 
     async def _from_geoclue(self) -> Optional[Location]:
-        """Try GeoClue2 (system location service). Primary automatic source.
-
-        Bounded by a timeout so a stalled geoclue can't block startup; on
-        timeout/failure the caller falls through to IP geolocation.
-        """
-        try:
-            return await asyncio.wait_for(
-                asyncio.get_event_loop().run_in_executor(
-                    None, self._geoclue_sync
-                ),
-                timeout=8.0,
-            )
-        except asyncio.TimeoutError:
-            logger.debug("GeoClue2 timed out")
+        """Try GeoClue2 (system location service)."""
+        from butler.platform.location import geoclue_location
+        result = await geoclue_location(timeout=8.0)
+        if result is None:
             return None
-        except Exception as exc:
-            logger.debug(f"GeoClue2 unavailable: {exc}")
-            return None
-
-    def _geoclue_sync(self) -> Optional[Location]:
-        """Blocking GeoClue2 lookup via gi.repository (Geoclue.Simple).
-
-        The `gdbus` CLI cannot be used here: GeoClue2 binds each Client to the
-        D-Bus connection that created it, so a Client made in one `gdbus call`
-        is destroyed the instant that process exits ("Object does not exist").
-        Geoclue.Simple holds a single connection open and blocks until the
-        first fix is available.
-        """
-        try:
-            import gi
-            gi.require_version("Geoclue", "2.0")
-            from gi.repository import Geoclue
-        except Exception as exc:
-            logger.debug(f"GeoClue2 gi bindings unavailable: {exc}")
-            return None
-
-        try:
-            simple = Geoclue.Simple.new_sync(
-                "butler", Geoclue.AccuracyLevel.CITY, None,
-            )
-            loc = simple.get_location()
-            if loc is None:
-                logger.debug("GeoClue2 returned no location fix")
-                return None
-
-            lat = float(loc.get_property("latitude"))
-            lon = float(loc.get_property("longitude"))
-            if lat == 0.0 and lon == 0.0:
-                return None
-            acc = round(loc.get_property("accuracy"))
-            logger.info("GeoClue2 fix: %.6f, %.6f (±%sm)", lat, lon, acc)
-
-            # Reverse geocode lat/lon → city (best effort)
-            city, country, tz = self._reverse_geocode_sync(lat, lon)
-            return Location(
-                city=city, country=country, timezone=tz,
-                lat=lat, lon=lon, source="geoclue",
-            )
-        except Exception as exc:
-            logger.debug(f"GeoClue2 lookup failed: {exc}")
-            return None
-
-    def _reverse_geocode_sync(self, lat: float, lon: float) -> tuple[str, str, str]:
-        """Simple reverse geocode via nominatim (no API key)."""
-        import json as _json
-        import urllib.request
-        url = (
-            f"https://nominatim.openstreetmap.org/reverse"
-            f"?lat={lat}&lon={lon}&format=json"
+        # Reverse geocode lat/lon → city (best effort)
+        city, country, tz = self._reverse_geocode_sync(
+            result["lat"], result["lon"]
         )
-        req = urllib.request.Request(url, headers={"User-Agent": "Butler/2.0"})
-        with urllib.request.urlopen(req, timeout=5) as r:
-            data = _json.loads(r.read())
-        addr = data.get("address", {})
-        city = (addr.get("city") or addr.get("town") or
-                addr.get("village") or addr.get("county") or "Unknown")
-        country = addr.get("country_code", "").upper()
-        # Nominatim doesn't return a tz; use the machine's local zone.
-        tz = _system_timezone()
-        return city, country, tz
+        return Location(
+            city=city, country=country, timezone=tz,
+            lat=result["lat"], lon=result["lon"], source="geoclue",
+        )
 
     async def _from_ipinfo(self) -> Optional[Location]:
         try:
