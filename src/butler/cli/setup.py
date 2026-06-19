@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from butler.platform.paths import env_file_path
 import asyncio
+from butler.platform.daemon import get_daemon_backend
 
 
 def _handle_setup(parts: list[str]) -> None:
@@ -1444,17 +1445,12 @@ async def _doctor() -> None:
     _user = _os.environ.get("USER", "")
     _svc_path = _Path.home() / ".config" / "systemd" / "user" / "butler.service"
     if _svc_path.exists():
-        import subprocess as _sp
-        _active = _sp.run(
-            ["systemctl", "--user", "is-active", "butler.service"],
-            capture_output=True, text=True,
-        )
-        _state = _active.stdout.strip()
-        if _state == "active":
+        _backend = get_daemon_backend()
+        if _backend.is_active():
             _linger = "linger=yes" if _check_linger(_user) else "linger=no"
             print(f"✅ systemd: active ({_linger})  → bantz --setup systemd --check")
         else:
-            print(f"⚪ systemd: {_state}  → systemctl --user start butler.service")
+            print("⚪ systemd: inactive  → systemctl --user start butler.service")
     else:
         print("⚪ systemd: not installed  → bantz --setup systemd")
 
@@ -1479,32 +1475,10 @@ def _setup_systemd() -> None:
     venv_python = project_dir / ".venv" / "bin" / "python"
     env_file = project_dir / ".env"
 
-    # Build user-mode service (no User=, no ProtectSystem=strict)
-    content = f"""[Unit]
-Description=Butler v2 — Personal AI Assistant (Daemon)
-After=network-online.target ollama.service
-Wants=network-online.target
-
-[Service]
-Type=simple
-WorkingDirectory={project_dir}
-EnvironmentFile={env_file}
-ExecStart={venv_python} -m bantz --daemon
-Restart=on-failure
-RestartSec=10
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=butler
-
-[Install]
-WantedBy=default.target
-"""
-
-    # Install to user systemd directory
-    systemd_dir = Path.home() / ".config" / "systemd" / "user"
-    systemd_dir.mkdir(parents=True, exist_ok=True)
-    target = systemd_dir / "butler.service"
-    target.write_text(content)
+    # Install via daemon backend
+    backend = get_daemon_backend()
+    backend.install(str(venv_python), str(project_dir))
+    target = Path.home() / ".config" / "systemd" / "user" / "butler.service"
 
     print(f"✅ Service file installed: {target}")
     print()
@@ -1514,12 +1488,11 @@ WantedBy=default.target
     print()
 
     # Ask if user wants to enable + start now
-    answer = input("Enable and start now? [Y/n] ").strip().lower()
     if answer in ("", "y", "yes"):
         ok = True
-        ok = _systemctl("daemon-reload") and ok
-        ok = _systemctl("enable", "butler.service") and ok
-        ok = _systemctl("start", "butler.service") and ok
+        ok = backend.daemon_reload() and ok
+        ok = backend.enable() and ok
+        ok = backend.start() and ok
         if ok:
             print()
             _verify_service()
@@ -1592,38 +1565,28 @@ def _ensure_linger(user: str) -> bool:
 
 
 def _systemctl(*args: str) -> bool:
-    """Run systemctl --user <args> with proper error handling.
+    """Run systemctl --user <args> via the daemon backend.
 
-    Uses subprocess.run for safe execution with error capture.
     Returns True on success, False on failure with stderr printed.
     """
-    import subprocess
-    cmd = ["systemctl", "--user", *args]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        stderr = result.stderr.strip()
-        print(f"❌ systemctl --user {' '.join(args)}: {stderr or f'exit code {result.returncode}'}")
+    backend = get_daemon_backend()
+    r = backend._run(*args)
+    if r.returncode != 0:
+        stderr = r.stderr.strip()
+        print(f"❌ systemctl --user {' '.join(args)}: {stderr or f'exit code {r.returncode}'}")
         return False
     return True
 
 
 def _verify_service() -> None:
     """Check that butler.service is active and healthy."""
-    import subprocess
-    result = subprocess.run(
-        ["systemctl", "--user", "is-active", "butler.service"],
-        capture_output=True, text=True,
-    )
-    state = result.stdout.strip()
-    if state == "active":
+    backend = get_daemon_backend()
+    if backend.is_active():
         print("✅ butler.service is running")
-        # Show compact status (let output go to terminal)
-        subprocess.run(
-            ["systemctl", "--user", "status", "butler.service", "--no-pager", "-l"],
-            capture_output=False,
-        )
+        # Show compact status
+        print(backend.status_text())
     else:
-        print(f"⚠  Service state: {state}")
+        print("⚠  Service is not active")
         print("   Check logs: journalctl --user -u butler.service -n 20")
 
 
@@ -1653,20 +1616,15 @@ def _systemd_check() -> None:
         print(f"⚪ Linger: disabled — run: loginctl enable-linger {user}")
 
     # 3. Service state
-    result = subprocess.run(
-        ["systemctl", "--user", "is-active", "butler.service"],
-        capture_output=True, text=True,
-    )
-    state = result.stdout.strip()
-    if state == "active":
+    backend = get_daemon_backend()
+    state_active = backend.is_active()
+    if state_active:
         print("✅ Service: active (running)")
-    elif state == "inactive":
-        print("⚪ Service: inactive — run: systemctl --user start butler.service")
     else:
-        print(f"❌ Service: {state}")
+        print("⚪ Service: inactive — run: systemctl --user start butler.service")
 
     # 4. Detailed properties (PID, Memory, uptime)
-    if state == "active":
+    if state_active:
         props = subprocess.run(
             ["systemctl", "--user", "show", "butler.service",
              "--property=MainPID,MemoryCurrent,ActiveEnterTimestamp"],

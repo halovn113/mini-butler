@@ -466,6 +466,17 @@ async def _daemon() -> None:
     signal.signal(signal.SIGTERM, _signal_handler)
     signal.signal(signal.SIGINT, _signal_handler)
 
+    # Register quick-capture global hotkey
+    try:
+        from butler.platform.hotkey import register_hotkey
+        from butler.interface.quick_capture import on_quick_capture
+        hotkey = config.quick_capture_hotkey
+        if hotkey:
+            register_hotkey(hotkey, on_quick_capture)
+            log.info("Quick-capture hotkey: %s", hotkey)
+    except Exception as _hk_exc:
+        log.debug("Hotkey registration skipped: %s", _hk_exc)
+
     import os
     log.info("Daemon running — APScheduler=%s. PID: %d",
              "active" if config.job_scheduler_enabled else "off", os.getpid())

@@ -71,6 +71,10 @@ _ROUTING_HINTS: dict[str, str] = {
     "gui": "Desktop GUI automation via pyautogui + xdotool. action=click x=<int> y=<int>, action=click_image template=<path>, action=type text=<str>, action=focus_window title=<pattern> wm_class=<class>, action=screenshot region=<x,y,w,h>, action=scroll x=<int> y=<int> clicks=<int>, action=action_log to inspect recorded actions.",
     "screen_query": "Answer questions about the CURRENT screen or click an element the user describes. Triggers (Turkish forms may pass through translation): 'what do you see' / 'ekranda ne var' (what's on the screen) = describe; 'ne yazıyor' (what does it say) = read; 'click the blue button' / 'şu ikona tıkla' (click that icon) = click. query=<user request>.",
     "vision_execute": "Long multi-step desktop task guided by screen vision (screenshot → decide → act each step): 'play X on the music app', 'find Y in app Z and do W'. goal=<task>. For music: intent=play_music artist=<name> pulls favorites from profile.",
+    "list_macros": "List saved automation macros. 'list macros', 'show macros', 'what macros do I have', 'makrolarım' → list_macros.",
+    "run_macro": "Execute a saved macro by name. 'run X macro', 'execute Y', 'çalıştır Z' → run_macro name=<name>.",
+    "create_macro": "Create or update a macro with a sequence of steps. 'create a macro to X', 'record a macro', 'makro oluştur' → create_macro.",
+    "delete_macro": "Delete a saved macro. 'delete X macro', 'remove Y', 'makro sil' → delete_macro name=<name>.",
 }
 
 

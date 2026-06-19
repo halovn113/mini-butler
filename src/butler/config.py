@@ -190,6 +190,9 @@ class Config(BaseSettings):
     notification_icon: str = Field("", alias="BUTLER_NOTIFICATION_ICON")
     notification_sound: bool = Field(False, alias="BUTLER_NOTIFICATION_SOUND")
 
+    # ── Quick Capture (#193) ───────────────────────────────────────────
+    quick_capture_hotkey: str = Field("ctrl+shift+space", alias="BUTLER_QUICK_CAPTURE_HOTKEY")
+
     # ── Voice Master Switch (#277) ────────────────────────────────────────
     # Setting BUTLER_VOICE_ENABLED=true cascades into tts, wake word, stt,
     # ghost loop, audio ducking, and ambient.  Individual flags still
