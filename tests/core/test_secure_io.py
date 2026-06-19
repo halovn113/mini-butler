@@ -7,7 +7,7 @@ import stat
 
 import pytest
 
-from bantz.core.secure_io import secure_write_text
+from butler.core.secure_io import secure_write_text
 
 
 def _mode(path) -> int:

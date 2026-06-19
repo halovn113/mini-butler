@@ -26,7 +26,7 @@ class TestSplitSentences:
     """Test the sentence splitter used for TTS chunking."""
 
     def _split(self, text: str) -> list[str]:
-        from bantz.agent.tts import split_sentences
+        from butler.agent.tts import split_sentences
         return split_sentences(text)
 
     def test_basic_split(self):
@@ -101,7 +101,7 @@ class TestTTSEngine:
     """Test TTSEngine initialization, availability, and lifecycle."""
 
     def _make_engine(self):
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
         return TTSEngine()
 
     def test_initial_state(self):
@@ -235,7 +235,7 @@ class TestTTSAsync:
     """Async tests for speak, synthesize, play."""
 
     def _make_engine(self):
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
         eng = TTSEngine()
         eng._piper_path = "/usr/bin/piper"
         eng._aplay_path = "/usr/bin/aplay"
@@ -246,7 +246,7 @@ class TestTTSAsync:
 
     @pytest.mark.asyncio
     async def test_speak_not_available(self):
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
         eng = TTSEngine()
         with patch.object(eng, "available", return_value=False):
             await eng.speak("Hello world")
@@ -418,7 +418,7 @@ class TestBriefingWatcher:
     @pytest.fixture(autouse=True)
     def _reset_globals(self):
         """Reset module-level state between tests."""
-        import bantz.agent.job_scheduler as js
+        import butler.agent.job_scheduler as js
         js._last_activity = "idle"
         js._briefing_spoken_today = ""
         yield
@@ -428,7 +428,7 @@ class TestBriefingWatcher:
     @pytest.mark.asyncio
     async def test_watcher_disabled_tts(self):
         """Watcher does nothing when TTS is disabled."""
-        from bantz.agent.job_scheduler import _job_briefing_watcher
+        from butler.agent.job_scheduler import _job_briefing_watcher
         with patch("bantz.config.config") as mock_cfg:
             mock_cfg.tts_enabled = False
             await _job_briefing_watcher()
@@ -437,7 +437,7 @@ class TestBriefingWatcher:
     @pytest.mark.asyncio
     async def test_watcher_already_spoken_today(self):
         """Watcher skips if already spoken today."""
-        import bantz.agent.job_scheduler as js
+        import butler.agent.job_scheduler as js
         from datetime import datetime as dt
         js._briefing_spoken_today = dt.now().date().isoformat()
 
@@ -450,7 +450,7 @@ class TestBriefingWatcher:
     @pytest.mark.asyncio
     async def test_watcher_before_prep_hour(self):
         """Watcher skips if before briefing_prep_hour."""
-        from bantz.agent.job_scheduler import _job_briefing_watcher
+        from butler.agent.job_scheduler import _job_briefing_watcher
         from datetime import datetime as dt
 
         with patch("bantz.config.config") as mock_cfg, \
@@ -469,7 +469,7 @@ class TestBriefingWatcher:
     @pytest.mark.asyncio
     async def test_watcher_idle_to_active_triggers(self):
         """IDLE → CODING transition triggers TTS briefing."""
-        import bantz.agent.job_scheduler as js
+        import butler.agent.job_scheduler as js
         from datetime import datetime as dt
 
         js._last_activity = "idle"
@@ -506,7 +506,7 @@ class TestBriefingWatcher:
     @pytest.mark.asyncio
     async def test_watcher_no_briefing_ready(self):
         """IDLE → active but no briefing cached: should not speak."""
-        import bantz.agent.job_scheduler as js
+        import butler.agent.job_scheduler as js
         from datetime import datetime as dt
 
         js._last_activity = "idle"
@@ -538,7 +538,7 @@ class TestBriefingWatcher:
     @pytest.mark.asyncio
     async def test_watcher_active_to_active_no_trigger(self):
         """CODING → BROWSING should NOT trigger briefing."""
-        import bantz.agent.job_scheduler as js
+        import butler.agent.job_scheduler as js
         from datetime import datetime as dt
 
         js._last_activity = "coding"  # Not idle
@@ -574,7 +574,7 @@ class TestBrainTTSRoutes:
     """Test quick_route patterns for TTS control."""
 
     def _qr(self, text: str):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         return Brain._quick_route(text, text.lower())
 
     def test_shut_up(self):
@@ -614,7 +614,7 @@ class TestBrainTTSStopHandler:
     """Test process() handling of _tts_stop route."""
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True
@@ -691,7 +691,7 @@ class TestBrainBriefingWithTTS:
     """Test that briefing trigger also speaks via TTS."""
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True
@@ -784,7 +784,7 @@ class TestTTSConfig:
     """Test TTS configuration fields."""
 
     def test_default_values(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(_env_file=None)
         assert cfg.tts_enabled is False
         assert cfg.tts_model == "en_US-danny-low"
@@ -794,7 +794,7 @@ class TestTTSConfig:
         assert cfg.tts_auto_briefing is True
 
     def test_env_override(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(
             BANTZ_TTS_ENABLED="true",
             BANTZ_TTS_MODEL="en_GB-alba-medium",
@@ -816,7 +816,7 @@ class TestBriefingWatcherRegistration:
     """Test that the briefing watcher job is registered when TTS is enabled."""
 
     def test_register_when_tts_enabled(self):
-        from bantz.agent.job_scheduler import JobScheduler
+        from butler.agent.job_scheduler import JobScheduler
         js = JobScheduler()
         mock_scheduler = MagicMock()
         js._scheduler = mock_scheduler
@@ -830,7 +830,7 @@ class TestBriefingWatcherRegistration:
             assert call_kwargs[1]["id"] == "briefing_watcher"
 
     def test_no_register_when_tts_disabled(self):
-        from bantz.agent.job_scheduler import JobScheduler
+        from butler.agent.job_scheduler import JobScheduler
         js = JobScheduler()
         mock_scheduler = MagicMock()
         js._scheduler = mock_scheduler
@@ -851,11 +851,11 @@ class TestTTSSingleton:
     """Test the module-level tts_engine singleton."""
 
     def test_singleton_exists(self):
-        from bantz.agent.tts import tts_engine
+        from butler.agent.tts import tts_engine
         assert tts_engine is not None
 
     def test_singleton_is_tts_engine(self):
-        from bantz.agent.tts import tts_engine, TTSEngine
+        from butler.agent.tts import tts_engine, TTSEngine
         assert isinstance(tts_engine, TTSEngine)
 
 
@@ -869,7 +869,7 @@ class TestStripMarkdownForTTS:
 
     @staticmethod
     def _strip(text: str) -> str:
-        from bantz.agent.tts import strip_markdown_for_tts
+        from butler.agent.tts import strip_markdown_for_tts
         return strip_markdown_for_tts(text)
 
     # ── Code blocks (Rule 1) ─────────────────────────────────────────────
@@ -1025,19 +1025,19 @@ class TestGlobalTTSConfig:
     """Verify the tts_speak_all_responses config field."""
 
     def test_config_field_exists(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config()
         assert hasattr(cfg, "tts_speak_all_responses")
 
     def test_default_is_false(self):
-        from bantz.config import Config
+        from butler.config import Config
         # Check the Field default directly (immune to .env overrides)
         field = Config.model_fields["tts_speak_all_responses"]
         assert field.default is False
 
     def test_env_alias(self):
         """Config field has the correct BANTZ_ env alias."""
-        from bantz.config import Config
+        from butler.config import Config
         field = Config.model_fields["tts_speak_all_responses"]
         alias = field.alias
         assert alias == "BANTZ_TTS_SPEAK_ALL_RESPONSES"
@@ -1053,7 +1053,7 @@ class TestPhoneticFixes:
 
     @staticmethod
     def _fix(text: str) -> str:
-        from bantz.agent.tts import apply_phonetic_fixes
+        from butler.agent.tts import apply_phonetic_fixes
         return apply_phonetic_fixes(text)
 
     def test_mam_variants(self):
@@ -1097,7 +1097,7 @@ class TestPhoneticFixes:
 
     def test_integrated_in_strip_markdown(self):
         """strip_markdown_for_tts should include phonetic fixes."""
-        from bantz.agent.tts import strip_markdown_for_tts
+        from butler.agent.tts import strip_markdown_for_tts
         result = strip_markdown_for_tts("**Yes, ma'm.** How are you?")
         assert "mam" in result
         assert "ma'm" not in result
@@ -1113,7 +1113,7 @@ class TestProsodyNormalizer:
 
     @staticmethod
     def _norm(text: str) -> str:
-        from bantz.agent.tts import normalize_prosody
+        from butler.agent.tts import normalize_prosody
         return normalize_prosody(text)
 
     def test_ellipsis_removed(self):
@@ -1162,7 +1162,7 @@ class TestProsodyNormalizer:
 
     def test_end_to_end_in_strip_markdown(self):
         """Full pipeline: markdown → phonetic → prosody."""
-        from bantz.agent.tts import strip_markdown_for_tts
+        from butler.agent.tts import strip_markdown_for_tts
         result = strip_markdown_for_tts("**Hello...** ma'm!!! How are you?!")
         assert "..." not in result
         assert "!!!" not in result
@@ -1179,24 +1179,24 @@ class TestAnimatronicConfig:
     """Verify the tts_animatronic_filter config field."""
 
     def test_field_exists(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config()
         assert hasattr(cfg, "tts_animatronic_filter")
 
     def test_default_is_false(self):
-        from bantz.config import Config
+        from butler.config import Config
         # Check the Field default directly (immune to .env overrides)
         field = Config.model_fields["tts_animatronic_filter"]
         assert field.default is False
 
     def test_env_alias(self):
-        from bantz.config import Config
+        from butler.config import Config
         field = Config.model_fields["tts_animatronic_filter"]
         assert field.alias == "BANTZ_TTS_ANIMATRONIC_FILTER"
 
     def test_default_model_is_danny(self):
         """Default TTS model should be en_US-danny-low (#248)."""
-        from bantz.config import Config
+        from butler.config import Config
         # Check the Field default directly (immune to .env overrides)
         field = Config.model_fields["tts_model"]
         assert field.default == "en_US-danny-low"
@@ -1207,7 +1207,7 @@ class TestSoxDiscovery:
 
     def test_sox_found_when_present(self):
         """When sox is on PATH, _sox_path is set."""
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
 
         eng = TTSEngine()
         model_path = "/tmp/test_model.onnx"
@@ -1235,7 +1235,7 @@ class TestSoxDiscovery:
 
     def test_sox_not_found(self):
         """When sox is not on PATH, _sox_path is empty string."""
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
 
         eng = TTSEngine()
         model_path = "/tmp/test_model.onnx"
@@ -1268,7 +1268,7 @@ class TestPlayPipeline:
     @pytest.mark.asyncio
     async def test_clean_play_no_sox(self):
         """When filter disabled AND gain=0, only aplay is spawned (no sox)."""
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
 
         eng = TTSEngine()
         eng._aplay_path = "/usr/bin/aplay"
@@ -1293,7 +1293,7 @@ class TestPlayPipeline:
     @pytest.mark.asyncio
     async def test_gain_only_uses_sox(self):
         """When filter disabled but gain > 0 and sox available, sox gain + aplay."""
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
 
         eng = TTSEngine()
         eng._aplay_path = "/usr/bin/aplay"
@@ -1336,7 +1336,7 @@ class TestPlayPipeline:
     @pytest.mark.asyncio
     async def test_animatronic_play_uses_sox(self):
         """When filter enabled and sox available, two subprocesses are created."""
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
 
         eng = TTSEngine()
         eng._aplay_path = "/usr/bin/aplay"
@@ -1382,7 +1382,7 @@ class TestPlayPipeline:
     @pytest.mark.asyncio
     async def test_animatronic_fallback_when_sox_missing(self):
         """When filter enabled but sox not found, falls back to clean play."""
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
 
         eng = TTSEngine()
         eng._aplay_path = "/usr/bin/aplay"
@@ -1406,7 +1406,7 @@ class TestPlayPipeline:
     @pytest.mark.asyncio
     async def test_play_empty_data_noop(self):
         """Empty wav_data does nothing."""
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
 
         eng = TTSEngine()
         eng._aplay_path = "/usr/bin/aplay"
@@ -1421,7 +1421,7 @@ class TestKillPlaybackSox:
     """Verify _kill_playback terminates both sox and aplay."""
 
     def test_kill_both_processes(self):
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
 
         eng = TTSEngine()
 
@@ -1444,7 +1444,7 @@ class TestKillPlaybackSox:
         assert eng._sox_proc is None
 
     def test_kill_only_aplay_when_no_sox(self):
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
 
         eng = TTSEngine()
 

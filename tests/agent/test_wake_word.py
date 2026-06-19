@@ -30,32 +30,32 @@ from unittest.mock import MagicMock, patch
 
 class TestWakeWordConfig:
     def test_wake_word_enabled_field(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(BANTZ_WAKE_WORD_ENABLED="false")
         assert c.wake_word_enabled is False
 
     def test_wake_word_enabled_true(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(BANTZ_WAKE_WORD_ENABLED="true")
         assert c.wake_word_enabled is True
 
     def test_picovoice_access_key_default_empty(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None)
         assert c.picovoice_access_key == ""
 
     def test_picovoice_access_key_set(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(BANTZ_PICOVOICE_ACCESS_KEY="test-key-123")
         assert c.picovoice_access_key == "test-key-123"
 
     def test_wake_word_sensitivity_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         # Test the hardcoded Field default, independent of .env overrides
         assert Config.model_fields["wake_word_sensitivity"].default == 0.5
 
     def test_wake_word_sensitivity_custom(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(BANTZ_WAKE_WORD_SENSITIVITY="0.8")
         assert c.wake_word_sensitivity == 0.8
 
@@ -66,7 +66,7 @@ class TestWakeWordConfig:
 
 class TestWakeWordListener:
     def _make(self):
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         return WakeWordListener()
 
     def test_initial_state(self):
@@ -132,7 +132,7 @@ class TestWakeWordListener:
 
 class TestDiagnose:
     def _make(self):
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         return WakeWordListener()
 
     def test_diagnose_structure(self):
@@ -164,7 +164,7 @@ class TestThreadArchitecture:
     def test_not_using_apscheduler(self):
         """Wake word must NOT be registered as an APScheduler job."""
         import ast
-        from bantz.agent import wake_word
+        from butler.agent import wake_word
         import inspect
         tree = ast.parse(inspect.getsource(wake_word))
         # Strip docstrings/comments by looking at executable code only
@@ -186,21 +186,21 @@ class TestThreadArchitecture:
     def test_uses_threading_thread(self):
         """Must use threading.Thread, not asyncio task."""
         import inspect
-        from bantz.agent import wake_word
+        from butler.agent import wake_word
         src = inspect.getsource(wake_word)
         assert "threading.Thread" in src
 
     def test_thread_is_daemon(self):
         """Thread must be daemon=True so it dies with the main process."""
         import inspect
-        from bantz.agent import wake_word
+        from butler.agent import wake_word
         src = inspect.getsource(wake_word)
         assert "daemon=True" in src
 
     def test_has_stop_event(self):
         """Must use threading.Event for clean shutdown."""
         import inspect
-        from bantz.agent import wake_word
+        from butler.agent import wake_word
         src = inspect.getsource(wake_word)
         assert "_stop" in src
         assert "Event" in src
@@ -214,14 +214,14 @@ class TestMicNotMutedDuringTTS:
     def test_no_tts_mute_check_in_listen_loop(self):
         """The listen loop must NOT check tts.is_speaking to skip audio reads."""
         import inspect
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         src = inspect.getsource(WakeWordListener._listen_loop)
         # is_speaking check belongs in _interrupt_tts, not in the listen loop
         assert "is_speaking" not in src
 
     def test_interrupt_tts_calls_stop(self):
         """_interrupt_tts should call tts_engine.stop() when speaking."""
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         mock_tts = MagicMock()
         mock_tts.is_speaking = True
         with patch("bantz.agent.tts.tts_engine", mock_tts):
@@ -235,12 +235,12 @@ class TestMicNotMutedDuringTTS:
 
 class TestCooldown:
     def test_cooldown_constant_exists(self):
-        from bantz.agent.wake_word import _COOLDOWN_SECONDS
+        from butler.agent.wake_word import _COOLDOWN_SECONDS
         assert _COOLDOWN_SECONDS >= 1.0
 
     def test_rapid_triggers_are_suppressed(self):
         """Simulate two detections within cooldown — second should be ignored."""
-        from bantz.agent.wake_word import WakeWordListener, _COOLDOWN_SECONDS
+        from butler.agent.wake_word import WakeWordListener, _COOLDOWN_SECONDS
         w = WakeWordListener()
         callback = MagicMock()
         w._on_wake = callback
@@ -267,7 +267,7 @@ class TestCooldown:
 class TestAckSound:
     def test_play_ack_without_aplay_uses_bell(self):
         """Falls back to terminal bell if aplay missing."""
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         with patch("shutil.which", return_value=None):
             with patch("builtins.print") as mock_print:
                 WakeWordListener._play_ack()
@@ -275,7 +275,7 @@ class TestAckSound:
 
     def test_play_ack_with_aplay(self):
         """Generates sine tone and pipes to aplay."""
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         with patch("shutil.which", return_value="/usr/bin/aplay"):
             with patch("subprocess.run") as mock_run:
                 WakeWordListener._play_ack()
@@ -293,7 +293,7 @@ class TestAckSound:
 class TestKeywordDiscovery:
     def test_find_custom_ppn(self, tmp_path):
         """Finds hey-bantz.ppn in data dir."""
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         ppn = tmp_path / "hey-bantz_en_linux.ppn"
         ppn.write_bytes(b"fake")
 
@@ -306,7 +306,7 @@ class TestKeywordDiscovery:
 
     def test_fallback_when_no_ppn(self, tmp_path):
         """Returns None when no custom keyword file exists in any search dir."""
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         w = WakeWordListener()
         # Create an empty subdir so all search dirs point to empty locations
         empty = tmp_path / "empty"
@@ -336,7 +336,7 @@ class TestKeywordDiscovery:
             sentinel.resolve.return_value.parent.parent.parent.parent = empty
             sentinel.is_dir = lambda: True
             # Simplest approach: just monkeypatch __file__ in the module
-            import bantz.agent.wake_word as ww_mod
+            import butler.agent.wake_word as ww_mod
             orig_file = ww_mod.__file__
             try:
                 ww_mod.__file__ = str(empty / "fake.py")
@@ -352,7 +352,7 @@ class TestKeywordDiscovery:
 
 class TestCleanup:
     def test_cleanup_audio(self):
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         w = WakeWordListener()
         w._audio_stream = MagicMock()
         w._pa = MagicMock()
@@ -361,7 +361,7 @@ class TestCleanup:
         assert w._pa is None
 
     def test_cleanup_porcupine(self):
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         w = WakeWordListener()
         mock_porc = MagicMock()
         w._porcupine = mock_porc
@@ -371,7 +371,7 @@ class TestCleanup:
 
     def test_cleanup_porcupine_none(self):
         """Cleanup when porcupine is None should not raise."""
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         w = WakeWordListener()
         w._porcupine = None
         w._cleanup_porcupine()  # Should not raise
@@ -383,11 +383,11 @@ class TestCleanup:
 
 class TestSingleton:
     def test_singleton_exists(self):
-        from bantz.agent.wake_word import wake_listener, WakeWordListener
+        from butler.agent.wake_word import wake_listener, WakeWordListener
         assert isinstance(wake_listener, WakeWordListener)
 
     def test_singleton_starts_stopped(self):
-        from bantz.agent.wake_word import wake_listener
+        from butler.agent.wake_word import wake_listener
         assert wake_listener.running is False
 
 
@@ -416,7 +416,7 @@ class TestEnvExample:
 
 class TestDoctorSection:
     def test_section_for_wake_word(self):
-        from bantz.cli.setup import _section_for
+        from butler.cli.setup import _section_for
         assert _section_for("wake_word_enabled") == "Wake Word"
         assert _section_for("wake_word_sensitivity") == "Wake Word"
         assert _section_for("picovoice_access_key") == "Wake Word"
@@ -431,7 +431,7 @@ class TestScopeGuard:
         """wake_word.py must NOT import or call any STT/Whisper code."""
         import ast
         import inspect
-        from bantz.agent import wake_word
+        from butler.agent import wake_word
         tree = ast.parse(inspect.getsource(wake_word))
         # Check imports don't reference whisper/stt
         imports = [n for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom))]
@@ -450,7 +450,7 @@ class TestScopeGuard:
     def test_no_recording_saving(self):
         """Must not save audio to wav files — that's STT's job."""
         import inspect
-        from bantz.agent import wake_word
+        from butler.agent import wake_word
         src = inspect.getsource(wake_word)
         assert ".wav" not in src
         assert "wave.open" not in src
@@ -465,28 +465,28 @@ class TestArchitectureAudit:
     def test_no_scheduler_import(self):
         """Must not import job_scheduler."""
         import inspect
-        from bantz.agent import wake_word
+        from butler.agent import wake_word
         src = inspect.getsource(wake_word)
         assert "job_scheduler" not in src
 
     def test_exception_on_overflow_false(self):
         """stream.read must use exception_on_overflow=False to prevent crashes."""
         import inspect
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         src = inspect.getsource(WakeWordListener._listen_loop)
         assert "exception_on_overflow=False" in src
 
     def test_listen_loop_has_sleep_on_error(self):
         """Error handler in listen loop must sleep to prevent busy-spin."""
         import inspect
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         src = inspect.getsource(WakeWordListener._listen_loop)
         assert "time.sleep" in src
 
     def test_tts_interrupt_in_listen_loop(self):
         """Wake detection must call _interrupt_tts."""
         import inspect
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         src = inspect.getsource(WakeWordListener._listen_loop)
         assert "_interrupt_tts" in src
 
@@ -501,7 +501,7 @@ class TestWakeWordEventBus:
     def test_bus_emit_in_listen_loop_source(self):
         """_listen_loop must call bus.emit_threadsafe('wake_word_detected')."""
         import inspect
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         src = inspect.getsource(WakeWordListener._listen_loop)
         assert "bus.emit_threadsafe" in src
         assert "wake_word_detected" in src
@@ -509,15 +509,15 @@ class TestWakeWordEventBus:
     def test_bus_import_exists(self):
         """wake_word.py must import from event_bus."""
         import inspect
-        from bantz.agent import wake_word
+        from butler.agent import wake_word
         src = inspect.getsource(wake_word)
-        assert "from bantz.core.event_bus import bus" in src
+        assert "from butler.core.event_bus import bus" in src
 
     def test_no_brain_or_tui_imports(self):
         """wake_word.py must NOT import from brain or TUI."""
         import ast
         import inspect
-        from bantz.agent import wake_word
+        from butler.agent import wake_word
         tree = ast.parse(inspect.getsource(wake_word))
         imports = [n for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)]
         for imp in imports:

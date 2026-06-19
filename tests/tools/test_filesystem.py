@@ -49,7 +49,7 @@ class TestPDFReading:
 
     @pytest.mark.asyncio
     async def test_reads_pdf_text(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         pdf_file = tmp_path / "report.pdf"
         pdf_file.write_bytes(b"%PDF-fake")
@@ -71,7 +71,7 @@ class TestPDFReading:
 
     @pytest.mark.asyncio
     async def test_pdf_page_count_in_data(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         pdf_file = tmp_path / "three_pages.pdf"
         pdf_file.write_bytes(b"%PDF-fake")
@@ -98,7 +98,7 @@ class TestEncryptedPDF:
 
     @pytest.mark.asyncio
     async def test_encrypted_pdf_rejected(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         pdf_file = tmp_path / "secret.pdf"
         pdf_file.write_bytes(b"%PDF-fake")
@@ -127,7 +127,7 @@ class TestEmptyPDF:
 
     @pytest.mark.asyncio
     async def test_empty_pdf_returns_failure(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         pdf_file = tmp_path / "scan.pdf"
         pdf_file.write_bytes(b"%PDF-fake")
@@ -146,7 +146,7 @@ class TestEmptyPDF:
 
     @pytest.mark.asyncio
     async def test_whitespace_only_pdf_is_empty(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         pdf_file = tmp_path / "blank.pdf"
         pdf_file.write_bytes(b"%PDF-fake")
@@ -174,7 +174,7 @@ class TestPDFTruncation:
 
     @pytest.mark.asyncio
     async def test_long_pdf_truncated(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool, MAX_PDF_CHARS
+        from butler.tools.filesystem import FilesystemTool, MAX_PDF_CHARS
 
         pdf_file = tmp_path / "thesis.pdf"
         pdf_file.write_bytes(b"%PDF-fake")
@@ -199,7 +199,7 @@ class TestPDFTruncation:
 
     @pytest.mark.asyncio
     async def test_short_pdf_not_truncated(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         pdf_file = tmp_path / "short.pdf"
         pdf_file.write_bytes(b"%PDF-fake")
@@ -229,7 +229,7 @@ class TestBinaryRejection:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("ext", [".exe", ".jpg", ".zip", ".mp3", ".mp4", ".dll", ".sqlite"])
     async def test_binary_extensions_rejected(self, tmp_path, ext):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         bin_file = tmp_path / f"file{ext}"
         bin_file.write_bytes(b"\x00\x01\x02\x03")
@@ -243,7 +243,7 @@ class TestBinaryRejection:
 
     @pytest.mark.asyncio
     async def test_text_file_not_rejected(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         txt_file = tmp_path / "readme.txt"
         txt_file.write_text("Hello world", encoding="utf-8")
@@ -258,7 +258,7 @@ class TestBinaryRejection:
     @pytest.mark.asyncio
     async def test_unknown_extension_reads_as_text(self, tmp_path):
         """Unknown extensions (e.g., .cfg, .log) should still be read as text."""
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         cfg_file = tmp_path / "config.cfg"
         cfg_file.write_text("key=value", encoding="utf-8")
@@ -281,7 +281,7 @@ class TestFitzMissing:
 
     @pytest.mark.asyncio
     async def test_fitz_missing_returns_helpful_error(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         pdf_file = tmp_path / "doc.pdf"
         pdf_file.write_bytes(b"%PDF-fake")
@@ -305,7 +305,7 @@ class TestPDFOpenFailure:
 
     @pytest.mark.asyncio
     async def test_corrupt_pdf_returns_error(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         pdf_file = tmp_path / "corrupt.pdf"
         pdf_file.write_bytes(b"%PDF-fake")
@@ -332,7 +332,7 @@ class TestPlainTextRegression:
 
     @pytest.mark.asyncio
     async def test_read_python_file(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         py_file = tmp_path / "script.py"
         py_file.write_text("print('hello')", encoding="utf-8")
@@ -346,7 +346,7 @@ class TestPlainTextRegression:
 
     @pytest.mark.asyncio
     async def test_read_json_file(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         json_file = tmp_path / "data.json"
         json_file.write_text('{"key": "value"}', encoding="utf-8")
@@ -360,7 +360,7 @@ class TestPlainTextRegression:
 
     @pytest.mark.asyncio
     async def test_large_text_file_truncated(self, tmp_path):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
 
         big_file = tmp_path / "big.txt"
         big_file.write_text("X" * 100_000, encoding="utf-8")

@@ -24,8 +24,8 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from bantz.data.connection_pool import get_pool, SQLitePool
-from bantz.vision.spatial_cache import (
+from butler.data.connection_pool import get_pool, SQLitePool
+from butler.vision.spatial_cache import (
     SpatialCacheDB,
     CacheEntry,
     MAX_ENTRIES,
@@ -512,7 +512,7 @@ class TestClose:
 
 class TestSingleton:
     def test_module_singleton_exists(self):
-        from bantz.vision.spatial_cache import spatial_db
+        from butler.vision.spatial_cache import spatial_db
         assert isinstance(spatial_db, SpatialCacheDB)
 
 

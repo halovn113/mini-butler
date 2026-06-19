@@ -22,47 +22,47 @@ import pytest
 
 class TestFuzzyMatch:
     def test_exact_match(self):
-        from bantz.tools.accessibility import _fuzzy_match
+        from butler.tools.accessibility import _fuzzy_match
         assert _fuzzy_match("Send", "Send") == 1.0
 
     def test_case_insensitive(self):
-        from bantz.tools.accessibility import _fuzzy_match
+        from butler.tools.accessibility import _fuzzy_match
         assert _fuzzy_match("send", "Send") == 1.0
 
     def test_substring(self):
-        from bantz.tools.accessibility import _fuzzy_match
+        from butler.tools.accessibility import _fuzzy_match
         score = _fuzzy_match("Send", "Send Message")
         assert score >= 0.8
 
     def test_reverse_substring(self):
-        from bantz.tools.accessibility import _fuzzy_match
+        from butler.tools.accessibility import _fuzzy_match
         score = _fuzzy_match("Send Message Button", "Send")
         assert score >= 0.7
 
     def test_word_overlap(self):
-        from bantz.tools.accessibility import _fuzzy_match
+        from butler.tools.accessibility import _fuzzy_match
         score = _fuzzy_match("URL bar", "URL Address Bar")
         assert score > 0.5
 
     def test_no_match(self):
-        from bantz.tools.accessibility import _fuzzy_match
+        from butler.tools.accessibility import _fuzzy_match
         score = _fuzzy_match("Send", "Cancel")
         assert score < 0.5
 
     def test_empty_strings(self):
-        from bantz.tools.accessibility import _fuzzy_match
+        from butler.tools.accessibility import _fuzzy_match
         assert _fuzzy_match("", "Send") == 0.0
         assert _fuzzy_match("Send", "") == 0.0
         assert _fuzzy_match("", "") == 0.0
 
     def test_bigram_similarity(self):
-        from bantz.tools.accessibility import _fuzzy_match
+        from butler.tools.accessibility import _fuzzy_match
         # Similar but not exact or substring
         score = _fuzzy_match("Settings", "Setting")
         assert score > 0.3
 
     def test_whitespace_handling(self):
-        from bantz.tools.accessibility import _fuzzy_match
+        from butler.tools.accessibility import _fuzzy_match
         assert _fuzzy_match("  Send  ", "Send") == 1.0
 
 
@@ -70,24 +70,24 @@ class TestFuzzyMatch:
 
 class TestDisplayServer:
     def test_detect_x11(self):
-        from bantz.tools.accessibility import detect_display_server
+        from butler.tools.accessibility import detect_display_server
         with patch.dict(os.environ, {"XDG_SESSION_TYPE": "x11"}, clear=False):
             assert detect_display_server() == "x11"
 
     def test_detect_wayland(self):
-        from bantz.tools.accessibility import detect_display_server
+        from butler.tools.accessibility import detect_display_server
         with patch.dict(os.environ, {"XDG_SESSION_TYPE": "wayland"}, clear=False):
             assert detect_display_server() == "wayland"
 
     def test_detect_wayland_display(self):
-        from bantz.tools.accessibility import detect_display_server
+        from butler.tools.accessibility import detect_display_server
         env = {"XDG_SESSION_TYPE": "", "WAYLAND_DISPLAY": "wayland-0"}
         with patch.dict(os.environ, env, clear=False):
             result = detect_display_server()
             assert result in ("wayland", "x11")  # may have DISPLAY too
 
     def test_detect_x11_display(self):
-        from bantz.tools.accessibility import detect_display_server
+        from butler.tools.accessibility import detect_display_server
         env = {"XDG_SESSION_TYPE": "", "DISPLAY": ":0"}
         with patch.dict(os.environ, env, clear=False):
             result = detect_display_server()
@@ -110,12 +110,12 @@ class TestAccessibilityToolActions:
     """Test tool execute() with AT-SPI mocked at module level."""
 
     def _make_tool(self):
-        from bantz.tools.accessibility import AccessibilityTool
+        from butler.tools.accessibility import AccessibilityTool
         return AccessibilityTool()
 
     @pytest.mark.asyncio
     async def test_info_action(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -138,7 +138,7 @@ class TestAccessibilityToolActions:
 
     @pytest.mark.asyncio
     async def test_list_apps_empty(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -159,7 +159,7 @@ class TestAccessibilityToolActions:
 
     @pytest.mark.asyncio
     async def test_list_apps_with_apps(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -189,7 +189,7 @@ class TestAccessibilityToolActions:
 
     @pytest.mark.asyncio
     async def test_find_missing_args(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -206,7 +206,7 @@ class TestAccessibilityToolActions:
 
     @pytest.mark.asyncio
     async def test_tree_missing_app(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -223,7 +223,7 @@ class TestAccessibilityToolActions:
 
     @pytest.mark.asyncio
     async def test_focus_missing_app(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -240,7 +240,7 @@ class TestAccessibilityToolActions:
 
     @pytest.mark.asyncio
     async def test_unknown_action(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -261,7 +261,7 @@ class TestAccessibilityToolActions:
 class TestATSPIUnavailable:
     @pytest.mark.asyncio
     async def test_graceful_error_when_unavailable(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -277,7 +277,7 @@ class TestATSPIUnavailable:
             mod._atspi = old_atspi
 
     def test_list_applications_when_unavailable(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -289,7 +289,7 @@ class TestATSPIUnavailable:
             mod._atspi = old_atspi
 
     def test_get_element_tree_when_unavailable(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -301,7 +301,7 @@ class TestATSPIUnavailable:
             mod._atspi = old_atspi
 
     def test_find_element_when_unavailable(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -317,7 +317,7 @@ class TestATSPIUnavailable:
 
 class TestTreeFormatting:
     def test_format_tree_lines(self):
-        from bantz.tools.accessibility import AccessibilityTool
+        from butler.tools.accessibility import AccessibilityTool
         tool = AccessibilityTool()
 
         tree = {
@@ -350,7 +350,7 @@ class TestTreeFormatting:
         assert "[entry]" in lines[2]
 
     def test_format_tree_truncation(self):
-        from bantz.tools.accessibility import AccessibilityTool
+        from butler.tools.accessibility import AccessibilityTool
         tool = AccessibilityTool()
 
         tree = {
@@ -373,7 +373,7 @@ class TestTreeFormatting:
 class TestQuickRouteAccessibility:
     @staticmethod
     def _quick(orig: str, en: str = "") -> dict | None:
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         return Brain._quick_route(orig, en or orig)
 
     def test_click_button_route(self):
@@ -412,7 +412,7 @@ class TestQuickRouteAccessibility:
 
 class TestToolSchema:
     def test_schema(self):
-        from bantz.tools.accessibility import AccessibilityTool
+        from butler.tools.accessibility import AccessibilityTool
         tool = AccessibilityTool()
         schema = tool.schema()
         assert schema["name"] == "accessibility"
@@ -424,7 +424,7 @@ class TestToolSchema:
 
 class TestFindElement:
     def test_find_element_in_mocked_tree(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -473,7 +473,7 @@ class TestFindElement:
             mod._atspi = old_atspi
 
     def test_find_element_no_match(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:
@@ -515,7 +515,7 @@ class TestFindElement:
 
 class TestFocusWindow:
     def test_focus_via_wmctrl(self):
-        from bantz.tools.accessibility import focus_window
+        from butler.tools.accessibility import focus_window
         with patch("bantz.tools.accessibility.subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
             assert focus_window("Firefox") is True
@@ -524,7 +524,7 @@ class TestFocusWindow:
             assert "wmctrl" in args
 
     def test_focus_wmctrl_missing_falls_to_xdotool(self):
-        from bantz.tools.accessibility import focus_window
+        from butler.tools.accessibility import focus_window
         call_count = 0
 
         def side_effect(*args, **kwargs):
@@ -542,7 +542,7 @@ class TestFocusWindow:
             assert call_count == 2  # wmctrl failed, xdotool succeeded
 
     def test_focus_all_fail(self):
-        import bantz.tools.accessibility as mod
+        import butler.tools.accessibility as mod
         old_avail = mod._atspi_available
         old_atspi = mod._atspi
         try:

@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bantz.tools.image_tool import (
+from butler.tools.image_tool import (
     CACHE_TTL,
     ImageTool,
     ImageToolError,
@@ -26,7 +26,7 @@ from bantz.tools.image_tool import (
 @pytest.fixture
 def tmp_cache(tmp_path, monkeypatch):
     """Override CACHE_DIR to a temporary directory."""
-    import bantz.tools.image_tool as mod
+    import butler.tools.image_tool as mod
     monkeypatch.setattr(mod, "CACHE_DIR", tmp_path)
     return tmp_path
 
@@ -72,7 +72,7 @@ class TestCacheManagement:
         assert purge_stale_cache() == 0
 
     def test_purge_nonexistent_cache(self, monkeypatch):
-        import bantz.tools.image_tool as mod
+        import butler.tools.image_tool as mod
         monkeypatch.setattr(mod, "CACHE_DIR", Path("/nonexistent/path"))
         assert purge_stale_cache() == 0
 

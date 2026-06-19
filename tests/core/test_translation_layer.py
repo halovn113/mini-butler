@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bantz.core.translation_layer import (
+from butler.core.translation_layer import (
     to_en,
     resolve_message_ref,
     detect_feedback,
@@ -32,12 +32,12 @@ class TestGetBridge:
 
     def setup_method(self):
         """Reset the module-level cache before each test."""
-        import bantz.core.translation_layer as mod
+        import butler.core.translation_layer as mod
         mod._bridge_cache = None
 
     def test_returns_bridge_when_available(self):
         mock_bridge = MagicMock()
-        import bantz.core.translation_layer as mod
+        import butler.core.translation_layer as mod
         mod._bridge_cache = None
         fake_module = MagicMock(bridge=mock_bridge)
         with patch.dict("sys.modules", {"bantz.i18n.bridge": fake_module}):
@@ -45,7 +45,7 @@ class TestGetBridge:
         assert result is mock_bridge
 
     def test_returns_none_when_import_fails(self):
-        import bantz.core.translation_layer as mod
+        import butler.core.translation_layer as mod
         mod._bridge_cache = None
         with patch.dict("sys.modules", {"bantz.i18n.bridge": None}):
             mod._bridge_cache = None
@@ -53,7 +53,7 @@ class TestGetBridge:
         assert result is None
 
     def test_caches_result(self):
-        import bantz.core.translation_layer as mod
+        import butler.core.translation_layer as mod
         sentinel = MagicMock()
         mod._bridge_cache = sentinel
         result = mod.get_bridge()
@@ -69,12 +69,12 @@ class TestToEn:
     """Async translation to English."""
 
     def setup_method(self):
-        import bantz.core.translation_layer as mod
+        import butler.core.translation_layer as mod
         mod._bridge_cache = None
 
     @pytest.mark.asyncio
     async def test_passthrough_when_bridge_disabled(self):
-        import bantz.core.translation_layer as mod
+        import butler.core.translation_layer as mod
         mod._bridge_cache = False  # bridge unavailable
         result = await to_en("merhaba dünya")
         assert result == "merhaba dünya"
@@ -85,7 +85,7 @@ class TestToEn:
         mock_bridge.is_enabled.return_value = True
         mock_bridge.to_english = AsyncMock(return_value="hello world")
 
-        import bantz.core.translation_layer as mod
+        import butler.core.translation_layer as mod
         mod._bridge_cache = mock_bridge
         result = await to_en("merhaba dünya")
         assert result == "hello world"
@@ -101,7 +101,7 @@ class TestToEn:
 
         mock_bridge.to_english = slow_translate
 
-        import bantz.core.translation_layer as mod
+        import butler.core.translation_layer as mod
         mod._bridge_cache = mock_bridge
 
         # Patch asyncio.wait_for timeout to be very short

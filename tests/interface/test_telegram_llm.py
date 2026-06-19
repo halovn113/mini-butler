@@ -62,14 +62,14 @@ class TestSafeReply:
 
     @pytest.mark.asyncio
     async def test_short_message_single_reply(self):
-        from bantz.interface.telegram_bot import _safe_reply
+        from butler.interface.telegram_bot import _safe_reply
         update = _make_update()
         await _safe_reply(update, "Hello world")
         update.message.reply_text.assert_awaited_once_with("Hello world")
 
     @pytest.mark.asyncio
     async def test_splits_at_paragraph_boundary(self):
-        from bantz.interface.telegram_bot import _safe_reply
+        from butler.interface.telegram_bot import _safe_reply
         update = _make_update()
         # Two paragraphs each ~2500 chars → combined > 4000 → split into 2
         para_a = "A" * 2500
@@ -84,7 +84,7 @@ class TestSafeReply:
     @pytest.mark.asyncio
     async def test_exact_boundary(self):
         """Message exactly at the limit — single reply."""
-        from bantz.interface.telegram_bot import _safe_reply
+        from butler.interface.telegram_bot import _safe_reply
         update = _make_update()
         text = "X" * 4000
         await _safe_reply(update, text)
@@ -93,7 +93,7 @@ class TestSafeReply:
     @pytest.mark.asyncio
     async def test_hard_split_long_paragraph(self):
         """A single paragraph > 4000 chars must still be sent."""
-        from bantz.interface.telegram_bot import _safe_reply
+        from butler.interface.telegram_bot import _safe_reply
         update = _make_update()
         text = "X" * 8000  # No \n\n, no \n — hard truncation
         await _safe_reply(update, text)
@@ -105,7 +105,7 @@ class TestSafeReply:
 
     @pytest.mark.asyncio
     async def test_three_small_paragraphs_fit_one_chunk(self):
-        from bantz.interface.telegram_bot import _safe_reply
+        from butler.interface.telegram_bot import _safe_reply
         update = _make_update()
         text = "Hi\n\nThere\n\nFriend"
         await _safe_reply(update, text)
@@ -119,7 +119,7 @@ class TestSafeReply:
 
 class TestRateLimiter:
     def setup_method(self):
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         self.mod = mod
         # Clear rate state before each test
         mod._rate_log.clear()
@@ -156,7 +156,7 @@ class TestSilentStranger:
 
     @pytest.mark.asyncio
     async def test_unauthorized_user_silent_drop(self):
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         # Save and set allowed list
         original = mod._ALLOWED
         try:
@@ -171,7 +171,7 @@ class TestSilentStranger:
 
     @pytest.mark.asyncio
     async def test_authorized_user_passes(self):
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -201,7 +201,7 @@ class TestLLMModeToggle:
     @pytest.mark.asyncio
     async def test_llm_mode_off_rejects(self):
         """When TELEGRAM_LLM_MODE=false, free text is rejected."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -227,7 +227,7 @@ class TestHandleMessage:
     @pytest.mark.asyncio
     async def test_typing_indicator_sent(self):
         """Typing action should be sent while brain processes."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original_allowed = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -252,7 +252,7 @@ class TestHandleMessage:
     @pytest.mark.asyncio
     async def test_brain_process_called_with_is_remote(self):
         """brain.process() must be called with is_remote=True."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original_allowed = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -276,7 +276,7 @@ class TestHandleMessage:
     @pytest.mark.asyncio
     async def test_stream_response_collected(self):
         """When result.stream exists, chunks are collected and sent."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original_allowed = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -309,7 +309,7 @@ class TestHandleMessage:
     @pytest.mark.asyncio
     async def test_stream_response_persisted_to_db(self):
         """Streamed responses must be saved to DB for memory continuity."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original_allowed = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -349,7 +349,7 @@ class TestHandleMessage:
     @pytest.mark.asyncio
     async def test_empty_text_ignored(self):
         """Empty text messages are silently ignored."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original_allowed = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -369,7 +369,7 @@ class TestHandleMessage:
     @pytest.mark.asyncio
     async def test_rate_limited_user_gets_warning(self):
         """Rate-limited user gets a polite wait message."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original_allowed = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -392,7 +392,7 @@ class TestHandleMessage:
     @pytest.mark.asyncio
     async def test_brain_error_reports_to_user(self):
         """If brain raises, user gets an error message."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original_allowed = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -418,7 +418,7 @@ class TestHandleMessage:
     @pytest.mark.asyncio
     async def test_empty_response_sends_ellipsis(self):
         """Empty brain response sends '…' instead of nothing."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original_allowed = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -450,17 +450,17 @@ class TestHandleMessage:
 
 class TestConfigField:
     def test_telegram_llm_mode_exists(self):
-        from bantz.config import Config
+        from butler.config import Config
         fields = Config.model_fields
         assert "telegram_llm_mode" in fields
 
     def test_telegram_llm_mode_default_true(self):
-        from bantz.config import Config
+        from butler.config import Config
         f = Config.model_fields["telegram_llm_mode"]
         assert f.default is True
 
     def test_telegram_llm_mode_alias(self):
-        from bantz.config import Config
+        from butler.config import Config
         f = Config.model_fields["telegram_llm_mode"]
         alias = f.alias or (f.validation_alias if hasattr(f, "validation_alias") else None)
         assert alias == "TELEGRAM_LLM_MODE"
@@ -475,7 +475,7 @@ class TestBrainIsRemote:
     def test_process_accepts_is_remote_kwarg(self):
         """brain.process() signature must accept is_remote."""
         import inspect
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         sig = inspect.signature(Brain.process)
         params = sig.parameters
         assert "is_remote" in params
@@ -483,7 +483,7 @@ class TestBrainIsRemote:
 
     def test_no_remote_hint_in_chat(self):
         """remote_hint was removed — _chat must NOT inject any remote persona hint."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         import inspect
         src = inspect.getsource(Brain._chat)
         assert "remote_hint" not in src
@@ -491,7 +491,7 @@ class TestBrainIsRemote:
 
     def test_no_remote_hint_in_chat_stream(self):
         """remote_hint was removed — _chat_stream must NOT inject any remote persona hint."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         import inspect
         src = inspect.getsource(Brain._chat_stream)
         assert "remote_hint" not in src
@@ -506,7 +506,7 @@ class TestBrainIsRemote:
 class TestTTSSuppression:
     def test_tts_guard_in_briefing_handler(self):
         """The TTS speak call in briefing handler must be guarded by _is_remote."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         import inspect
         src = inspect.getsource(Brain._handle_briefing) if hasattr(Brain, "_handle_briefing") else ""
         if not src:
@@ -523,7 +523,7 @@ class TestTTSSuppression:
 class TestStartCommand:
     @pytest.mark.asyncio
     async def test_start_shows_llm_hint_when_enabled(self):
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         try:
             mod._ALLOWED = None
@@ -539,7 +539,7 @@ class TestStartCommand:
 
     @pytest.mark.asyncio
     async def test_start_no_llm_hint_when_disabled(self):
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         try:
             mod._ALLOWED = None
@@ -563,7 +563,7 @@ class TestRunBotRegistration:
     def test_run_bot_source_has_message_handler(self):
         """run_bot() must register a MessageHandler for free text."""
         import inspect
-        from bantz.interface.telegram_bot import run_bot
+        from butler.interface.telegram_bot import run_bot
         src = inspect.getsource(run_bot)
         assert "MessageHandler" in src
         assert "handle_message" in src
@@ -571,7 +571,7 @@ class TestRunBotRegistration:
     def test_run_bot_source_has_text_filter(self):
         """MessageHandler must use TEXT & ~COMMAND filter."""
         import inspect
-        from bantz.interface.telegram_bot import run_bot
+        from butler.interface.telegram_bot import run_bot
         src = inspect.getsource(run_bot)
         assert "filters.TEXT" in src
         assert "filters.COMMAND" in src
@@ -584,20 +584,20 @@ class TestRunBotRegistration:
 
 class TestModuleExports:
     def test_handle_message_exported(self):
-        from bantz.interface.telegram_bot import handle_message
+        from butler.interface.telegram_bot import handle_message
         assert callable(handle_message)
 
     def test_rate_limit_constants(self):
-        from bantz.interface.telegram_bot import _RATE_WINDOW, _RATE_LIMIT
+        from butler.interface.telegram_bot import _RATE_WINDOW, _RATE_LIMIT
         assert _RATE_WINDOW == 60
         assert _RATE_LIMIT == 10
 
     def test_safe_reply_exported(self):
-        from bantz.interface.telegram_bot import _safe_reply
+        from butler.interface.telegram_bot import _safe_reply
         assert callable(_safe_reply)
 
     def test_is_rate_limited_exported(self):
-        from bantz.interface.telegram_bot import _is_rate_limited
+        from butler.interface.telegram_bot import _is_rate_limited
         assert callable(_is_rate_limited)
 
 
@@ -612,7 +612,7 @@ class TestProgressIndicators:
     @pytest.mark.asyncio
     async def test_placeholder_sent_immediately(self):
         """reply_text() called with a placeholder BEFORE brain.process()."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -654,7 +654,7 @@ class TestProgressIndicators:
     @pytest.mark.asyncio
     async def test_placeholder_edited_with_response(self):
         """edit_text() called with the actual LLM response on the placeholder."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -680,7 +680,7 @@ class TestProgressIndicators:
     @pytest.mark.asyncio
     async def test_long_response_chunked(self):
         """>4000 chars: first chunk edits placeholder, rest are new messages."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -715,7 +715,7 @@ class TestProgressIndicators:
     @pytest.mark.asyncio
     async def test_edit_failure_fallback_plain_text(self):
         """If edit_text fails with markdown, retry with parse_mode=None."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -755,7 +755,7 @@ class TestProgressIndicators:
     @pytest.mark.asyncio
     async def test_edit_failure_complete_fallback(self):
         """Both edit_text calls fail → delete placeholder + reply_text."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -786,7 +786,7 @@ class TestProgressIndicators:
     @pytest.mark.asyncio
     async def test_error_response_edits_placeholder(self):
         """Brain error → placeholder edited to show error message."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -812,7 +812,7 @@ class TestProgressIndicators:
     @pytest.mark.asyncio
     async def test_placeholder_is_in_character(self):
         """Placeholder text is from PLACEHOLDER_MESSAGES (butler persona)."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -838,7 +838,7 @@ class TestProgressIndicators:
     @pytest.mark.asyncio
     async def test_streaming_collected_then_edited(self):
         """Streaming tokens collected in full, then single edit_text."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -871,24 +871,24 @@ class TestPlaceholderMessages:
     """Tests for the PLACEHOLDER_MESSAGES constant."""
 
     def test_placeholder_messages_exist(self):
-        from bantz.interface.telegram_bot import PLACEHOLDER_MESSAGES
+        from butler.interface.telegram_bot import PLACEHOLDER_MESSAGES
         assert isinstance(PLACEHOLDER_MESSAGES, list)
         assert len(PLACEHOLDER_MESSAGES) >= 5
 
     def test_placeholder_messages_are_strings(self):
-        from bantz.interface.telegram_bot import PLACEHOLDER_MESSAGES
+        from butler.interface.telegram_bot import PLACEHOLDER_MESSAGES
         for msg in PLACEHOLDER_MESSAGES:
             assert isinstance(msg, str)
             assert len(msg) > 10
 
     def test_placeholder_messages_have_telegraph_emoji(self):
-        from bantz.interface.telegram_bot import PLACEHOLDER_MESSAGES
+        from butler.interface.telegram_bot import PLACEHOLDER_MESSAGES
         for msg in PLACEHOLDER_MESSAGES:
             assert "📟" in msg
 
     def test_placeholder_messages_in_character(self):
         """All placeholders should sound like a 1920s butler."""
-        from bantz.interface.telegram_bot import PLACEHOLDER_MESSAGES
+        from butler.interface.telegram_bot import PLACEHOLDER_MESSAGES
         butler_words = {"ma'am", "moment", "please", "telegraph", "archives",
                         "enquiry", "bureau", "dispatching", "stand by"}
         for msg in PLACEHOLDER_MESSAGES:
@@ -902,30 +902,30 @@ class TestChunkText:
     """Tests for the _chunk_text helper."""
 
     def test_short_text_single_chunk(self):
-        from bantz.interface.telegram_bot import _chunk_text
+        from butler.interface.telegram_bot import _chunk_text
         assert _chunk_text("Hello world") == ["Hello world"]
 
     def test_exact_boundary(self):
-        from bantz.interface.telegram_bot import _chunk_text
+        from butler.interface.telegram_bot import _chunk_text
         text = "X" * 4000
         assert _chunk_text(text) == [text]
 
     def test_splits_at_paragraph_boundary(self):
-        from bantz.interface.telegram_bot import _chunk_text
+        from butler.interface.telegram_bot import _chunk_text
         a = "A" * 2500
         b = "B" * 2500
         chunks = _chunk_text(a + "\n\n" + b)
         assert chunks == [a, b]
 
     def test_hard_split_no_newlines(self):
-        from bantz.interface.telegram_bot import _chunk_text
+        from butler.interface.telegram_bot import _chunk_text
         text = "X" * 8000
         chunks = _chunk_text(text)
         assert len(chunks) == 2
         assert "".join(chunks) == text
 
     def test_custom_max_len(self):
-        from bantz.interface.telegram_bot import _chunk_text
+        from butler.interface.telegram_bot import _chunk_text
         text = "short"
         assert _chunk_text(text, max_len=3) == ["sho", "rt"]
 
@@ -935,7 +935,7 @@ class TestSafeEdit:
 
     @pytest.mark.asyncio
     async def test_normal_edit_succeeds(self):
-        from bantz.interface.telegram_bot import _safe_edit
+        from butler.interface.telegram_bot import _safe_edit
         ph = AsyncMock()
         ph.edit_text = AsyncMock()
         result = await _safe_edit(ph, "hello")
@@ -944,7 +944,7 @@ class TestSafeEdit:
 
     @pytest.mark.asyncio
     async def test_fallback_to_plain_text(self):
-        from bantz.interface.telegram_bot import _safe_edit
+        from butler.interface.telegram_bot import _safe_edit
         call_count = 0
 
         async def flaky(*a, **kw):
@@ -964,7 +964,7 @@ class TestSafeEdit:
 
     @pytest.mark.asyncio
     async def test_complete_failure_returns_false(self):
-        from bantz.interface.telegram_bot import _safe_edit
+        from butler.interface.telegram_bot import _safe_edit
         ph = AsyncMock()
         ph.edit_text = AsyncMock(side_effect=Exception("total failure"))
         result = await _safe_edit(ph, "test")
@@ -982,7 +982,7 @@ class TestThrottledStreaming:
     @pytest.mark.asyncio
     async def test_returns_full_text(self):
         """_stream_to_placeholder must return the complete accumulated text."""
-        from bantz.interface.telegram_bot import _stream_to_placeholder
+        from butler.interface.telegram_bot import _stream_to_placeholder
 
         async def gen():
             for tok in ["Good ", "morning, ", "ma'am."]:
@@ -996,7 +996,7 @@ class TestThrottledStreaming:
     @pytest.mark.asyncio
     async def test_edits_placeholder_during_stream(self):
         """With interval=0, every chunk should trigger an edit."""
-        from bantz.interface.telegram_bot import _stream_to_placeholder
+        from butler.interface.telegram_bot import _stream_to_placeholder
 
         async def gen():
             for tok in ["Hello ", "world"]:
@@ -1011,7 +1011,7 @@ class TestThrottledStreaming:
     @pytest.mark.asyncio
     async def test_edit_includes_cursor(self):
         """Intermediate edits should include the ▍ cursor indicator."""
-        from bantz.interface.telegram_bot import _stream_to_placeholder
+        from butler.interface.telegram_bot import _stream_to_placeholder
 
         async def gen():
             for tok in ["Hello ", "world"]:
@@ -1027,7 +1027,7 @@ class TestThrottledStreaming:
     @pytest.mark.asyncio
     async def test_edit_failure_does_not_crash(self):
         """If edit_text fails during streaming, it should not abort."""
-        from bantz.interface.telegram_bot import _stream_to_placeholder
+        from butler.interface.telegram_bot import _stream_to_placeholder
 
         async def gen():
             for tok in ["One ", "two ", "three"]:
@@ -1041,14 +1041,14 @@ class TestThrottledStreaming:
     @pytest.mark.asyncio
     async def test_stream_interval_constant_exists(self):
         """_STREAM_INTERVAL constant must exist and be >= 1.0."""
-        from bantz.interface.telegram_bot import _STREAM_INTERVAL
+        from butler.interface.telegram_bot import _STREAM_INTERVAL
         assert isinstance(_STREAM_INTERVAL, float)
         assert _STREAM_INTERVAL >= 1.0
 
     @pytest.mark.asyncio
     async def test_handle_message_uses_stream_to_placeholder(self):
         """handle_message should use _stream_to_placeholder for streams."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -1088,14 +1088,14 @@ class TestMessageLock:
 
     def test_msg_lock_exists(self):
         """telegram_bot module must expose an asyncio.Lock."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         assert hasattr(mod, "_msg_lock")
         assert isinstance(mod._msg_lock, asyncio.Lock)
 
     @pytest.mark.asyncio
     async def test_concurrent_messages_serialised(self):
         """Two concurrent handle_message calls must NOT overlap processing."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -1140,7 +1140,7 @@ class TestMaintenanceSpamFilter:
 
     def test_all_green_maintenance_is_spam(self):
         """A maintenance result with zero failures → spam."""
-        from bantz.interface.telegram_bot import _is_maintenance_spam
+        from butler.interface.telegram_bot import _is_maintenance_spam
         result = FakeBrainResult(
             response="Workflow complete: 3/3 steps succeeded.\n✓ [a] ok\n✓ [b] ok\n✓ [c] ok",
             tool_used="maintenance",
@@ -1149,7 +1149,7 @@ class TestMaintenanceSpamFilter:
 
     def test_maintenance_with_failure_also_spam(self):
         """A maintenance result with failures → ALSO spam (all maintenance suppressed)."""
-        from bantz.interface.telegram_bot import _is_maintenance_spam
+        from butler.interface.telegram_bot import _is_maintenance_spam
         result = FakeBrainResult(
             response="Workflow complete: 2/3 steps succeeded.\n✓ [a] ok\n✗ [b] fail\n✓ [c] ok",
             tool_used="maintenance",
@@ -1158,20 +1158,20 @@ class TestMaintenanceSpamFilter:
 
     def test_non_maintenance_never_spam(self):
         """Non-maintenance tool results are never spam."""
-        from bantz.interface.telegram_bot import _is_maintenance_spam
+        from butler.interface.telegram_bot import _is_maintenance_spam
         result = FakeBrainResult(response="Some response", tool_used="weather")
         assert _is_maintenance_spam(result) is False
 
     def test_chat_result_never_spam(self):
         """Chat results (tool_used=None) are never spam."""
-        from bantz.interface.telegram_bot import _is_maintenance_spam
+        from butler.interface.telegram_bot import _is_maintenance_spam
         result = FakeBrainResult(response="Hello ma'am", tool_used=None)
         assert _is_maintenance_spam(result) is False
 
     @pytest.mark.asyncio
     async def test_handle_message_suppresses_green_maintenance(self):
         """handle_message must delete placeholder and return for all-green maintenance."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -1203,7 +1203,7 @@ class TestMaintenanceSpamFilter:
     @pytest.mark.asyncio
     async def test_handle_message_suppresses_failed_maintenance(self):
         """handle_message must ALSO suppress maintenance results with failures."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -1244,17 +1244,17 @@ class TestStreamMemoryPersistence:
     """
 
     def test_import_path_is_correct(self):
-        """telegram_bot must use 'from bantz.data import data_layer', not dal."""
+        """telegram_bot must use 'from butler.data import data_layer', not dal."""
         import inspect
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         src = inspect.getsource(mod)
-        assert "from bantz.data.dal" not in src
-        assert "from bantz.data import data_layer" in src
+        assert "from butler.data.dal" not in src
+        assert "from butler.data import data_layer" in src
 
     @pytest.mark.asyncio
     async def test_streamed_response_saved_to_memory(self):
         """After streaming, the assistant response must be persisted to DB."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -1300,7 +1300,7 @@ class TestStreamMemoryPersistence:
     @pytest.mark.asyncio
     async def test_graph_store_called_for_streams(self):
         """Graph memory must also be updated for streamed Telegram responses."""
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         original = mod._ALLOWED
         mod._rate_log.clear()
         try:
@@ -1344,14 +1344,14 @@ class TestOllamaWarmup:
     def test_warmup_job_scheduled(self):
         """run_bot source must contain ollama warm-up scheduling."""
         import inspect
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         src = inspect.getsource(mod.run_bot)
         assert "ollama_warmup" in src or "_warm_up_ollama" in src
 
     def test_warmup_sends_hi(self):
         """The warm-up function must chat 'hi' to pre-load the model."""
         import inspect
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         src = inspect.getsource(mod.run_bot)
         # The inner function sends "hi" to warm up
         assert '"hi"' in src
@@ -1363,13 +1363,13 @@ class TestSessionRotation:
     def test_session_rotation_job_scheduled(self):
         """run_bot source must contain session rotation scheduling."""
         import inspect
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         src = inspect.getsource(mod.run_bot)
         assert "session_rotation" in src or "_rotate_session" in src
 
     def test_rotation_resets_memory_ready(self):
         """Session rotation must set brain._memory_ready = False."""
         import inspect
-        import bantz.interface.telegram_bot as mod
+        import butler.interface.telegram_bot as mod
         src = inspect.getsource(mod.run_bot)
         assert "_memory_ready = False" in src

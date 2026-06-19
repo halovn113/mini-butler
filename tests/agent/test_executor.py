@@ -14,8 +14,8 @@ from __future__ import annotations
 
 import pytest
 
-from bantz.core.intent import strip_thinking
-from bantz.agent.executor import PlanExecutor, _replace_placeholders
+from butler.core.intent import strip_thinking
+from butler.agent.executor import PlanExecutor, _replace_placeholders
 
 
 # ── strip_thinking tests (#214) ──────────────────────────────────────────────
@@ -288,7 +288,7 @@ class TestCircuitBreaker:
     async def test_short_circuit_on_step_failure(self):
         """Step 1 succeeds, Step 2 fails → Step 3 is NEVER called and aborted."""
         from unittest.mock import AsyncMock, patch, MagicMock
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
 
         # Build 3-step plan
         steps = [
@@ -350,7 +350,7 @@ class TestCircuitBreaker:
     async def test_short_circuit_on_exception(self):
         """Step that raises an exception triggers circuit breaker."""
         from unittest.mock import AsyncMock, patch, MagicMock
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
 
         steps = [
             self._make_step(1, "web_search", "Search", query="q"),
@@ -384,7 +384,7 @@ class TestCircuitBreaker:
     async def test_short_circuit_on_error_marker_in_output(self):
         """Tool claims success=True but output starts with 'Error:' → tripped."""
         from unittest.mock import AsyncMock, patch, MagicMock
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
 
         steps = [
             self._make_step(1, "web_search", "Search", query="q"),
@@ -421,7 +421,7 @@ class TestCircuitBreaker:
     async def test_all_steps_succeed_no_abort(self):
         """When all steps succeed, no short-circuit occurs."""
         from unittest.mock import AsyncMock, patch, MagicMock
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
 
         steps = [
             self._make_step(1, "web_search", "Search", query="q"),

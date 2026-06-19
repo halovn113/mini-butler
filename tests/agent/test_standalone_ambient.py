@@ -45,7 +45,7 @@ def _stub_pyaudio(frame_size: int = 512):
 
 class TestStandaloneAmbientSamplerNoAudio:
     def test_start_returns_false_when_pyaudio_missing(self):
-        from bantz.agent.ambient import StandaloneAmbientSampler
+        from butler.agent.ambient import StandaloneAmbientSampler
         sampler = StandaloneAmbientSampler()
         with patch.dict(sys.modules, {"pyaudio": None}):
             ok = sampler.start()
@@ -53,7 +53,7 @@ class TestStandaloneAmbientSamplerNoAudio:
         assert sampler.running is False
 
     def test_start_returns_false_when_mic_open_fails(self):
-        from bantz.agent.ambient import StandaloneAmbientSampler
+        from butler.agent.ambient import StandaloneAmbientSampler
         sampler = StandaloneAmbientSampler()
 
         pyaudio_mod, pa_instance, _ = _make_pyaudio_stub()
@@ -71,7 +71,7 @@ class TestStandaloneAmbientSamplerNoAudio:
 
 class TestStandaloneAmbientSamplerLifecycle:
     def test_start_launches_daemon_thread(self):
-        from bantz.agent.ambient import StandaloneAmbientSampler, _STANDALONE_FRAME_SIZE
+        from butler.agent.ambient import StandaloneAmbientSampler, _STANDALONE_FRAME_SIZE
         sampler = StandaloneAmbientSampler()
 
         read_event = threading.Event()
@@ -101,7 +101,7 @@ class TestStandaloneAmbientSamplerLifecycle:
         assert sampler.running is False
 
     def test_stop_releases_resources(self):
-        from bantz.agent.ambient import StandaloneAmbientSampler, _STANDALONE_FRAME_SIZE
+        from butler.agent.ambient import StandaloneAmbientSampler, _STANDALONE_FRAME_SIZE
         sampler = StandaloneAmbientSampler()
         pyaudio_mod, pa_instance, stream_mock = _make_pyaudio_stub(_STANDALONE_FRAME_SIZE)
 
@@ -117,7 +117,7 @@ class TestStandaloneAmbientSamplerLifecycle:
         pa_instance.terminate.assert_called()
 
     def test_start_is_idempotent(self):
-        from bantz.agent.ambient import StandaloneAmbientSampler, _STANDALONE_FRAME_SIZE
+        from butler.agent.ambient import StandaloneAmbientSampler, _STANDALONE_FRAME_SIZE
         sampler = StandaloneAmbientSampler()
         pyaudio_mod, pa_instance, _ = _make_pyaudio_stub(_STANDALONE_FRAME_SIZE)
 
@@ -135,7 +135,7 @@ class TestStandaloneAmbientSamplerLifecycle:
 
     def test_sample_loop_feeds_ambient_analyzer(self):
         """The sampling thread must call ambient_analyzer.feed_frames() with PCM."""
-        from bantz.agent.ambient import StandaloneAmbientSampler, _STANDALONE_FRAME_SIZE
+        from butler.agent.ambient import StandaloneAmbientSampler, _STANDALONE_FRAME_SIZE
         sampler = StandaloneAmbientSampler()
         pyaudio_mod, _, _ = _make_pyaudio_stub(_STANDALONE_FRAME_SIZE)
 
@@ -165,7 +165,7 @@ class TestStandaloneAmbientSamplerLifecycle:
 
 class TestMaybeStartStandalone:
     def test_starts_when_ambient_enabled_and_wake_word_disabled(self):
-        from bantz.agent.ambient import maybe_start_standalone
+        from butler.agent.ambient import maybe_start_standalone
 
         mock_sampler = MagicMock()
         mock_sampler.start.return_value = True
@@ -183,7 +183,7 @@ class TestMaybeStartStandalone:
         assert result is True
 
     def test_noop_when_wake_word_enabled(self):
-        from bantz.agent.ambient import maybe_start_standalone
+        from butler.agent.ambient import maybe_start_standalone
 
         mock_sampler = MagicMock()
         mock_config = MagicMock()
@@ -200,7 +200,7 @@ class TestMaybeStartStandalone:
         assert result is False
 
     def test_noop_when_ambient_disabled(self):
-        from bantz.agent.ambient import maybe_start_standalone
+        from butler.agent.ambient import maybe_start_standalone
 
         mock_sampler = MagicMock()
         mock_config = MagicMock()
@@ -218,7 +218,7 @@ class TestMaybeStartStandalone:
 
     def test_survives_exception(self):
         """maybe_start_standalone() must not propagate exceptions from start()."""
-        from bantz.agent.ambient import maybe_start_standalone
+        from butler.agent.ambient import maybe_start_standalone
 
         mock_sampler = MagicMock()
         mock_sampler.start.side_effect = RuntimeError("boom")

@@ -4,7 +4,7 @@ from __future__ import annotations
 import time
 
 
-from bantz.core.context import BantzContext
+from butler.core.context import BantzContext
 
 
 # ── construction & defaults ───────────────────────────────────────────

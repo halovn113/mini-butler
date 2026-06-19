@@ -1,6 +1,6 @@
-# ── Bantz v3 — Oracle Free Tier ARM64 (#93) ──────────────────────────────────
+# ── Butler v3 — Oracle Free Tier ARM64 (#93) ──────────────────────────────────
 # Targets: linux/arm64 (Oracle Free Tier Ampere A1)
-# Build:   docker build -t bantz .
+# Build:   docker build -t butler .
 # Run:     docker compose up -d
 
 FROM python:3.11-slim
@@ -37,8 +37,8 @@ RUN case "${TARGETARCH}" in \
     && rm /tmp/pup.zip
 
 # ── App user (non-root) ────────────────────────────────────────────────────────
-RUN useradd -m -s /bin/bash bantz
-WORKDIR /home/bantz/app
+RUN useradd -m -s /bin/bash butler
+WORKDIR /home/butler/app
 
 # ── Application source + Python dependencies ──────────────────────────────────
 COPY pyproject.toml ./
@@ -46,11 +46,11 @@ COPY src/ ./src/
 RUN pip install --no-cache-dir .
 
 # ── Data volume ────────────────────────────────────────────────────────────────
-# ~/.local/share/bantz — SQLite DB, logs, reflections
-RUN mkdir -p /home/bantz/.local/share/bantz \
-    && chown -R bantz:bantz /home/bantz
+# ~/.local/share/butler — SQLite DB, logs, reflections
+RUN mkdir -p /home/butler/.local/share/butler \
+    && chown -R butler:butler /home/butler
 
-VOLUME ["/home/bantz/.local/share/bantz"]
+VOLUME ["/home/butler/.local/share/butler"]
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 # Mount .env at runtime:  -v $(pwd)/.env:/home/bantz/app/.env:ro
@@ -59,4 +59,4 @@ ENV PYTHONUNBUFFERED=1
 USER bantz
 
 # ── Default: headless daemon (Telegram bot + scheduler, no TUI) ───────────────
-CMD ["python", "-m", "bantz", "--daemon"]
+CMD ["python", "-m", "butler", "--daemon"]

@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from bantz.data.models import (
+from butler.data.models import (
     Conversation,
     Message,
     Place,
@@ -26,14 +26,14 @@ from bantz.data.models import (
     SessionInfo,
     UserProfile,
 )
-from bantz.data.sqlite_store import SQLiteConversationStore, SQLiteReminderStore
-from bantz.data.json_store import (
+from butler.data.sqlite_store import SQLiteConversationStore, SQLiteReminderStore
+from butler.data.json_store import (
     JSONPlaceStore,
     JSONProfileStore,
     JSONScheduleStore,
     JSONSessionStore,
 )
-from bantz.data.migration import migrate_to_sqlite, validate_json_files
+from butler.data.migration import migrate_to_sqlite, validate_json_files
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────
@@ -489,67 +489,67 @@ class TestABCConformance:
     """Verify that concrete implementations satisfy the ABC contracts."""
 
     def test_sqlite_conversation_is_conversation_store(self):
-        from bantz.data.store import ConversationStore
+        from butler.data.store import ConversationStore
 
         assert issubclass(SQLiteConversationStore, ConversationStore)
 
     def test_sqlite_reminder_is_reminder_store(self):
-        from bantz.data.store import ReminderStore
+        from butler.data.store import ReminderStore
 
         assert issubclass(SQLiteReminderStore, ReminderStore)
 
     def test_json_profile_is_profile_store(self):
-        from bantz.data.store import ProfileStore
+        from butler.data.store import ProfileStore
 
         assert issubclass(JSONProfileStore, ProfileStore)
 
     def test_json_place_is_place_store(self):
-        from bantz.data.store import PlaceStore
+        from butler.data.store import PlaceStore
 
         assert issubclass(JSONPlaceStore, PlaceStore)
 
     def test_json_schedule_is_schedule_store(self):
-        from bantz.data.store import ScheduleStore
+        from butler.data.store import ScheduleStore
 
         assert issubclass(JSONScheduleStore, ScheduleStore)
 
     def test_json_session_is_session_store(self):
-        from bantz.data.store import SessionStore
+        from butler.data.store import SessionStore
 
         assert issubclass(JSONSessionStore, SessionStore)
 
     def test_sqlite_profile_is_profile_store(self):
-        from bantz.data.store import ProfileStore
-        from bantz.data.sqlite_store import SQLiteProfileStore
+        from butler.data.store import ProfileStore
+        from butler.data.sqlite_store import SQLiteProfileStore
 
         assert issubclass(SQLiteProfileStore, ProfileStore)
 
     def test_sqlite_place_is_place_store(self):
-        from bantz.data.store import PlaceStore
-        from bantz.data.sqlite_store import SQLitePlaceStore
+        from butler.data.store import PlaceStore
+        from butler.data.sqlite_store import SQLitePlaceStore
 
         assert issubclass(SQLitePlaceStore, PlaceStore)
 
     def test_sqlite_schedule_is_schedule_store(self):
-        from bantz.data.store import ScheduleStore
-        from bantz.data.sqlite_store import SQLiteScheduleStore
+        from butler.data.store import ScheduleStore
+        from butler.data.sqlite_store import SQLiteScheduleStore
 
         assert issubclass(SQLiteScheduleStore, ScheduleStore)
 
     def test_sqlite_session_is_session_store(self):
-        from bantz.data.store import SessionStore
-        from bantz.data.sqlite_store import SQLiteSessionStore
+        from butler.data.store import SessionStore
+        from butler.data.sqlite_store import SQLiteSessionStore
 
         assert issubclass(SQLiteSessionStore, SessionStore)
 
     def test_memory_is_conversation_store(self):
-        from bantz.data.store import ConversationStore
-        from bantz.core.memory import Memory
+        from butler.data.store import ConversationStore
+        from butler.core.memory import Memory
 
         assert issubclass(Memory, ConversationStore)
 
     def test_scheduler_is_reminder_store(self):
-        from bantz.data.store import ReminderStore
-        from bantz.core.scheduler import Scheduler
+        from butler.data.store import ReminderStore
+        from butler.core.scheduler import Scheduler
 
         assert issubclass(Scheduler, ReminderStore)

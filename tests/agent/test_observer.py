@@ -20,7 +20,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bantz.agent.observer import (
+from butler.agent.observer import (
     ErrorBuffer,
     ErrorClassifier,
     ErrorEvent,
@@ -475,7 +475,7 @@ class TestObserverEventBus:
 
 class TestObserverConfig:
     def test_default_observer_disabled(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(
             BANTZ_OLLAMA_MODEL="test",
             _env_file=None,
@@ -483,7 +483,7 @@ class TestObserverConfig:
         assert cfg.observer_enabled is False
 
     def test_default_severity_threshold(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(
             BANTZ_OLLAMA_MODEL="test",
             _env_file=None,
@@ -491,7 +491,7 @@ class TestObserverConfig:
         assert cfg.observer_severity_threshold == "warning"
 
     def test_default_analysis_model(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(
             BANTZ_OLLAMA_MODEL="test",
             _env_file=None,
@@ -499,7 +499,7 @@ class TestObserverConfig:
         assert cfg.observer_analysis_model == "qwen2.5:0.5b"
 
     def test_default_batch_seconds(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(
             BANTZ_OLLAMA_MODEL="test",
             _env_file=None,
@@ -507,7 +507,7 @@ class TestObserverConfig:
         assert cfg.observer_batch_seconds == 5.0
 
     def test_default_dedup_window(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(
             BANTZ_OLLAMA_MODEL="test",
             _env_file=None,
@@ -515,7 +515,7 @@ class TestObserverConfig:
         assert cfg.observer_dedup_window == 60.0
 
     def test_env_override(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(
             BANTZ_OLLAMA_MODEL="test",
             BANTZ_OBSERVER_ENABLED="true",
@@ -603,7 +603,7 @@ class TestObserverSourceAudit:
 
     def test_no_top_level_aiohttp_import(self):
         """aiohttp must be lazy-imported, never at module level."""
-        from bantz.agent import observer as mod
+        from butler.agent import observer as mod
         import inspect
         src = inspect.getsource(mod)
         # Check that 'import aiohttp' only appears inside functions
@@ -615,7 +615,7 @@ class TestObserverSourceAudit:
                 assert line[0] == " ", f"Line {i}: aiohttp import at module level"
 
     def test_bus_import_exists(self):
-        from bantz.agent import observer as mod
+        from butler.agent import observer as mod
         assert hasattr(mod, "bus")
 
     def test_singleton_is_observer(self):

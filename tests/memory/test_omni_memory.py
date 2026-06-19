@@ -44,28 +44,28 @@ class TestTruncate:
     """Test the _truncate helper for budget enforcement."""
 
     def test_empty_string(self):
-        from bantz.memory.omni_memory import _truncate
+        from butler.memory.omni_memory import _truncate
         assert _truncate("", 100) == ""
 
     def test_short_string_unchanged(self):
-        from bantz.memory.omni_memory import _truncate
+        from butler.memory.omni_memory import _truncate
         text = "Hello world"
         assert _truncate(text, 100) == text
 
     def test_exact_length_unchanged(self):
-        from bantz.memory.omni_memory import _truncate
+        from butler.memory.omni_memory import _truncate
         text = "x" * 50
         assert _truncate(text, 50) == text
 
     def test_truncates_with_ellipsis(self):
-        from bantz.memory.omni_memory import _truncate
+        from butler.memory.omni_memory import _truncate
         text = "a" * 200
         result = _truncate(text, 100)
         assert len(result) <= 102  # 100 chars + "…"
         assert result.endswith("…")
 
     def test_breaks_at_newline_when_possible(self):
-        from bantz.memory.omni_memory import _truncate
+        from butler.memory.omni_memory import _truncate
         text = "Line 1: some content\nLine 2: more content\nLine 3: final content"
         result = _truncate(text, 45)
         # Should break at a newline boundary
@@ -73,7 +73,7 @@ class TestTruncate:
         assert len(result) <= 50
 
     def test_none_returns_empty(self):
-        from bantz.memory.omni_memory import _truncate
+        from butler.memory.omni_memory import _truncate
         assert _truncate(None, 100) == ""  # type: ignore[arg-type]
 
 
@@ -86,12 +86,12 @@ class TestExtractEntityNames:
     """Test entity extraction from graph context text."""
 
     def test_empty_graph(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         omm = OmniMemoryManager()
         assert omm._extract_entity_names("") == set()
 
     def test_known_people_line(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         omm = OmniMemoryManager()
         text = "Known people: Alice, Bob, Charlie"
         names = omm._extract_entity_names(text)
@@ -100,7 +100,7 @@ class TestExtractEntityNames:
         assert "charlie" in names
 
     def test_bracket_tags(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         omm = OmniMemoryManager()
         text = "[Person] Alice\n[Task] Build the widget\n[Event] Team meeting"
         names = omm._extract_entity_names(text)
@@ -109,7 +109,7 @@ class TestExtractEntityNames:
         assert "team meeting" in names
 
     def test_dash_items(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         omm = OmniMemoryManager()
         text = "- Alice (colleague)\n- Project X\n- Bob"
         names = omm._extract_entity_names(text)
@@ -118,7 +118,7 @@ class TestExtractEntityNames:
         assert "bob" in names
 
     def test_mixed_format(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         omm = OmniMemoryManager()
         text = "Known people: Eve\n[Task] Deploy app\n- Frank"
         names = omm._extract_entity_names(text)
@@ -136,20 +136,20 @@ class TestRerankVectorWithGraph:
     """Test graph-informed vector result re-ranking."""
 
     def test_empty_vector(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         omm = OmniMemoryManager()
         result = omm._rerank_vector_with_graph("", {"alice"})
         assert result == ""
 
     def test_empty_entities(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         omm = OmniMemoryManager()
         text = "Relevant past context:\n[vec 0.9] user: hello"
         result = omm._rerank_vector_with_graph(text, set())
         assert result == text
 
     def test_matching_lines_promoted(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         omm = OmniMemoryManager()
         text = (
             "Relevant past context:\n"
@@ -167,7 +167,7 @@ class TestRerankVectorWithGraph:
         assert alice_idx < weather_idx
 
     def test_no_match_order_preserved(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         omm = OmniMemoryManager()
         text = (
             "Relevant past context:\n"
@@ -192,22 +192,22 @@ class TestMergeSections:
     """Test section merging."""
 
     def test_all_empty(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         assert OmniMemoryManager._merge_sections("", "", "") == ""
 
     def test_one_section(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         assert OmniMemoryManager._merge_sections("graph data", "", "") == "graph data"
 
     def test_all_sections(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         result = OmniMemoryManager._merge_sections("graph", "vector", "deep")
         assert "graph" in result
         assert "vector" in result
         assert "deep" in result
 
     def test_two_sections(self):
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
         result = OmniMemoryManager._merge_sections("", "vector", "deep")
         assert "vector" in result
         assert "deep" in result
@@ -223,7 +223,7 @@ class TestMemoryRecallResult:
     """Test the result container."""
 
     def test_empty_result(self):
-        from bantz.memory.omni_memory import MemoryRecallResult
+        from butler.memory.omni_memory import MemoryRecallResult
         r = MemoryRecallResult()
         assert r.is_empty
         assert r.total_chars == 0
@@ -231,7 +231,7 @@ class TestMemoryRecallResult:
         assert "0 tokens" in repr(r)
 
     def test_populated_result(self):
-        from bantz.memory.omni_memory import MemoryRecallResult
+        from butler.memory.omni_memory import MemoryRecallResult
         r = MemoryRecallResult(
             graph_context="graph",
             vector_context="vector",
@@ -257,7 +257,7 @@ class TestOmniMemoryRecall:
 
     def test_all_sources_return_data(self):
         """When all three sources return data, all appear in combined."""
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
 
         omm = OmniMemoryManager()
 
@@ -278,7 +278,7 @@ class TestOmniMemoryRecall:
 
     def test_graph_empty_uses_pure_vector(self):
         """When graph returns nothing, vector results are used as-is."""
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
 
         omm = OmniMemoryManager()
 
@@ -297,7 +297,7 @@ class TestOmniMemoryRecall:
 
     def test_all_empty(self):
         """When all sources return empty, result is empty."""
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
 
         omm = OmniMemoryManager()
 
@@ -315,7 +315,7 @@ class TestOmniMemoryRecall:
 
     def test_exception_in_one_source_doesnt_crash(self):
         """If one search raises, it's treated as empty string."""
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
 
         omm = OmniMemoryManager()
 
@@ -334,7 +334,7 @@ class TestOmniMemoryRecall:
 
     def test_budget_enforcement(self):
         """Combined output must not exceed MAX_MEMORY_CHARS."""
-        from bantz.memory.omni_memory import OmniMemoryManager, _CHARS_PER_TOKEN
+        from butler.memory.omni_memory import OmniMemoryManager, _CHARS_PER_TOKEN
 
         # Use a very small budget to force truncation
         omm = OmniMemoryManager(max_memory_tokens=50)  # 200 chars max
@@ -357,7 +357,7 @@ class TestOmniMemoryRecall:
 
     def test_graph_reranking_applied(self):
         """When graph finds entities, vector results are re-ranked."""
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
 
         omm = OmniMemoryManager()
 
@@ -391,7 +391,7 @@ class TestOmniMemoryRecall:
 
     def test_budget_redistribution(self):
         """Unused budget from empty section is given to others."""
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
 
         omm = OmniMemoryManager(max_memory_tokens=100)  # 400 chars max
 
@@ -409,7 +409,7 @@ class TestOmniMemoryRecall:
 
     def test_custom_budget_allocation(self):
         """OmniMemoryManager respects custom budget percentages."""
-        from bantz.memory.omni_memory import OmniMemoryManager
+        from butler.memory.omni_memory import OmniMemoryManager
 
         omm = OmniMemoryManager(
             max_memory_tokens=100,
@@ -442,8 +442,8 @@ class TestInjectIntegration:
 
     def test_inject_populates_memory_combined(self):
         """inject() should populate ctx.memory_combined via OmniMemory."""
-        from bantz.core.context import BantzContext
-        from bantz.memory.omni_memory import MemoryRecallResult
+        from butler.core.context import BantzContext
+        from butler.memory.omni_memory import MemoryRecallResult
 
         mock_result = MemoryRecallResult(
             graph_context="[Person] Alice",
@@ -472,7 +472,7 @@ class TestInjectIntegration:
                 create=True,
             ):
                 # Need to patch the dynamic import
-                import bantz.core.memory_injector as mi
+                import butler.core.memory_injector as mi
                 _run(mi.inject(ctx, "tell me about alice"))
 
         assert ctx.memory_combined  # should be populated
@@ -481,8 +481,8 @@ class TestInjectIntegration:
 
     def test_inject_realtime_always_included(self):
         """Real-time context (desktop, persona) is always populated."""
-        from bantz.core.context import BantzContext
-        from bantz.memory.omni_memory import MemoryRecallResult
+        from butler.core.context import BantzContext
+        from butler.memory.omni_memory import MemoryRecallResult
 
         mock_result = MemoryRecallResult()  # empty memory
 
@@ -498,7 +498,7 @@ class TestInjectIntegration:
             mock_omni.recall = AsyncMock(return_value=mock_result)
             mock_profile.prompt_hint.return_value = "profile"
 
-            import bantz.core.memory_injector as mi
+            import butler.core.memory_injector as mi
             _run(mi.inject(ctx, "hi"))
 
         # Real-time context should always be populated
@@ -518,8 +518,8 @@ class TestPromptBuilderMemoryCombined:
 
     def test_memory_combined_in_system_prompt(self):
         """When memory_combined is set, it appears in the system prompt."""
-        from bantz.core.context import BantzContext
-        from bantz.core.prompt_builder import build_chat_system
+        from butler.core.context import BantzContext
+        from butler.core.prompt_builder import build_chat_system
 
         ctx = BantzContext(
             memory_combined="[Memory] Alice is a colleague who works on Project X",
@@ -539,8 +539,8 @@ class TestPromptBuilderMemoryCombined:
 
     def test_legacy_fallback_when_no_combined(self):
         """When memory_combined is empty, individual fields are used."""
-        from bantz.core.context import BantzContext
-        from bantz.core.prompt_builder import build_chat_system
+        from butler.core.context import BantzContext
+        from butler.core.prompt_builder import build_chat_system
 
         ctx = BantzContext(
             memory_combined="",
@@ -565,8 +565,8 @@ class TestPromptBuilderMemoryCombined:
 
     def test_combined_preferred_over_legacy(self):
         """When both combined and individual fields exist, combined is used."""
-        from bantz.core.context import BantzContext
-        from bantz.core.prompt_builder import build_chat_system
+        from butler.core.context import BantzContext
+        from butler.core.prompt_builder import build_chat_system
 
         ctx = BantzContext(
             memory_combined="COMBINED MEMORY BLOCK",
@@ -599,11 +599,11 @@ class TestModuleSingleton:
     """Test the module-level omni_memory singleton."""
 
     def test_singleton_exists(self):
-        from bantz.memory.omni_memory import omni_memory, OmniMemoryManager
+        from butler.memory.omni_memory import omni_memory, OmniMemoryManager
         assert isinstance(omni_memory, OmniMemoryManager)
 
     def test_singleton_default_budget(self):
-        from bantz.memory.omni_memory import omni_memory, MAX_MEMORY_TOKENS, _CHARS_PER_TOKEN
+        from butler.memory.omni_memory import omni_memory, MAX_MEMORY_TOKENS, _CHARS_PER_TOKEN
         assert omni_memory._max_chars == MAX_MEMORY_TOKENS * _CHARS_PER_TOKEN
 
 
@@ -616,21 +616,21 @@ class TestBantzContextMemoryField:
     """Test the new memory_combined field on BantzContext."""
 
     def test_memory_combined_default_empty(self):
-        from bantz.core.context import BantzContext
+        from butler.core.context import BantzContext
         ctx = BantzContext()
         assert ctx.memory_combined == ""
 
     def test_has_memory_with_combined(self):
-        from bantz.core.context import BantzContext
+        from butler.core.context import BantzContext
         ctx = BantzContext(memory_combined="some memory")
         assert ctx.has_memory
 
     def test_has_memory_with_legacy_fields(self):
-        from bantz.core.context import BantzContext
+        from butler.core.context import BantzContext
         ctx = BantzContext(graph_context="graph data")
         assert ctx.has_memory
 
     def test_has_memory_false_when_all_empty(self):
-        from bantz.core.context import BantzContext
+        from butler.core.context import BantzContext
         ctx = BantzContext()
         assert not ctx.has_memory

@@ -3,7 +3,7 @@ import threading
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
-from bantz.llm.gemini import GeminiClient, _notify_gemini_health
+from butler.llm.gemini import GeminiClient, _notify_gemini_health
 
 
 # --- GeminiClient tests ---

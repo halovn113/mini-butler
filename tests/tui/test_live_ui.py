@@ -10,8 +10,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from rich.panel import Panel
 
-from bantz.core.event_bus import Event
-from bantz.interface.live_ui import (
+from butler.core.event_bus import Event
+from butler.interface.live_ui import (
     LiveUI,
     ServiceDot,
     _bar,
@@ -365,7 +365,7 @@ class TestEmitLog:
 class TestEmitLogThreadsafe:
     @pytest.mark.asyncio
     async def test_threadsafe_pushes_to_queue(self):
-        import bantz.interface.live_ui as mod
+        import butler.interface.live_ui as mod
         old_loop = mod._event_loop
         mod._event_loop = asyncio.get_event_loop()
         try:
@@ -380,7 +380,7 @@ class TestEmitLogThreadsafe:
 class TestQueueLogHandler:
     @pytest.mark.asyncio
     async def test_handler_pushes_to_queue(self):
-        import bantz.interface.live_ui as mod
+        import butler.interface.live_ui as mod
         old_loop = mod._event_loop
         mod._event_loop = asyncio.get_event_loop()
         try:
@@ -551,7 +551,7 @@ class TestNoTextual:
                 )
 
     def test_no_textual_in_module_dict(self):
-        import bantz.interface.live_ui as mod
+        import butler.interface.live_ui as mod
         for name in dir(mod):
             obj = getattr(mod, name, None)
             if hasattr(obj, "__module__") and obj.__module__:
@@ -636,7 +636,7 @@ class TestServiceStatusBar:
             assert ui._services[name] == ServiceDot.UNCONFIGURED
 
     def test_header_includes_model_name(self, ui):
-        from bantz.config import config
+        from butler.config import config
         panel = ui._render_header()
         rendered = panel.renderable  # Text object
         markup = rendered.markup
@@ -709,7 +709,7 @@ class TestServicePollerAndUpdater:
             ui._running = False  # run one iteration only
             # Manually call the update logic (first iteration before sleep)
             try:
-                from bantz.core.memory import memory as _mem
+                from butler.core.memory import memory as _mem
             except Exception:
                 pass
             with patch.dict("sys.modules", {"bantz.core.memory": type("m", (), {"memory": mock_mem})()}):

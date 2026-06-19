@@ -16,7 +16,7 @@ class TestWakeWordAmbientPiggybacking:
     """Verify that _listen_loop feeds frames to ambient_analyzer."""
 
     def _make_listener(self):
-        from bantz.agent.wake_word import WakeWordListener
+        from butler.agent.wake_word import WakeWordListener
         listener = WakeWordListener()
         return listener
 
@@ -142,7 +142,7 @@ class TestAffinityEngineAmbient:
     """Verify affinity engine initialises cleanly (ambient context N/A)."""
 
     def test_affinity_engine_importable(self):
-        from bantz.agent.affinity_engine import AffinityEngine
+        from butler.agent.affinity_engine import AffinityEngine
         ae = AffinityEngine()
         assert ae.initialized is False
         assert ae.get_score() == 0.0
@@ -156,26 +156,26 @@ class TestReflectionAmbient:
     """Verify nightly reflection includes ambient data."""
 
     def test_reflection_result_has_ambient_summary_field(self):
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.workflows.reflection import ReflectionResult
         r = ReflectionResult()
         assert hasattr(r, "ambient_summary")
         assert r.ambient_summary == ""
 
     def test_reflection_result_to_dict_includes_ambient_when_set(self):
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.workflows.reflection import ReflectionResult
         r = ReflectionResult(ambient_summary="Ambient today (5 samples): silence: 60%, speech: 40%")
         d = r.to_dict()
         assert "ambient_summary" in d
         assert "60%" in d["ambient_summary"]
 
     def test_reflection_result_to_dict_excludes_ambient_when_empty(self):
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.workflows.reflection import ReflectionResult
         r = ReflectionResult()
         d = r.to_dict()
         assert "ambient_summary" not in d
 
     def test_summary_line_includes_ambient(self):
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.workflows.reflection import ReflectionResult
         r = ReflectionResult(
             date="2026-03-12",
             sessions=3,
@@ -188,7 +188,7 @@ class TestReflectionAmbient:
 
     def test_reflection_prompt_has_ambient_section_placeholder(self):
         """_REFLECTION_USER template includes {ambient_section}."""
-        from bantz.agent.workflows.reflection import _REFLECTION_USER
+        from butler.agent.workflows.reflection import _REFLECTION_USER
         assert "{ambient_section}" in _REFLECTION_USER
 
 
@@ -198,14 +198,14 @@ class TestReflectionAmbient:
 
 class TestAmbientConfig:
     def test_config_has_ambient_fields(self):
-        from bantz.config import Config
+        from butler.config import Config
         fields = {f for f in Config.model_fields}
         assert "ambient_enabled" in fields
         assert "ambient_interval" in fields
         assert "ambient_window" in fields
 
     def test_default_values(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None)
         assert c.ambient_enabled is False
         assert c.ambient_interval == 600
@@ -220,17 +220,17 @@ class TestAmbientDoesNotTouchTTS:
     """Issue #166 design constraint: ambient data must NOT affect TTS decisions."""
 
     def test_ambient_module_has_no_tts_import(self):
-        """ambient.py must not import from bantz.agent.tts."""
+        """ambient.py must not import from butler.agent.tts."""
         import inspect
-        import bantz.agent.ambient as mod
+        import butler.agent.ambient as mod
         source = inspect.getsource(mod)
-        assert "from bantz.agent.tts" not in source
+        assert "from butler.agent.tts" not in source
         assert "import tts" not in source
 
     def test_ambient_module_has_no_audio_ducker_import(self):
         """ambient.py must not import audio_ducker — that's TTS's job."""
         import inspect
-        import bantz.agent.ambient as mod
+        import butler.agent.ambient as mod
         source = inspect.getsource(mod)
         assert "audio_ducker" not in source
 
@@ -250,7 +250,7 @@ class TestAmbientNoOwnMic:
     def test_ambient_analyzer_class_has_no_pyaudio(self):
         import ast
         import inspect
-        import bantz.agent.ambient as mod
+        import butler.agent.ambient as mod
 
         source = inspect.getsource(mod.AmbientAnalyzer)
         tree = ast.parse(source)
@@ -266,7 +266,7 @@ class TestAmbientNoOwnMic:
 
     def test_ambient_analyzer_class_does_not_open_stream(self):
         import inspect
-        import bantz.agent.ambient as mod
+        import butler.agent.ambient as mod
 
         source = inspect.getsource(mod.AmbientAnalyzer)
         assert "pa.open" not in source
@@ -275,7 +275,7 @@ class TestAmbientNoOwnMic:
     def test_no_numpy_dependency(self):
         """MVP: pure stdlib math, no numpy."""
         import inspect
-        import bantz.agent.ambient as mod
+        import butler.agent.ambient as mod
         source = inspect.getsource(mod)
         assert "import numpy" not in source
         assert "from numpy" not in source
@@ -283,7 +283,7 @@ class TestAmbientNoOwnMic:
     def test_no_fft_spectral(self):
         """MVP: no FFT / spectral centroid."""
         import ast
-        import bantz.agent.ambient as mod
+        import butler.agent.ambient as mod
         source = open(mod.__file__).read()
         tree = ast.parse(source)
         # Check function/method names and actual code — not comments/docstrings

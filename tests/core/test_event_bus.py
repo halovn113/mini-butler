@@ -19,7 +19,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from bantz.core.event_bus import Event, EventBus
+from butler.core.event_bus import Event, EventBus
 
 
 # ── Helpers ───────────────────────────────────────────────────────────

@@ -277,7 +277,7 @@ BANTZ_LANGUAGE=tr
 BANTZ_MEMPALACE_ENABLED=true
 ```
 
-Full reference in `src/bantz/config.py` — every field has a comment.
+Full reference in `src/butler/config.py` — every field has a comment.
 
 ---
 
@@ -340,7 +340,7 @@ journalctl --user -u bantz -f
 ## Project layout
 
 ```
-src/bantz/
+src/butler/
 ├── __main__.py          entry point, CLI argument routing
 ├── config.py            pydantic-settings, ~70 env vars
 ├── cli/

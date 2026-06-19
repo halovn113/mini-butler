@@ -13,7 +13,7 @@ import pytest
 class TestHandleLocation:
     @pytest.mark.asyncio
     async def test_with_gps_data(self):
-        from bantz.core.location_handler import handle_location
+        from butler.core.location_handler import handle_location
 
         mock_places = MagicMock()
         mock_places.current_place_label.return_value = None
@@ -36,7 +36,7 @@ class TestHandleLocation:
 
     @pytest.mark.asyncio
     async def test_with_named_place(self):
-        from bantz.core.location_handler import handle_location
+        from butler.core.location_handler import handle_location
 
         mock_places = MagicMock()
         mock_places.current_place_label.return_value = "Home"
@@ -53,7 +53,7 @@ class TestHandleLocation:
 
     @pytest.mark.asyncio
     async def test_no_gps_shows_fallback(self):
-        from bantz.core.location_handler import handle_location
+        from butler.core.location_handler import handle_location
 
         mock_places = MagicMock()
         mock_places.current_place_label.return_value = None
@@ -70,7 +70,7 @@ class TestHandleLocation:
 
     @pytest.mark.asyncio
     async def test_with_live_location_service(self):
-        from bantz.core.location_handler import handle_location
+        from butler.core.location_handler import handle_location
 
         mock_places = MagicMock()
         mock_places.current_place_label.return_value = None
@@ -101,7 +101,7 @@ class TestHandleLocation:
 class TestHandleSavePlace:
     @pytest.mark.asyncio
     async def test_save_success(self):
-        from bantz.core.location_handler import handle_save_place
+        from butler.core.location_handler import handle_save_place
 
         mock_places = MagicMock()
         mock_places.save_here.return_value = {"lat": 41.0, "lon": 29.0, "radius": 100}
@@ -115,7 +115,7 @@ class TestHandleSavePlace:
 
     @pytest.mark.asyncio
     async def test_save_no_gps(self):
-        from bantz.core.location_handler import handle_save_place
+        from butler.core.location_handler import handle_save_place
 
         mock_places = MagicMock()
         mock_places.save_here.return_value = None
@@ -132,7 +132,7 @@ class TestHandleSavePlace:
 class TestHandleListPlaces:
     @pytest.mark.asyncio
     async def test_list_empty(self):
-        from bantz.core.location_handler import handle_list_places
+        from butler.core.location_handler import handle_list_places
 
         mock_places = MagicMock()
         mock_places.all_places.return_value = {}
@@ -144,7 +144,7 @@ class TestHandleListPlaces:
 
     @pytest.mark.asyncio
     async def test_list_with_places(self):
-        from bantz.core.location_handler import handle_list_places
+        from butler.core.location_handler import handle_list_places
 
         mock_places = MagicMock()
         mock_places.all_places.return_value = {
@@ -167,7 +167,7 @@ class TestHandleListPlaces:
 class TestHandleDeletePlace:
     @pytest.mark.asyncio
     async def test_delete_success(self):
-        from bantz.core.location_handler import handle_delete_place
+        from butler.core.location_handler import handle_delete_place
 
         mock_places = MagicMock()
         mock_places.delete_place.return_value = True
@@ -179,7 +179,7 @@ class TestHandleDeletePlace:
 
     @pytest.mark.asyncio
     async def test_delete_not_found(self):
-        from bantz.core.location_handler import handle_delete_place
+        from butler.core.location_handler import handle_delete_place
 
         mock_places = MagicMock()
         mock_places.delete_place.return_value = False
@@ -198,7 +198,7 @@ class TestBrainDelegation:
 
     @pytest.mark.asyncio
     async def test_brain_handle_location_delegates(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         with patch("bantz.core.location_handler.handle_location", new_callable=AsyncMock) as mock:
             mock.return_value = "mocked location"
             b = Brain.__new__(Brain)
@@ -208,7 +208,7 @@ class TestBrainDelegation:
     @pytest.mark.asyncio
     async def test_brain_handle_save_place_delegates(self):
         """dispatch_internal routes _save_place to location_handler."""
-        from bantz.core.routing_engine import dispatch_internal
+        from butler.core.routing_engine import dispatch_internal
         with patch("bantz.core.location_handler.handle_save_place", new_callable=AsyncMock) as mock, \
              patch("bantz.core.routing_engine.data_layer") as dl:
             dl.conversations = MagicMock()
@@ -223,7 +223,7 @@ class TestBrainDelegation:
     @pytest.mark.asyncio
     async def test_brain_handle_list_places_delegates(self):
         """dispatch_internal routes _list_places to location_handler."""
-        from bantz.core.routing_engine import dispatch_internal
+        from butler.core.routing_engine import dispatch_internal
         with patch("bantz.core.location_handler.handle_list_places", new_callable=AsyncMock) as mock, \
              patch("bantz.core.routing_engine.data_layer") as dl:
             dl.conversations = MagicMock()
@@ -237,7 +237,7 @@ class TestBrainDelegation:
     @pytest.mark.asyncio
     async def test_brain_handle_delete_place_delegates(self):
         """dispatch_internal routes _delete_place to location_handler."""
-        from bantz.core.routing_engine import dispatch_internal
+        from butler.core.routing_engine import dispatch_internal
         with patch("bantz.core.location_handler.handle_delete_place", new_callable=AsyncMock) as mock, \
              patch("bantz.core.routing_engine.data_layer") as dl:
             dl.conversations = MagicMock()

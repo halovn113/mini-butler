@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bantz.core.rl_hooks import rl_reward_hook, rl_feedback_reward
+from butler.core.rl_hooks import rl_reward_hook, rl_feedback_reward
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -24,35 +24,35 @@ class TestRLRewardHook:
 
     @pytest.mark.asyncio
     async def test_positive_reward_on_success(self):
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
         result = ToolResult(success=True, output="ok")
 
         mock_ae = MagicMock()
         mock_ae.initialized = True
 
         with patch("bantz.agent.affinity_engine.affinity_engine", mock_ae):
-            from bantz.core import rl_hooks
+            from butler.core import rl_hooks
             await rl_hooks.rl_reward_hook("weather", result)
 
         mock_ae.add_reward.assert_called_once_with(1.0)
 
     @pytest.mark.asyncio
     async def test_negative_reward_on_failure(self):
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
         result = ToolResult(success=False, output="", error="fail")
 
         mock_ae = MagicMock()
         mock_ae.initialized = True
 
         with patch("bantz.agent.affinity_engine.affinity_engine", mock_ae):
-            from bantz.core import rl_hooks
+            from butler.core import rl_hooks
             await rl_hooks.rl_reward_hook("shell", result)
 
         mock_ae.add_reward.assert_called_once_with(-0.5)
 
     @pytest.mark.asyncio
     async def test_noop_when_uninitialized(self):
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
         result = ToolResult(success=True, output="ok")
 
         mock_ae = MagicMock()
@@ -65,7 +65,7 @@ class TestRLRewardHook:
 
     @pytest.mark.asyncio
     async def test_no_crash_on_import_error(self):
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
         result = ToolResult(success=True, output="ok")
 
         with patch.dict("sys.modules", {"bantz.agent.affinity_engine": None}):

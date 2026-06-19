@@ -34,7 +34,7 @@ All failures below are **pre-existing** — they existed before the v2.1.0 featu
 - `tests/tui/test_input_control.py` — 1 failure
 
 **Root causes:**
-- `FileNotFoundError`: `src/bantz/interface/tui/styles.tcss` does not exist.
+- `FileNotFoundError`: `src/butler/interface/tui/styles.tcss` does not exist.
 - `AttributeError`: `BantzApp` is missing methods/attributes that the test suite
   expects: `_bus_handler`, `_on_bus_wake_word`, `_relay_bus_event`,
   `_on_bus_ambient_change`, `_on_bus_health_alert`, `action_focus_input`,
@@ -43,7 +43,7 @@ All failures below are **pre-existing** — they existed before the v2.1.0 featu
 - `ImportError`: `from bantz.interface.tui.app import run` — `run` not exported.
 - `AssertionError`: Tests assert app title `'BANTZ v3'`; actual is `'BantzApp'`.
 - Tests assert event bus wiring, keyboard bindings, and toast/mood widgets that are
-  not yet implemented in `src/bantz/interface/tui/app.py`.
+  not yet implemented in `src/butler/interface/tui/app.py`.
 
 **Status:** These tests are aspirational specs for TUI features not yet implemented.
 They predate v2.1.0 and will be addressed in a future TUI overhaul milestone.
@@ -73,7 +73,7 @@ causing downstream tests to see stale mocks or missing attributes.
 
 **Affected file:** `tests/agent/test_job_scheduler.py`
 
-**Root cause:** `src/bantz/agent/job_scheduler.py` imports
+**Root cause:** `src/butler/agent/job_scheduler.py` imports
 `apscheduler.schedulers.asyncio.AsyncIOScheduler` and
 `apscheduler.triggers.interval.IntervalTrigger` at runtime. The `apscheduler`
 package is listed in `pyproject.toml` but is not installed in this environment.
@@ -107,7 +107,7 @@ has been created.
 argv, but the installed Piper binary uses `--length_scale` (underscore, not hyphen).
 
 **Fix:** Update the test assertion to match the actual Piper flag, or normalise the
-flag in `src/bantz/agent/tts.py` when building the command.
+flag in `src/butler/agent/tts.py` when building the command.
 
 ---
 

@@ -6,9 +6,9 @@ from __future__ import annotations
 import pytest
 from pathlib import Path
 
-from bantz.workflows.registry import WorkflowRegistry
-from bantz.workflows.errors import WorkflowNotFoundError, WorkflowValidationError
-from bantz.workflows.models import WorkflowDef
+from butler.workflows.registry import WorkflowRegistry
+from butler.workflows.errors import WorkflowNotFoundError, WorkflowValidationError
+from butler.workflows.models import WorkflowDef
 
 
 VALID_YAML = """\

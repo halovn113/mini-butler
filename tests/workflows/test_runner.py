@@ -7,11 +7,11 @@ import asyncio
 import pytest
 from unittest.mock import patch
 
-from bantz.tools import BaseTool, ToolResult
-from bantz.workflows.models import (
+from butler.tools import BaseTool, ToolResult
+from butler.workflows.models import (
     WorkflowDef,
 )
-from bantz.workflows.runner import WorkflowRunner
+from butler.workflows.runner import WorkflowRunner
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -124,7 +124,7 @@ class TestRunToolStep:
         wf = _make_wf([{"name": "s1", "action": "tool", "tool": "fake"}])
         runner = WorkflowRunner()
         with patch("bantz.workflows.runner.WorkflowRunner._run_tool") as mock:
-            from bantz.workflows.models import StepResult
+            from butler.workflows.models import StepResult
             mock.return_value = StepResult(step_name="s1", success=True, output="ok")
             result = await runner.run(wf)
         assert result.success is True
@@ -221,7 +221,7 @@ class TestRunSetVariable:
             inputs={"name": {"type": "string", "default": "World"}},
         )
         runner = WorkflowRunner()
-        result = await runner.run(wf, {"name": "Bantz"})
+        result = await runner.run(wf, {"name": "Butler"})
         assert result.variables.get("greeting") == "Hello Bantz"
 
 

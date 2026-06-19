@@ -14,8 +14,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bantz.tools.delegate_task import DelegateTaskTool
-from bantz.agent.sub_agent import SubAgentResult
+from butler.tools.delegate_task import DelegateTaskTool
+from butler.agent.sub_agent import SubAgentResult
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -27,7 +27,7 @@ class TestRegistration:
 
     def test_registered_in_registry(self):
         """Tool is findable in the global registry."""
-        from bantz.tools import registry
+        from butler.tools import registry
         tool = registry.get("delegate_task")
         assert tool is not None
         assert tool.name == "delegate_task"

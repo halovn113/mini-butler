@@ -29,22 +29,22 @@ import pytest
 
 class TestAudioDuckConfig:
     def test_audio_duck_enabled_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None)
         assert c.audio_duck_enabled is False
 
     def test_audio_duck_enabled_true(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(BANTZ_AUDIO_DUCK_ENABLED="true")
         assert c.audio_duck_enabled is True
 
     def test_audio_duck_pct_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None)
         assert c.audio_duck_pct == 30
 
     def test_audio_duck_pct_custom(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(BANTZ_AUDIO_DUCK_PCT="20")
         assert c.audio_duck_pct == 20
 
@@ -55,7 +55,7 @@ class TestAudioDuckConfig:
 
 class TestAudioDucker:
     def _make(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         return AudioDucker()
 
     def test_initial_state(self):
@@ -147,26 +147,26 @@ _SAMPLE_PACTL_SINGLE = textwrap.dedent("""\
 
 class TestParseSinkInputs:
     def test_parse_two_inputs(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         result = AudioDucker._parse_sink_inputs(_SAMPLE_PACTL_OUTPUT)
         assert len(result) == 2
 
     def test_parse_spotify_entry(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         result = AudioDucker._parse_sink_inputs(_SAMPLE_PACTL_OUTPUT)
         spotify = next(r for r in result if r["app_name"] == "Spotify")
         assert spotify["id"] == 42
         assert spotify["volume"] == 73
 
     def test_parse_bantz_entry(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         result = AudioDucker._parse_sink_inputs(_SAMPLE_PACTL_OUTPUT)
         bantz = next(r for r in result if r["app_name"] == "BantzTTS")
         assert bantz["id"] == 55
         assert bantz["volume"] == 100
 
     def test_parse_single_input(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         result = AudioDucker._parse_sink_inputs(_SAMPLE_PACTL_SINGLE)
         assert len(result) == 1
         assert result[0]["id"] == 10
@@ -174,19 +174,19 @@ class TestParseSinkInputs:
         assert result[0]["volume"] == 50
 
     def test_parse_empty_output(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         result = AudioDucker._parse_sink_inputs("")
         assert result == []
 
     def test_parse_no_volume_defaults_100(self):
         raw = "Sink Input #99\n    Properties:\n        application.name = \"VLC\"\n"
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         result = AudioDucker._parse_sink_inputs(raw)
         assert result[0]["volume"] == 100
 
     def test_parse_no_app_name_defaults_empty(self):
         raw = "Sink Input #99\n    Volume: front-left: 65536 / 100% / 0.00 dB\n"
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         result = AudioDucker._parse_sink_inputs(raw)
         assert result[0]["app_name"] == ""
 
@@ -198,7 +198,7 @@ class TestParseSinkInputs:
 class TestBantzExclusion:
     def test_bantz_stream_not_ducked(self):
         """BantzTTS stream must NOT be volume-ducked."""
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         d._pactl = "/usr/bin/pactl"
         d._duck_pct = 30
@@ -216,7 +216,7 @@ class TestBantzExclusion:
 
     def test_only_bantz_stream_present(self):
         """If only BantzTTS is playing, duck() returns False (nothing to duck)."""
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         d._pactl = "/usr/bin/pactl"
 
@@ -235,7 +235,7 @@ class TestBantzExclusion:
 
 class TestDuckRestore:
     def test_duck_and_restore_cycle(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         d._pactl = "/usr/bin/pactl"
         d._duck_pct = 30
@@ -263,7 +263,7 @@ class TestDuckRestore:
         mock_vol.assert_any_call(2, 65)
 
     def test_duck_no_inputs(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         d._pactl = "/usr/bin/pactl"
         with patch.object(d, "_get_sink_inputs", return_value=[]):
@@ -276,7 +276,7 @@ class TestDuckRestore:
 
 class TestFade:
     def test_duck_with_fade_sets_multiple_volumes(self):
-        from bantz.agent.audio_ducker import AudioDucker, _FADE_STEPS
+        from butler.agent.audio_ducker import AudioDucker, _FADE_STEPS
         d = AudioDucker()
         d._pactl = "/usr/bin/pactl"
         d._duck_pct = 30
@@ -293,7 +293,7 @@ class TestFade:
         assert mock_vol.call_count == _FADE_STEPS
 
     def test_restore_with_fade(self):
-        from bantz.agent.audio_ducker import AudioDucker, _FADE_STEPS
+        from butler.agent.audio_ducker import AudioDucker, _FADE_STEPS
         d = AudioDucker()
         d._pactl = "/usr/bin/pactl"
         d._duck_pct = 30
@@ -314,7 +314,7 @@ class TestFade:
 
 class TestSetVolume:
     def test_volume_clamped_to_150(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         d._pactl = "/usr/bin/pactl"
         with patch("subprocess.run") as mock_run:
@@ -324,7 +324,7 @@ class TestSetVolume:
         assert "150%" in args
 
     def test_volume_clamped_to_0(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         d._pactl = "/usr/bin/pactl"
         with patch("subprocess.run") as mock_run:
@@ -333,7 +333,7 @@ class TestSetVolume:
         assert "0%" in args
 
     def test_set_volume_no_pactl(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         d._pactl = ""
         assert d._set_volume(1, 50) is False
@@ -345,7 +345,7 @@ class TestSetVolume:
 
 class TestDiagnose:
     def test_diagnose_structure(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         diag = d.diagnose()
         assert "pactl_available" in diag
@@ -354,26 +354,26 @@ class TestDiagnose:
         assert "duck_pct" in diag
 
     def test_stats(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         s = d.stats()
         assert s["ducked"] is False
         assert s["duck_pct"] == 30
 
     def test_status_line_unavailable(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         d._pactl = ""
         assert "unavailable" in d.status_line()
 
     def test_status_line_idle(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         d._pactl = "/usr/bin/pactl"
         assert "idle" in d.status_line()
 
     def test_status_line_active(self):
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         d = AudioDucker()
         d._pactl = "/usr/bin/pactl"
         d._ducked = True
@@ -386,11 +386,11 @@ class TestDiagnose:
 
 class TestSingleton:
     def test_singleton_exists(self):
-        from bantz.agent.audio_ducker import audio_ducker, AudioDucker
+        from butler.agent.audio_ducker import audio_ducker, AudioDucker
         assert isinstance(audio_ducker, AudioDucker)
 
     def test_singleton_starts_idle(self):
-        from bantz.agent.audio_ducker import audio_ducker
+        from butler.agent.audio_ducker import audio_ducker
         assert audio_ducker.is_ducked is False
 
 
@@ -402,7 +402,7 @@ class TestPulsePropTag:
     def test_play_method_sets_pulse_prop(self):
         """_play() must set PULSE_PROP='application.name=BantzTTS' in env."""
         import inspect
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
         src = inspect.getsource(TTSEngine._play)
         assert "PULSE_PROP" in src
         assert "BantzTTS" in src
@@ -410,14 +410,14 @@ class TestPulsePropTag:
     def test_play_passes_env_to_subprocess(self):
         """_play() must pass env= to create_subprocess_exec."""
         import inspect
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
         src = inspect.getsource(TTSEngine._play)
         assert "env=env" in src
 
     def test_no_pid_matching(self):
         """Must NOT use PID matching to filter Bantz's audio."""
         import inspect
-        from bantz.agent import audio_ducker
+        from butler.agent import audio_ducker
         src = inspect.getsource(audio_ducker)
         assert "getpid" not in src
         assert "os.getpid" not in src
@@ -431,7 +431,7 @@ class TestTTSSpeakDucking:
     def test_speak_ducks_and_restores(self):
         """speak() should call duck() before and restore() after playing."""
         import inspect
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
         src = inspect.getsource(TTSEngine.speak)
         assert "audio_ducker" in src
         assert ".duck()" in src
@@ -440,7 +440,7 @@ class TestTTSSpeakDucking:
     def test_restore_in_finally(self):
         """restore() must be in a finally block for crash safety."""
         import inspect
-        from bantz.agent.tts import TTSEngine
+        from butler.agent.tts import TTSEngine
         src = inspect.getsource(TTSEngine.speak)
         # The restore call must appear after a 'finally:' line
         lines = src.splitlines()
@@ -483,7 +483,7 @@ class TestEnvExample:
 
 class TestDoctorSection:
     def test_section_for_audio_duck(self):
-        from bantz.cli.setup import _section_for
+        from butler.cli.setup import _section_for
         assert _section_for("audio_duck_enabled") == "Audio Ducking"
         assert _section_for("audio_duck_pct") == "Audio Ducking"
 
@@ -496,7 +496,7 @@ class TestArchitectureAudit:
     def test_no_wpctl(self):
         """Must NOT use wpctl (PipeWire-native CLI) — pactl only."""
         import inspect
-        from bantz.agent import audio_ducker
+        from butler.agent import audio_ducker
         src = inspect.getsource(audio_ducker)
         # wpctl may appear in docstring as explanation; check actual code
         import ast
@@ -512,29 +512,29 @@ class TestArchitectureAudit:
     def test_pactl_only(self):
         """Must use pactl for all PulseAudio operations."""
         import inspect
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         src = inspect.getsource(AudioDucker._get_sink_inputs)
         assert "pactl" in src
 
     def test_sync_not_async(self):
         """Duck/restore must be synchronous (no async def)."""
         import inspect
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         assert not inspect.iscoroutinefunction(AudioDucker.duck)
         assert not inspect.iscoroutinefunction(AudioDucker.restore)
 
     def test_thread_lock(self):
         """Must use threading.Lock for thread safety."""
         import inspect
-        from bantz.agent.audio_ducker import AudioDucker
+        from butler.agent.audio_ducker import AudioDucker
         src = inspect.getsource(AudioDucker)
         assert "threading.Lock" in src or "_lock" in src
 
     def test_bantz_app_name_constant(self):
-        from bantz.agent.audio_ducker import _BANTZ_APP_NAME
+        from butler.agent.audio_ducker import _BANTZ_APP_NAME
         assert _BANTZ_APP_NAME == "BantzTTS"
 
     def test_fade_constants(self):
-        from bantz.agent.audio_ducker import _FADE_STEPS, _FADE_STEP_MS
+        from butler.agent.audio_ducker import _FADE_STEPS, _FADE_STEP_MS
         assert _FADE_STEPS >= 2
         assert _FADE_STEP_MS >= 5

@@ -7,14 +7,14 @@ from enum import Enum
 from unittest.mock import patch
 
 
-from bantz.agent.notifier import (
+from butler.agent.notifier import (
     Notifier,
     _URGENCY_MAP,
     _DEFAULT_URGENCY,
     _TUI_IDENTIFIERS,
     notifier,
 )
-from bantz.agent.interventions import Priority as RealPriority
+from butler.agent.interventions import Priority as RealPriority
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -160,7 +160,7 @@ class TestSend:
         cmd = mock_run.call_args[0][0]
         assert cmd[0] == "/usr/bin/notify-send"
         assert "--app-name" in cmd
-        assert "Bantz" in cmd
+        assert "Butler" in cmd
         assert "Hello" in cmd
         assert "World" in cmd
 
@@ -257,7 +257,7 @@ class TestIsTuiActive:
 
     def test_tui_active_bantz_in_title(self):
         n = self._make_ready()
-        from bantz.agent.app_detector import WindowInfo
+        from butler.agent.app_detector import WindowInfo
         win = WindowInfo(name="Alacritty", title="python -m bantz", pid=100)
         with patch("bantz.agent.app_detector.app_detector") as mock_ad:
             mock_ad.initialized = True
@@ -267,7 +267,7 @@ class TestIsTuiActive:
 
     def test_tui_not_active_browser(self):
         n = self._make_ready()
-        from bantz.agent.app_detector import WindowInfo
+        from butler.agent.app_detector import WindowInfo
         win = WindowInfo(name="firefox", title="GitHub - Firefox", pid=200)
         with patch("bantz.agent.app_detector.app_detector") as mock_ad:
             mock_ad.initialized = True
@@ -380,7 +380,7 @@ class TestDispatch:
         n = self._make_ready()
         iv = FakeIntervention(priority=RealPriority.MEDIUM)
 
-        from bantz.agent.interventions import intervention_queue as real_queue
+        from butler.agent.interventions import intervention_queue as real_queue
         old_init = real_queue._initialized
         old_focus = real_queue._focus
         old_quiet = real_queue._quiet
@@ -403,7 +403,7 @@ class TestDispatch:
         n = self._make_ready()
         iv = FakeIntervention(priority=RealPriority.CRITICAL, title="Alert", reason="Critical!")
 
-        from bantz.agent.interventions import intervention_queue as real_queue
+        from butler.agent.interventions import intervention_queue as real_queue
         old_init = real_queue._initialized
         old_focus = real_queue._focus
         old_quiet = real_queue._quiet
@@ -426,7 +426,7 @@ class TestDispatch:
         n = self._make_ready()
         iv = FakeIntervention(priority=RealPriority.HIGH)
 
-        from bantz.agent.interventions import intervention_queue as real_queue
+        from butler.agent.interventions import intervention_queue as real_queue
         old_init = real_queue._initialized
         old_focus = real_queue._focus
         old_quiet = real_queue._quiet
@@ -525,13 +525,13 @@ class TestStats:
 
 class TestConfigFields:
     def test_config_has_notification_fields(self):
-        from bantz.config import config
+        from butler.config import config
         assert hasattr(config, "desktop_notifications")
         assert hasattr(config, "notification_icon")
         assert hasattr(config, "notification_sound")
 
     def test_config_defaults(self):
-        from bantz.config import Config
+        from butler.config import Config
         # Test the hardcoded Field defaults, independent of .env overrides
         fields = Config.model_fields
         assert fields["desktop_notifications"].default is True

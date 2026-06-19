@@ -20,7 +20,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 class TestRLEnabledDefault:
     def test_rl_enabled_is_true_by_default(self):
         """rl_enabled must default to True so the AffinityEngine fires (#438)."""
-        from bantz.config import Config
+        from butler.config import Config
         import inspect, dataclasses
 
         # Inspect the Field default directly so .env overrides don't mask the code default
@@ -39,14 +39,14 @@ class TestRLEnabledDefault:
 
 class TestBantzContextHabitHint:
     def test_habit_hint_field_exists_and_defaults_empty(self):
-        from bantz.core.context import BantzContext
+        from butler.core.context import BantzContext
 
         ctx = BantzContext()
         assert hasattr(ctx, "habit_hint")
         assert ctx.habit_hint == ""
 
     def test_habit_hint_field_is_assignable(self):
-        from bantz.core.context import BantzContext
+        from butler.core.context import BantzContext
 
         ctx = BantzContext()
         ctx.habit_hint = "[Usage habits — morning] Most-used tools: weather (3×)"
@@ -72,7 +72,7 @@ class TestHabitHint:
             patch("datetime.datetime") as mock_dt,
         ):
             mock_dt.now.return_value.hour = hour
-            from bantz.core.memory_injector import habit_hint
+            from butler.core.memory_injector import habit_hint
             return habit_hint()
 
     def test_morning_segment(self):
@@ -130,8 +130,8 @@ class TestInjectHabitHint:
     """inject() must set ctx.habit_hint from habit_hint()."""
 
     async def test_inject_sets_habit_hint(self):
-        from bantz.core.context import BantzContext
-        from bantz.core import memory_injector
+        from butler.core.context import BantzContext
+        from butler.core import memory_injector
 
         ctx = BantzContext()
 
@@ -163,8 +163,8 @@ class TestInjectHabitHint:
         assert ctx.habit_hint == expected_hint
 
     async def test_inject_habit_hint_empty_when_no_data(self):
-        from bantz.core.context import BantzContext
-        from bantz.core import memory_injector
+        from butler.core.context import BantzContext
+        from butler.core import memory_injector
 
         ctx = BantzContext()
 

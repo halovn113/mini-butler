@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bantz.tools.browser_tool import BrowserTool, BrowserToolError
+from butler.tools.browser_tool import BrowserTool, BrowserToolError
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -205,8 +205,8 @@ class TestExecute:
 
 class TestRegistry:
     def test_registered_as_browser(self):
-        from bantz.tools import registry
-        import bantz.tools.browser_tool  # noqa: F401 — trigger registration
+        from butler.tools import registry
+        import butler.tools.browser_tool  # noqa: F401 — trigger registration
         tool = registry.get("browser")
         assert tool is not None
         assert isinstance(tool, BrowserTool)

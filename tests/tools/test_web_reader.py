@@ -29,11 +29,11 @@ class TestHTMLStripping:
     """strip_html must remove tags, scripts, styles and collapse whitespace."""
 
     def test_strips_basic_tags(self):
-        from bantz.tools.web_reader import strip_html
+        from butler.tools.web_reader import strip_html
         assert strip_html("<p>Hello <b>World</b></p>") == "Hello World"
 
     def test_strips_script_tags(self):
-        from bantz.tools.web_reader import strip_html
+        from butler.tools.web_reader import strip_html
         html = "<p>Before</p><script>alert('xss')</script><p>After</p>"
         result = strip_html(html)
         assert "alert" not in result
@@ -41,43 +41,43 @@ class TestHTMLStripping:
         assert "After" in result
 
     def test_strips_style_tags(self):
-        from bantz.tools.web_reader import strip_html
+        from butler.tools.web_reader import strip_html
         html = "<style>body{color:red}</style><p>Content</p>"
         result = strip_html(html)
         assert "color" not in result
         assert "Content" in result
 
     def test_strips_noscript_and_svg(self):
-        from bantz.tools.web_reader import strip_html
+        from butler.tools.web_reader import strip_html
         html = "<noscript>Enable JS</noscript><svg><path/></svg><p>OK</p>"
         result = strip_html(html)
         assert "Enable JS" not in result
         assert "OK" in result
 
     def test_strips_head_content(self):
-        from bantz.tools.web_reader import strip_html
+        from butler.tools.web_reader import strip_html
         html = "<html><head><title>Test</title><meta charset='utf-8'></head><body><p>Body</p></body></html>"
         result = strip_html(html)
         assert "Test" not in result
         assert "Body" in result
 
     def test_collapses_whitespace(self):
-        from bantz.tools.web_reader import strip_html
+        from butler.tools.web_reader import strip_html
         html = "<p>  Lots   of   spaces  </p>"
         result = strip_html(html)
         assert result == "Lots of spaces"
 
     def test_empty_html(self):
-        from bantz.tools.web_reader import strip_html
+        from butler.tools.web_reader import strip_html
         assert strip_html("") == ""
 
     def test_plain_text_passthrough(self):
-        from bantz.tools.web_reader import strip_html
+        from butler.tools.web_reader import strip_html
         assert strip_html("Just plain text") == "Just plain text"
 
     def test_nested_invisible_tags(self):
         """Nested script inside style — all content hidden."""
-        from bantz.tools.web_reader import strip_html
+        from butler.tools.web_reader import strip_html
         html = "<style><script>inner</script>css</style><p>Visible</p>"
         result = strip_html(html)
         assert "inner" not in result
@@ -95,7 +95,7 @@ class TestWebReaderExecution:
 
     @pytest.mark.asyncio
     async def test_fetches_and_strips_html(self):
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -115,7 +115,7 @@ class TestWebReaderExecution:
 
     @pytest.mark.asyncio
     async def test_truncates_long_content(self):
-        from bantz.tools.web_reader import WebReaderTool, MAX_TEXT_LENGTH
+        from butler.tools.web_reader import WebReaderTool, MAX_TEXT_LENGTH
 
         long_text = "A" * 20_000
         mock_resp = MagicMock()
@@ -139,7 +139,7 @@ class TestWebReaderExecution:
     @pytest.mark.asyncio
     async def test_telegraph_reference_footer(self):
         """Output must end with 'Telegraph Reference: <url>'."""
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -166,21 +166,21 @@ class TestWebReaderErrors:
 
     @pytest.mark.asyncio
     async def test_no_url(self):
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
         result = await WebReaderTool().execute()
         assert result.success is False
         assert "No URL" in result.error
 
     @pytest.mark.asyncio
     async def test_invalid_url_scheme(self):
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
         result = await WebReaderTool().execute(url="ftp://bad.example.com")
         assert result.success is False
         assert "Invalid URL" in result.error
 
     @pytest.mark.asyncio
     async def test_http_error(self):
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
 
         mock_resp = MagicMock()
         mock_resp.status_code = 404
@@ -198,7 +198,7 @@ class TestWebReaderErrors:
 
     @pytest.mark.asyncio
     async def test_network_exception(self):
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
 
         mock_client = AsyncMock()
         mock_client.get = AsyncMock(side_effect=ConnectionError("DNS resolution failed"))
@@ -213,7 +213,7 @@ class TestWebReaderErrors:
     @pytest.mark.asyncio
     async def test_empty_page_content(self):
         """Page returns only scripts/styles with no readable text → success=False (#257)."""
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -239,13 +239,13 @@ class TestWebReaderRegistration:
     """read_url must be registered in the global tool registry."""
 
     def test_tool_is_registered(self):
-        from bantz.tools.web_reader import registry
+        from butler.tools.web_reader import registry
         tool = registry.get("read_url")
         assert tool is not None
         assert tool.name == "read_url"
 
     def test_tool_schema(self):
-        from bantz.tools.web_reader import registry
+        from butler.tools.web_reader import registry
         tool = registry.get("read_url")
         schema = tool.schema()
         assert schema["name"] == "read_url"
@@ -262,7 +262,7 @@ class TestUARotation:
     """User-Agent rotation and retry on 401/403 blocks (#257)."""
 
     def test_browser_uas_pool_exists(self):
-        from bantz.tools.web_reader import _BROWSER_UAS
+        from butler.tools.web_reader import _BROWSER_UAS
         assert len(_BROWSER_UAS) >= 3
         for ua in _BROWSER_UAS:
             assert "Mozilla" in ua
@@ -270,7 +270,7 @@ class TestUARotation:
     @pytest.mark.asyncio
     async def test_uses_browser_ua_not_bantz(self):
         """First request must NOT use the old 'Bantz/3.0' UA."""
-        from bantz.tools.web_reader import WebReaderTool, _BROWSER_UAS
+        from butler.tools.web_reader import WebReaderTool, _BROWSER_UAS
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -295,12 +295,12 @@ class TestUARotation:
         call_kwargs = mock_client.get.call_args_list[0][1]
         ua_used = call_kwargs["headers"]["User-Agent"]
         assert ua_used in _BROWSER_UAS
-        assert "Bantz" not in ua_used
+        assert "Butler" not in ua_used
 
     @pytest.mark.asyncio
     async def test_retries_on_403_with_different_ua(self):
         """403 on attempt 1 → retry with a different UA → succeed on attempt 2."""
-        from bantz.tools.web_reader import WebReaderTool, _BROWSER_UAS
+        from butler.tools.web_reader import WebReaderTool, _BROWSER_UAS
 
         resp_403 = MagicMock()
         resp_403.status_code = 403
@@ -338,7 +338,7 @@ class TestUARotation:
     @pytest.mark.asyncio
     async def test_retries_on_401_same_as_403(self):
         """401 triggers the same retry logic as 403."""
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
 
         resp_401 = MagicMock()
         resp_401.status_code = 401
@@ -364,7 +364,7 @@ class TestUARotation:
     @pytest.mark.asyncio
     async def test_both_attempts_403_returns_failure(self):
         """If both attempts return 403, return success=False with descriptive message."""
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
 
         resp_403 = MagicMock()
         resp_403.status_code = 403
@@ -396,7 +396,7 @@ class TestEmptyContentDetection:
     @pytest.mark.asyncio
     async def test_short_text_returns_failure(self):
         """< 20 chars after stripping → success=False."""
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -415,7 +415,7 @@ class TestEmptyContentDetection:
     @pytest.mark.asyncio
     async def test_cookie_banner_only_returns_failure(self):
         """Page with only a cookie notice (< 20 chars) → failure."""
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -433,7 +433,7 @@ class TestEmptyContentDetection:
     @pytest.mark.asyncio
     async def test_sufficient_text_returns_success(self):
         """Page with >= 20 chars of real text → success=True."""
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -452,7 +452,7 @@ class TestEmptyContentDetection:
     @pytest.mark.asyncio
     async def test_js_challenge_message_in_error(self):
         """Empty page error output must mention JavaScript/Captcha for LLM context."""
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200

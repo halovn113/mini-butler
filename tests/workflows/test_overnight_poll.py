@@ -31,7 +31,7 @@ import pytest
 @pytest.fixture
 def kv_store(tmp_path):
     """A real SQLiteKVStore backed by a temp file."""
-    from bantz.data.sqlite_store import SQLiteKVStore
+    from butler.data.sqlite_store import SQLiteKVStore
     return SQLiteKVStore(tmp_path / "test.db")
 
 
@@ -50,7 +50,7 @@ def mock_gmail_creds():
 
 class TestPollSourceResult:
     def test_to_dict_ok(self):
-        from bantz.agent.workflows.overnight_poll import PollSourceResult
+        from butler.agent.workflows.overnight_poll import PollSourceResult
         r = PollSourceResult(source="gmail", status="ok", data={"unread": 5})
         d = r.to_dict()
         assert d["source"] == "gmail"
@@ -58,7 +58,7 @@ class TestPollSourceResult:
         assert d["data"]["unread"] == 5
 
     def test_to_dict_auth_error(self):
-        from bantz.agent.workflows.overnight_poll import PollSourceResult
+        from butler.agent.workflows.overnight_poll import PollSourceResult
         r = PollSourceResult(
             source="calendar", status="auth_error",
             error_message="Token expired",
@@ -69,7 +69,7 @@ class TestPollSourceResult:
         assert "data" not in d
 
     def test_to_dict_error(self):
-        from bantz.agent.workflows.overnight_poll import PollSourceResult
+        from butler.agent.workflows.overnight_poll import PollSourceResult
         r = PollSourceResult(source="classroom", status="error", error_message="API down")
         d = r.to_dict()
         assert d["status"] == "error"
@@ -78,7 +78,7 @@ class TestPollSourceResult:
 
 class TestOvernightPollResult:
     def test_summary_line_with_data(self):
-        from bantz.agent.workflows.overnight_poll import (
+        from butler.agent.workflows.overnight_poll import (
             OvernightPollResult, PollSourceResult,
         )
         r = OvernightPollResult(
@@ -99,13 +99,13 @@ class TestOvernightPollResult:
         assert "3 assignments" in line
 
     def test_summary_line_with_errors(self):
-        from bantz.agent.workflows.overnight_poll import OvernightPollResult
+        from butler.agent.workflows.overnight_poll import OvernightPollResult
         r = OvernightPollResult(errors=2)
         line = r.summary_line()
         assert "2 errors" in line
 
     def test_summary_line_empty(self):
-        from bantz.agent.workflows.overnight_poll import OvernightPollResult
+        from butler.agent.workflows.overnight_poll import OvernightPollResult
         r = OvernightPollResult()
         assert r.summary_line() == "No data collected"
 
@@ -116,7 +116,7 @@ class TestOvernightPollResult:
 
 class TestUrgentKeywords:
     def test_get_urgent_keywords_from_config(self):
-        from bantz.agent.workflows.overnight_poll import _get_urgent_keywords
+        from butler.agent.workflows.overnight_poll import _get_urgent_keywords
         with patch("bantz.config.config") as mock_cfg:
             mock_cfg.urgent_keywords = "final,deadline,acil"
             kws = _get_urgent_keywords()
@@ -125,26 +125,26 @@ class TestUrgentKeywords:
         assert "acil" in kws
 
     def test_get_urgent_keywords_empty(self):
-        from bantz.agent.workflows.overnight_poll import _get_urgent_keywords
+        from butler.agent.workflows.overnight_poll import _get_urgent_keywords
         with patch("bantz.config.config") as mock_cfg:
             mock_cfg.urgent_keywords = ""
             kws = _get_urgent_keywords()
         assert kws == []
 
     def test_is_urgent_match(self):
-        from bantz.agent.workflows.overnight_poll import _is_urgent
+        from butler.agent.workflows.overnight_poll import _is_urgent
         assert _is_urgent("FINAL exam schedule", "prof@uni.edu", ["final", "deadline"])
 
     def test_is_urgent_no_match(self):
-        from bantz.agent.workflows.overnight_poll import _is_urgent
+        from butler.agent.workflows.overnight_poll import _is_urgent
         assert not _is_urgent("Newsletter update", "news@co.com", ["final", "deadline"])
 
     def test_is_urgent_case_insensitive(self):
-        from bantz.agent.workflows.overnight_poll import _is_urgent
+        from butler.agent.workflows.overnight_poll import _is_urgent
         assert _is_urgent("DEADLINE approaching", "boss@work.com", ["deadline"])
 
     def test_is_urgent_in_sender(self):
-        from bantz.agent.workflows.overnight_poll import _is_urgent
+        from butler.agent.workflows.overnight_poll import _is_urgent
         assert _is_urgent("Hello", "urgent-notices@school.edu", ["urgent"])
 
 
@@ -152,7 +152,7 @@ class TestDeduplication:
     """Rec #2: Gmail after:TIMESTAMP deduplication."""
 
     def test_gmail_after_timestamp_with_last_poll(self):
-        from bantz.agent.workflows.overnight_poll import _gmail_after_timestamp
+        from butler.agent.workflows.overnight_poll import _gmail_after_timestamp
         # Use a known timestamp
         ts = "2026-03-10T02:00:00+00:00"
         result = _gmail_after_timestamp(ts)
@@ -160,7 +160,7 @@ class TestDeduplication:
         assert result == str(int(dt.timestamp()))
 
     def test_gmail_after_timestamp_no_last_poll(self):
-        from bantz.agent.workflows.overnight_poll import _gmail_after_timestamp
+        from butler.agent.workflows.overnight_poll import _gmail_after_timestamp
         result = _gmail_after_timestamp(None)
         # Should be roughly 8 hours ago
         ts = int(result)
@@ -169,7 +169,7 @@ class TestDeduplication:
         assert (now - ts) < 9 * 3600  # at most 9h ago
 
     def test_gmail_after_timestamp_bad_format(self):
-        from bantz.agent.workflows.overnight_poll import _gmail_after_timestamp
+        from butler.agent.workflows.overnight_poll import _gmail_after_timestamp
         result = _gmail_after_timestamp("not-a-date")
         # Falls back to 8h ago
         ts = int(result)
@@ -184,7 +184,7 @@ class TestDeduplication:
 class TestPollGmail:
     @pytest.mark.asyncio
     async def test_poll_gmail_success(self):
-        from bantz.agent.workflows.overnight_poll import _poll_gmail
+        from butler.agent.workflows.overnight_poll import _poll_gmail
         mock_creds = MagicMock()
         mock_messages = [
             {"id": "1", "from": "boss@work.com", "subject": "Final deadline",
@@ -211,8 +211,8 @@ class TestPollGmail:
     @pytest.mark.asyncio
     async def test_poll_gmail_auth_error(self):
         """Rec #4: Auth error produces proper payload."""
-        from bantz.agent.workflows.overnight_poll import _poll_gmail
-        from bantz.auth.token_store import TokenNotFoundError
+        from butler.agent.workflows.overnight_poll import _poll_gmail
+        from butler.auth.token_store import TokenNotFoundError
         with patch("bantz.auth.token_store.token_store") as mock_ts:
             mock_ts.get.side_effect = TokenNotFoundError("Gmail token not found")
             result = await _poll_gmail(None)
@@ -222,7 +222,7 @@ class TestPollGmail:
 
     @pytest.mark.asyncio
     async def test_poll_gmail_api_error(self):
-        from bantz.agent.workflows.overnight_poll import _poll_gmail
+        from butler.agent.workflows.overnight_poll import _poll_gmail
         with patch("bantz.auth.token_store.token_store") as mock_ts:
             mock_ts.get.return_value = MagicMock()
             with patch("bantz.tools.gmail.GmailTool") as MockGmail:
@@ -236,7 +236,7 @@ class TestPollGmail:
     @pytest.mark.asyncio
     async def test_poll_gmail_dedup_query(self):
         """Rec #2: Verify after:TIMESTAMP is used in the query."""
-        from bantz.agent.workflows.overnight_poll import _poll_gmail
+        from butler.agent.workflows.overnight_poll import _poll_gmail
         last_poll = "2026-03-10T02:00:00+00:00"
         mock_creds = MagicMock()
         with patch("bantz.auth.token_store.token_store") as mock_ts:
@@ -257,7 +257,7 @@ class TestPollGmail:
 class TestPollCalendar:
     @pytest.mark.asyncio
     async def test_poll_calendar_success(self):
-        from bantz.agent.workflows.overnight_poll import _poll_calendar
+        from butler.agent.workflows.overnight_poll import _poll_calendar
         mock_events = [
             {"id": "e1", "summary": "Team standup", "start_local": "10:00",
              "location": "Zoom", "attendees": []},
@@ -279,8 +279,8 @@ class TestPollCalendar:
 
     @pytest.mark.asyncio
     async def test_poll_calendar_auth_error(self):
-        from bantz.agent.workflows.overnight_poll import _poll_calendar
-        from bantz.auth.token_store import TokenNotFoundError
+        from butler.agent.workflows.overnight_poll import _poll_calendar
+        from butler.auth.token_store import TokenNotFoundError
         with patch("bantz.auth.token_store.token_store") as mock_ts:
             mock_ts.get.side_effect = TokenNotFoundError("Calendar token missing")
             result = await _poll_calendar()
@@ -291,7 +291,7 @@ class TestPollCalendar:
 class TestPollClassroom:
     @pytest.mark.asyncio
     async def test_poll_classroom_success(self):
-        from bantz.agent.workflows.overnight_poll import _poll_classroom
+        from butler.agent.workflows.overnight_poll import _poll_classroom
         now = datetime.now(timezone.utc)
         mock_assignments = [
             {"title": "Math HW", "course": "Calculus",
@@ -316,8 +316,8 @@ class TestPollClassroom:
 
     @pytest.mark.asyncio
     async def test_poll_classroom_auth_error(self):
-        from bantz.agent.workflows.overnight_poll import _poll_classroom
-        from bantz.auth.token_store import TokenNotFoundError
+        from butler.agent.workflows.overnight_poll import _poll_classroom
+        from butler.auth.token_store import TokenNotFoundError
         with patch("bantz.auth.token_store.token_store") as mock_ts:
             mock_ts.get.side_effect = TokenNotFoundError("Classroom token expired")
             result = await _poll_classroom()
@@ -332,7 +332,7 @@ class TestPollClassroom:
 class TestKVStorePersistence:
     def test_store_and_read_overnight_data(self, tmp_path):
         """Rec #1: Store in KV instead of new table, then read back."""
-        from bantz.agent.workflows.overnight_poll import (
+        from butler.agent.workflows.overnight_poll import (
             OvernightPollResult, PollSourceResult,
             _store_poll_results, read_overnight_data,
         )
@@ -360,7 +360,7 @@ class TestKVStorePersistence:
         assert data["last_poll"] == "2026-03-10T04:00:00+00:00"
 
     def test_store_clears_errors_on_success(self, tmp_path):
-        from bantz.agent.workflows.overnight_poll import (
+        from butler.agent.workflows.overnight_poll import (
             OvernightPollResult, PollSourceResult,
             _store_poll_results, read_overnight_data,
         )
@@ -388,7 +388,7 @@ class TestKVStorePersistence:
         assert "errors" not in data2
 
     def test_read_single_source(self, tmp_path):
-        from bantz.agent.workflows.overnight_poll import (
+        from butler.agent.workflows.overnight_poll import (
             OvernightPollResult, PollSourceResult,
             _store_poll_results, read_overnight_data,
         )
@@ -403,14 +403,14 @@ class TestKVStorePersistence:
         assert gmail_data["data"]["unread"] == 3
 
     def test_read_missing_source(self, tmp_path):
-        from bantz.agent.workflows.overnight_poll import read_overnight_data
+        from butler.agent.workflows.overnight_poll import read_overnight_data
         with patch("bantz.config.config") as mock_cfg:
             mock_cfg.db_path = tmp_path / "bantz.db"
             data = read_overnight_data("gmail")
         assert data == {}
 
     def test_clear_overnight_data(self, tmp_path):
-        from bantz.agent.workflows.overnight_poll import (
+        from butler.agent.workflows.overnight_poll import (
             OvernightPollResult, PollSourceResult,
             _store_poll_results, read_overnight_data, clear_overnight_data,
         )
@@ -434,7 +434,7 @@ class TestKVStorePersistence:
 class TestAuthErrorPayloads:
     def test_error_payload_stored_in_kv(self, tmp_path):
         """Rec #4: Auth errors written to KV for briefing to read."""
-        from bantz.agent.workflows.overnight_poll import (
+        from butler.agent.workflows.overnight_poll import (
             OvernightPollResult, PollSourceResult,
             _store_poll_results, read_overnight_data,
         )
@@ -460,7 +460,7 @@ class TestAuthErrorPayloads:
 
 class TestUrgentNotification:
     def test_sends_notification_on_urgent(self):
-        from bantz.agent.workflows.overnight_poll import (
+        from butler.agent.workflows.overnight_poll import (
             OvernightPollResult, PollSourceResult, _send_urgent_notification,
         )
         result = OvernightPollResult(
@@ -478,7 +478,7 @@ class TestUrgentNotification:
             assert "FINAL exam" in call_args[0][1]
 
     def test_no_notification_without_urgent(self):
-        from bantz.agent.workflows.overnight_poll import (
+        from butler.agent.workflows.overnight_poll import (
             OvernightPollResult, PollSourceResult, _send_urgent_notification,
         )
         result = OvernightPollResult(
@@ -498,7 +498,7 @@ class TestUrgentNotification:
 
 class TestBriefingCacheIntegration:
     def test_gmail_from_cache_ok(self):
-        from bantz.core.briefing import Briefing
+        from butler.core.briefing import Briefing
         b = Briefing()
         result = b._gmail_from_cache({
             "status": "ok",
@@ -511,13 +511,13 @@ class TestBriefingCacheIntegration:
 
     def test_gmail_from_cache_auth_error(self):
         """Rec #4: Graceful auth error in briefing."""
-        from bantz.core.briefing import Briefing
+        from butler.core.briefing import Briefing
         b = Briefing()
         result = b._gmail_from_cache({"status": "auth_error"})
         assert "re-authenticate" in result.lower()
 
     def test_gmail_from_cache_clean_inbox(self):
-        from bantz.core.briefing import Briefing
+        from butler.core.briefing import Briefing
         b = Briefing()
         result = b._gmail_from_cache({
             "status": "ok", "data": {"unread": 0, "urgent_count": 0},
@@ -525,7 +525,7 @@ class TestBriefingCacheIntegration:
         assert "clean" in result.lower()
 
     def test_calendar_from_cache_ok(self):
-        from bantz.core.briefing import Briefing
+        from butler.core.briefing import Briefing
         b = Briefing()
         result = b._calendar_from_cache({
             "status": "ok",
@@ -537,19 +537,19 @@ class TestBriefingCacheIntegration:
         assert "Zoom" in result
 
     def test_calendar_from_cache_auth_error(self):
-        from bantz.core.briefing import Briefing
+        from butler.core.briefing import Briefing
         b = Briefing()
         result = b._calendar_from_cache({"status": "auth_error"})
         assert "re-authenticate" in result.lower()
 
     def test_calendar_from_cache_no_events(self):
-        from bantz.core.briefing import Briefing
+        from butler.core.briefing import Briefing
         b = Briefing()
         result = b._calendar_from_cache({"status": "ok", "data": {"events": []}})
         assert "no events" in result.lower()
 
     def test_classroom_from_cache_ok(self):
-        from bantz.core.briefing import Briefing
+        from butler.core.briefing import Briefing
         b = Briefing()
         result = b._classroom_from_cache({
             "status": "ok",
@@ -562,13 +562,13 @@ class TestBriefingCacheIntegration:
         assert "Math HW" in result
 
     def test_classroom_from_cache_auth_error(self):
-        from bantz.core.briefing import Briefing
+        from butler.core.briefing import Briefing
         b = Briefing()
         result = b._classroom_from_cache({"status": "auth_error"})
         assert "re-authenticate" in result.lower()
 
     def test_classroom_from_cache_nothing_due(self):
-        from bantz.core.briefing import Briefing
+        from butler.core.briefing import Briefing
         b = Briefing()
         result = b._classroom_from_cache({
             "status": "ok",
@@ -584,14 +584,14 @@ class TestBriefingCacheIntegration:
 class TestRunOvernightPoll:
     @pytest.mark.asyncio
     async def test_dry_run_no_kv_writes(self, tmp_path):
-        from bantz.agent.workflows.overnight_poll import run_overnight_poll
+        from butler.agent.workflows.overnight_poll import run_overnight_poll
         with patch("bantz.agent.workflows.overnight_poll._poll_gmail", new_callable=AsyncMock) as mg, \
              patch("bantz.agent.workflows.overnight_poll._poll_calendar", new_callable=AsyncMock) as mc, \
              patch("bantz.agent.workflows.overnight_poll._poll_classroom", new_callable=AsyncMock) as mcr, \
              patch("bantz.agent.workflows.overnight_poll._store_poll_results") as store_fn, \
              patch("bantz.agent.workflows.overnight_poll._send_urgent_notification") as notif_fn, \
              patch("bantz.agent.job_scheduler.inhibit_sleep"):
-            from bantz.agent.workflows.overnight_poll import PollSourceResult
+            from butler.agent.workflows.overnight_poll import PollSourceResult
             mg.return_value = PollSourceResult(source="gmail", status="ok", data={"unread": 0})
             mc.return_value = PollSourceResult(source="calendar", status="ok", data={"events": []})
             mcr.return_value = PollSourceResult(source="classroom", status="ok", data={"assignment_count": 0})
@@ -603,7 +603,7 @@ class TestRunOvernightPoll:
 
     @pytest.mark.asyncio
     async def test_normal_run_stores_results(self, tmp_path):
-        from bantz.agent.workflows.overnight_poll import run_overnight_poll, PollSourceResult
+        from butler.agent.workflows.overnight_poll import run_overnight_poll, PollSourceResult
         with patch("bantz.agent.workflows.overnight_poll._poll_gmail", new_callable=AsyncMock) as mg, \
              patch("bantz.agent.workflows.overnight_poll._poll_calendar", new_callable=AsyncMock) as mc, \
              patch("bantz.agent.workflows.overnight_poll._poll_classroom", new_callable=AsyncMock) as mcr, \
@@ -625,7 +625,7 @@ class TestRunOvernightPoll:
 
     @pytest.mark.asyncio
     async def test_partial_failure_counted(self, tmp_path):
-        from bantz.agent.workflows.overnight_poll import run_overnight_poll, PollSourceResult
+        from butler.agent.workflows.overnight_poll import run_overnight_poll, PollSourceResult
         with patch("bantz.agent.workflows.overnight_poll._poll_gmail", new_callable=AsyncMock) as mg, \
              patch("bantz.agent.workflows.overnight_poll._poll_calendar", new_callable=AsyncMock) as mc, \
              patch("bantz.agent.workflows.overnight_poll._poll_classroom", new_callable=AsyncMock) as mcr, \
@@ -647,7 +647,7 @@ class TestRunOvernightPoll:
 
     @pytest.mark.asyncio
     async def test_selective_sources(self):
-        from bantz.agent.workflows.overnight_poll import run_overnight_poll, PollSourceResult
+        from butler.agent.workflows.overnight_poll import run_overnight_poll, PollSourceResult
         with patch("bantz.agent.workflows.overnight_poll._poll_gmail", new_callable=AsyncMock) as mg, \
              patch("bantz.agent.workflows.overnight_poll._poll_calendar", new_callable=AsyncMock) as mc, \
              patch("bantz.agent.workflows.overnight_poll._poll_classroom", new_callable=AsyncMock) as mcr, \
@@ -666,7 +666,7 @@ class TestRunOvernightPoll:
             mcr.assert_not_awaited()
 
     def test_timeout_constants(self):
-        from bantz.agent.workflows.overnight_poll import _POLL_TIMEOUT, _TOTAL_TIMEOUT
+        from butler.agent.workflows.overnight_poll import _POLL_TIMEOUT, _TOTAL_TIMEOUT
         assert _POLL_TIMEOUT >= 60
         assert _TOTAL_TIMEOUT >= 180
 
@@ -698,16 +698,16 @@ class TestCLIArgs:
 class TestJobSchedulerDelegation:
     @pytest.mark.asyncio
     async def test_job_overnight_poll_delegates(self):
-        from bantz.agent.job_scheduler import _job_overnight_poll
+        from butler.agent.job_scheduler import _job_overnight_poll
         with patch("bantz.agent.workflows.overnight_poll.run_overnight_poll",
                     new_callable=AsyncMock) as mock_run:
-            from bantz.agent.workflows.overnight_poll import OvernightPollResult
+            from butler.agent.workflows.overnight_poll import OvernightPollResult
             mock_run.return_value = OvernightPollResult()
             await _job_overnight_poll()
             mock_run.assert_awaited_once_with(dry_run=False)
 
     def test_registry_updated(self):
-        from bantz.agent.job_scheduler import _JOB_REGISTRY
+        from butler.agent.job_scheduler import _JOB_REGISTRY
         assert "overnight_poll" in _JOB_REGISTRY
         desc = _JOB_REGISTRY["overnight_poll"][1]
         assert "overnight" in desc.lower() or "poll" in desc.lower()
@@ -719,7 +719,7 @@ class TestJobSchedulerDelegation:
 
 class TestConfigIntegration:
     def test_urgent_keywords_in_config(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config()
         assert hasattr(cfg, "urgent_keywords")
         # Default should have some keywords
@@ -728,7 +728,7 @@ class TestConfigIntegration:
     def test_urgent_keywords_custom(self):
         import os
         with patch.dict(os.environ, {"BANTZ_URGENT_KEYWORDS": "erasmus,gargantua,jetson"}):
-            from bantz.config import Config
+            from butler.config import Config
             cfg = Config()
             assert "erasmus" in cfg.urgent_keywords
             assert "gargantua" in cfg.urgent_keywords
@@ -740,13 +740,13 @@ class TestConfigIntegration:
 
 class TestEdgeCases:
     def test_poll_source_result_serializable(self):
-        from bantz.agent.workflows.overnight_poll import PollSourceResult
+        from butler.agent.workflows.overnight_poll import PollSourceResult
         r = PollSourceResult(source="gmail", status="ok", data={"key": "val"})
         s = json.dumps(r.to_dict())
         assert json.loads(s)["data"]["key"] == "val"
 
     def test_overnight_poll_result_serializable(self):
-        from bantz.agent.workflows.overnight_poll import OvernightPollResult
+        from butler.agent.workflows.overnight_poll import OvernightPollResult
         r = OvernightPollResult(poll_time="2026-01-01T00:00:00Z")
         # summary_line should not crash
         assert isinstance(r.summary_line(), str)
@@ -754,7 +754,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_poll_gmail_no_urgent_keywords(self):
         """When urgent_keywords is empty, all emails are normal."""
-        from bantz.agent.workflows.overnight_poll import _poll_gmail
+        from butler.agent.workflows.overnight_poll import _poll_gmail
         mock_creds = MagicMock()
         with patch("bantz.auth.token_store.token_store") as mock_ts:
             mock_ts.get.return_value = mock_creds
@@ -772,7 +772,7 @@ class TestEdgeCases:
         assert len(result.data["normal"]) == 1
 
     def test_read_overnight_data_empty_kv(self, tmp_path):
-        from bantz.agent.workflows.overnight_poll import read_overnight_data
+        from butler.agent.workflows.overnight_poll import read_overnight_data
         with patch("bantz.config.config") as mock_cfg:
             mock_cfg.db_path = tmp_path / "bantz.db"
             data = read_overnight_data()

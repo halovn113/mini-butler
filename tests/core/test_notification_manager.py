@@ -7,7 +7,7 @@ import pytest
 
 pytest.importorskip('textual')
 
-from bantz.core import notification_manager
+from butler.core import notification_manager
 
 
 class TestNotifyToast:
@@ -63,18 +63,18 @@ class TestBrainBackwardCompat:
     """brain._toast_callback and brain._notify_toast must still work."""
 
     def test_brain_module_exposes_toast_callback(self):
-        from bantz.core import brain as brain_mod
+        from butler.core import brain as brain_mod
         assert hasattr(brain_mod, "_toast_callback")
 
     def test_brain_module_exposes_notify_toast(self):
-        from bantz.core import brain as brain_mod
+        from butler.core import brain as brain_mod
         assert hasattr(brain_mod, "_notify_toast")
         assert callable(brain_mod._notify_toast)
 
     def test_brain_callback_write_flows_to_notification_manager(self):
         """Setting brain_mod._toast_callback then calling _notify_toast
         should route through notification_manager with that callback."""
-        from bantz.core import brain as brain_mod
+        from butler.core import brain as brain_mod
         calls: list[tuple] = []
         old = brain_mod._toast_callback
         try:
@@ -86,12 +86,12 @@ class TestBrainBackwardCompat:
             brain_mod._toast_callback = old
 
     def test_brain_push_toast_method(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         assert hasattr(Brain, "_push_toast")
 
     def test_brain_push_toast_delegates(self):
-        from bantz.core.brain import Brain
-        from bantz.core import brain as brain_mod
+        from butler.core.brain import Brain
+        from butler.core import brain as brain_mod
         calls: list[tuple] = []
         old = brain_mod._toast_callback
         try:
@@ -109,6 +109,6 @@ class TestBrainBackwardCompat:
 
     def test_deprecated_methods_removed(self):
         """_check_intervention_queue and _prepend_intervention are removed."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         assert not hasattr(Brain, "_check_intervention_queue")
         assert not hasattr(Brain, "_prepend_intervention")

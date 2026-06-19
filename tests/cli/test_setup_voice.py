@@ -28,23 +28,23 @@ import pytest
 
 class TestVoicePackagesConstant:
     def test_faster_whisper_present(self):
-        from bantz.cli.setup import _VOICE_PACKAGES
+        from butler.cli.setup import _VOICE_PACKAGES
         assert "faster-whisper" in _VOICE_PACKAGES
 
     def test_pyaudio_present(self):
-        from bantz.cli.setup import _VOICE_PACKAGES
+        from butler.cli.setup import _VOICE_PACKAGES
         assert "pyaudio" in _VOICE_PACKAGES
 
     def test_webrtcvad_present(self):
-        from bantz.cli.setup import _VOICE_PACKAGES
+        from butler.cli.setup import _VOICE_PACKAGES
         assert "webrtcvad" in _VOICE_PACKAGES
 
     def test_pvporcupine_present(self):
-        from bantz.cli.setup import _VOICE_PACKAGES
+        from butler.cli.setup import _VOICE_PACKAGES
         assert "pvporcupine" in _VOICE_PACKAGES
 
     def test_import_names_are_strings(self):
-        from bantz.cli.setup import _VOICE_PACKAGES
+        from butler.cli.setup import _VOICE_PACKAGES
         for k, v in _VOICE_PACKAGES.items():
             assert isinstance(k, str)
             assert isinstance(v, str)
@@ -52,23 +52,23 @@ class TestVoicePackagesConstant:
 
 class TestVoiceEnvPrefixesConstant:
     def test_voice_enabled_present(self):
-        from bantz.cli.setup import _VOICE_ENV_PREFIXES
+        from butler.cli.setup import _VOICE_ENV_PREFIXES
         assert "BANTZ_VOICE_ENABLED=" in _VOICE_ENV_PREFIXES
 
     def test_stt_enabled_present(self):
-        from bantz.cli.setup import _VOICE_ENV_PREFIXES
+        from butler.cli.setup import _VOICE_ENV_PREFIXES
         assert "BANTZ_STT_ENABLED=" in _VOICE_ENV_PREFIXES
 
     def test_ghost_loop_present(self):
-        from bantz.cli.setup import _VOICE_ENV_PREFIXES
+        from butler.cli.setup import _VOICE_ENV_PREFIXES
         assert "BANTZ_GHOST_LOOP_ENABLED=" in _VOICE_ENV_PREFIXES
 
     def test_picovoice_key_present(self):
-        from bantz.cli.setup import _VOICE_ENV_PREFIXES
+        from butler.cli.setup import _VOICE_ENV_PREFIXES
         assert "BANTZ_PICOVOICE_ACCESS_KEY=" in _VOICE_ENV_PREFIXES
 
     def test_wake_word_present(self):
-        from bantz.cli.setup import _VOICE_ENV_PREFIXES
+        from butler.cli.setup import _VOICE_ENV_PREFIXES
         assert "BANTZ_WAKE_WORD_ENABLED=" in _VOICE_ENV_PREFIXES
 
 
@@ -76,7 +76,7 @@ class TestVoiceEnvPrefixesConstant:
 
 class TestVoiceTestMic:
     def test_pass_when_pyaudio_returns_data(self):
-        from bantz.cli.setup import _voice_test_mic
+        from butler.cli.setup import _voice_test_mic
         mock_stream = MagicMock()
         mock_stream.read.return_value = b"\x00" * 960  # 480 frames * 2 bytes
         mock_pa = MagicMock()
@@ -93,7 +93,7 @@ class TestVoiceTestMic:
         assert "PASS" in buf.getvalue()
 
     def test_fail_when_no_audio_data(self):
-        from bantz.cli.setup import _voice_test_mic
+        from butler.cli.setup import _voice_test_mic
         mock_stream = MagicMock()
         mock_stream.read.return_value = b""  # empty
         mock_pa = MagicMock()
@@ -110,7 +110,7 @@ class TestVoiceTestMic:
         assert "FAIL" in buf.getvalue()
 
     def test_skip_when_pyaudio_missing(self):
-        from bantz.cli.setup import _voice_test_mic
+        from butler.cli.setup import _voice_test_mic
         with patch.dict("sys.modules", {"pyaudio": None}):
             buf = io.StringIO()
             with redirect_stdout(buf):
@@ -119,7 +119,7 @@ class TestVoiceTestMic:
         assert "SKIP" in buf.getvalue() or "FAIL" in buf.getvalue()
 
     def test_fail_on_exception(self):
-        from bantz.cli.setup import _voice_test_mic
+        from butler.cli.setup import _voice_test_mic
         mock_pyaudio_mod = MagicMock()
         mock_pyaudio_mod.PyAudio.side_effect = OSError("no mic")
         mock_pyaudio_mod.paInt16 = 8
@@ -136,7 +136,7 @@ class TestVoiceTestMic:
 
 class TestVoiceTestSTT:
     def test_pass_when_faster_whisper_importable(self):
-        from bantz.cli.setup import _voice_test_stt
+        from butler.cli.setup import _voice_test_stt
         mock_fw = MagicMock()
         with patch.dict("sys.modules", {"faster_whisper": mock_fw}):
             buf = io.StringIO()
@@ -146,7 +146,7 @@ class TestVoiceTestSTT:
         assert "PASS" in buf.getvalue()
 
     def test_fail_when_faster_whisper_missing(self):
-        from bantz.cli.setup import _voice_test_stt
+        from butler.cli.setup import _voice_test_stt
         with patch.dict("sys.modules", {"faster_whisper": None}):
             buf = io.StringIO()
             with redirect_stdout(buf):
@@ -159,7 +159,7 @@ class TestVoiceTestSTT:
 
 class TestVoiceTestTTS:
     def test_pass_when_piper_binary_found(self, tmp_path):
-        from bantz.cli.setup import _voice_test_tts
+        from butler.cli.setup import _voice_test_tts
         # Create a fake piper binary
         piper_bin = tmp_path / "piper"
         piper_bin.write_text("#!/bin/sh\n")
@@ -173,7 +173,7 @@ class TestVoiceTestTTS:
         assert "PASS" in buf.getvalue()
 
     def test_fail_when_no_piper_binary(self, tmp_path):
-        from bantz.cli.setup import _voice_test_tts
+        from butler.cli.setup import _voice_test_tts
         # Redirect home so no ~/.local/bin/piper or miniforge3/bin/piper found
         with patch("shutil.which", return_value=None), \
              patch.object(Path, "home", return_value=tmp_path):
@@ -198,7 +198,7 @@ class TestSetupVoiceEnvWriting:
         install_answer: str = "n",
     ) -> str:
         """Helper: run _setup_voice() with mocked inputs; return resulting .env text."""
-        from bantz.cli.setup import _setup_voice
+        from butler.cli.setup import _setup_voice
 
         env_path = tmp_path / ".env"
         if existing_env:
@@ -274,7 +274,7 @@ class TestSetupVoiceEnvWriting:
 
     def test_all_packages_present_skips_install_prompt(self, tmp_path):
         """When all packages are installed, no install prompt is shown."""
-        from bantz.cli.setup import _setup_voice
+        from butler.cli.setup import _setup_voice
 
         # Patch _VOICE_PACKAGES to empty dict → no missing packages → no install prompt
         # Only one input needed: picovoice key (blank)
@@ -296,19 +296,19 @@ class TestSetupVoiceEnvWriting:
 
 class TestHandleSetupVoiceDispatch:
     def test_voice_dispatches_to_setup_voice(self):
-        from bantz.cli.setup import _handle_setup
+        from butler.cli.setup import _handle_setup
         with patch("bantz.cli.setup._setup_voice") as mock_setup:
             _handle_setup(["voice"])
         mock_setup.assert_called_once_with()
 
     def test_voice_uppercase_dispatches(self):
-        from bantz.cli.setup import _handle_setup
+        from butler.cli.setup import _handle_setup
         with patch("bantz.cli.setup._setup_voice") as mock_setup:
             _handle_setup(["VOICE"])
         mock_setup.assert_called_once_with()
 
     def test_help_text_includes_voice(self):
-        from bantz.cli.setup import _handle_setup
+        from butler.cli.setup import _handle_setup
         buf = io.StringIO()
         with redirect_stdout(buf):
             _handle_setup(["unknown-target"])
@@ -320,12 +320,12 @@ class TestHandleSetupVoiceDispatch:
 class TestSetupVoiceSecurity:
     def test_no_os_system_calls(self):
         """_setup_voice must use subprocess, not os.system() (shell injection risk)."""
-        from bantz.cli import setup as setup_mod
+        from butler.cli import setup as setup_mod
         src = inspect.getsource(setup_mod._setup_voice)
         assert "os.system(" not in src
 
     def test_pip_invoked_via_sys_executable(self):
         """pip is invoked as [sys.executable, '-m', 'pip', ...] not bare 'pip'."""
-        from bantz.cli import setup as setup_mod
+        from butler.cli import setup as setup_mod
         src = inspect.getsource(setup_mod._setup_voice)
         assert "sys.executable" in src

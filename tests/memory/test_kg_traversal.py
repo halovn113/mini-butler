@@ -16,12 +16,12 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from bantz.memory.bridge import (
+from butler.memory.bridge import (
     MemPalaceBridge,
     _importance_multiplier,
     _recency_multiplier,
 )
-from bantz.memory.omni_memory import OmniMemoryManager
+from butler.memory.omni_memory import OmniMemoryManager
 
 
 @pytest.fixture

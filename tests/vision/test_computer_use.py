@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from bantz.vision.computer_use import (
+from butler.vision.computer_use import (
     AutonomousVisionLoop,
     VisionGoal,
     VisionStep,
@@ -484,17 +484,17 @@ class TestWebNavigationMacros:
 class TestComputerUseTool:
 
     def test_tool_name(self):
-        from bantz.tools.computer_use import ComputerUseTool
+        from butler.tools.computer_use import ComputerUseTool
         assert ComputerUseTool.name == "computer_use"
 
     def test_tool_registered(self):
-        import bantz.tools.computer_use  # ensure registration  # noqa
-        from bantz.tools import registry
+        import butler.tools.computer_use  # ensure registration  # noqa
+        from butler.tools import registry
         assert registry.get("computer_use") is not None
 
     @pytest.mark.asyncio
     async def test_execute_missing_task_returns_error(self):
-        from bantz.tools.computer_use import ComputerUseTool
+        from butler.tools.computer_use import ComputerUseTool
         tool = ComputerUseTool()
         result = await tool.execute()
         assert not result.success
@@ -502,11 +502,11 @@ class TestComputerUseTool:
 
     @pytest.mark.asyncio
     async def test_execute_success_path(self):
-        from bantz.tools.computer_use import ComputerUseTool
+        from butler.tools.computer_use import ComputerUseTool
         tool = ComputerUseTool()
         # Inject a loop that immediately succeeds
         mock_loop = MagicMock()
-        from bantz.vision.computer_use import VisionLoopResult
+        from butler.vision.computer_use import VisionLoopResult
         mock_loop.execute = AsyncMock(return_value=VisionLoopResult(
             success=True,
             steps=[],
@@ -521,8 +521,8 @@ class TestComputerUseTool:
 
     @pytest.mark.asyncio
     async def test_execute_failure_path(self):
-        from bantz.tools.computer_use import ComputerUseTool
-        from bantz.vision.computer_use import VisionLoopResult
+        from butler.tools.computer_use import ComputerUseTool
+        from butler.vision.computer_use import VisionLoopResult
         tool = ComputerUseTool()
         mock_loop = MagicMock()
         mock_loop.execute = AsyncMock(return_value=VisionLoopResult(
@@ -540,7 +540,7 @@ class TestComputerUseTool:
 
     @pytest.mark.asyncio
     async def test_execute_exception_returns_error(self):
-        from bantz.tools.computer_use import ComputerUseTool
+        from butler.tools.computer_use import ComputerUseTool
         tool = ComputerUseTool()
         mock_loop = MagicMock()
         mock_loop.execute = AsyncMock(side_effect=RuntimeError("crash"))
@@ -555,9 +555,9 @@ class TestComputerUseTool:
 class TestSingletons:
 
     def test_vision_loop_singleton(self):
-        from bantz.vision.computer_use import vision_loop, AutonomousVisionLoop
+        from butler.vision.computer_use import vision_loop, AutonomousVisionLoop
         assert isinstance(vision_loop, AutonomousVisionLoop)
 
     def test_web_macros_singleton(self):
-        from bantz.vision.computer_use import web_macros, WebNavigationMacros
+        from butler.vision.computer_use import web_macros, WebNavigationMacros
         assert isinstance(web_macros, WebNavigationMacros)

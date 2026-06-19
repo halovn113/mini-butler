@@ -41,7 +41,7 @@ class TestQuickRouteMaintenanceReflection:
 
     @staticmethod
     def _qr(orig: str, en: str | None = None):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         return Brain._quick_route(orig, en or orig)
 
     # ── Maintenance triggers → now return None (#272) ─────────────────
@@ -129,7 +129,7 @@ class TestRLRewardHook:
     """Verify _rl_reward_hook delegates to rl_hooks module (#226)."""
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._memory_ready = True
         b._graph_ready = True
@@ -150,7 +150,7 @@ class TestRLRewardHook:
     def test_reward_positive_on_success(self):
         """_rl_reward_hook creates a task that calls rl_hooks.rl_reward_hook."""
         b = self._make_brain()
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
         result = ToolResult(success=True, output="ok")
 
         mock_rl_hook = AsyncMock()
@@ -166,7 +166,7 @@ class TestRLRewardHook:
     def test_reward_negative_on_failure(self):
         """_rl_reward_hook fires for failure results too."""
         b = self._make_brain()
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
         result = ToolResult(success=False, output="", error="fail")
 
         mock_rl_hook = AsyncMock()
@@ -181,7 +181,7 @@ class TestRLRewardHook:
 
     def test_hook_no_crash_on_import_error(self):
         b = self._make_brain()
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
         result = ToolResult(success=True, output="ok")
 
         with patch.dict("sys.modules", {"bantz.core.rl_hooks": None}):
@@ -197,11 +197,11 @@ class TestInterventionQueueHook:
     """Deprecated methods removed in #225 — verify they no longer exist."""
 
     def test_check_intervention_queue_removed(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         assert not hasattr(Brain, "_check_intervention_queue")
 
     def test_prepend_intervention_removed(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         assert not hasattr(Brain, "_prepend_intervention")
 
 
@@ -213,7 +213,7 @@ class TestReminderBridge:
     """Verify ReminderTool._bridge_to_job_scheduler calls add_reminder."""
 
     def test_bridge_calls_add_reminder(self):
-        from bantz.tools.reminder import ReminderTool
+        from butler.tools.reminder import ReminderTool
         fire_at = datetime.now() + timedelta(hours=1)
         mock_js = MagicMock()
         mock_js._started = True
@@ -226,7 +226,7 @@ class TestReminderBridge:
         mock_js.add_reminder.assert_called_once_with("test", fire_at, repeat="none")
 
     def test_bridge_returns_none_when_not_started(self):
-        from bantz.tools.reminder import ReminderTool
+        from butler.tools.reminder import ReminderTool
         fire_at = datetime.now() + timedelta(hours=1)
         mock_js = MagicMock()
         mock_js._started = False
@@ -238,7 +238,7 @@ class TestReminderBridge:
         mock_js.add_reminder.assert_not_called()
 
     def test_bridge_returns_none_on_exception(self):
-        from bantz.tools.reminder import ReminderTool
+        from butler.tools.reminder import ReminderTool
         fire_at = datetime.now() + timedelta(hours=1)
 
         with patch.dict("sys.modules", {"bantz.agent.job_scheduler": None}):
@@ -247,7 +247,7 @@ class TestReminderBridge:
         assert result is None
 
     def test_bridge_passes_repeat_mode(self):
-        from bantz.tools.reminder import ReminderTool
+        from butler.tools.reminder import ReminderTool
         fire_at = datetime.now() + timedelta(hours=1)
         mock_js = MagicMock()
         mock_js._started = True
@@ -267,7 +267,7 @@ class TestMaintenanceHandler:
     """Verify _handle_maintenance calls run_maintenance and returns summary."""
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True
@@ -328,7 +328,7 @@ class TestReflectionHandlers:
     """Verify _handle_list_reflections and _handle_run_reflection."""
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True
@@ -414,7 +414,7 @@ class TestProcessRLWiring:
     """Verify that process() calls _rl_reward_hook after tool execution."""
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True
@@ -436,7 +436,7 @@ class TestProcessRLWiring:
     def test_process_calls_rl_hook_on_tool(self):
         """When brain.process() executes a tool, _rl_reward_hook is called."""
         b = self._make_brain()
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
 
         mock_result = ToolResult(success=True, output="Today is sunny, 28°C")
 
@@ -494,7 +494,7 @@ class TestProcessMaintenanceReflectionRouting:
     """
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True
@@ -618,7 +618,7 @@ class TestWakeWordRoutes:
 
     @staticmethod
     def _qr(orig: str, en: str | None = None):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         return Brain._quick_route(orig, en or orig)
 
     # ── Wake word OFF ────────────────────────────────────────────────
@@ -670,7 +670,7 @@ class TestWakeWordProcessHandlers:
     """Brain.process() handlers for _wake_word_on / _wake_word_off."""
 
     def test_process_wake_word_off(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
 
         b = Brain()
         b._ensure_memory = MagicMock()
@@ -696,7 +696,7 @@ class TestWakeWordProcessHandlers:
         mock_listener.stop.assert_called_once()
 
     def test_process_wake_word_on(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
 
         b = Brain()
         b._ensure_memory = MagicMock()
@@ -723,7 +723,7 @@ class TestWakeWordProcessHandlers:
         mock_listener.start.assert_called_once()
 
     def test_process_wake_word_off_not_running(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
 
         b = Brain()
         b._ensure_memory = MagicMock()
@@ -756,7 +756,7 @@ class TestNotifyToastFallback:
     """_notify_toast should fall back to desktop notify-send when TUI is unreachable."""
 
     def test_fallback_to_notifier_when_no_tui(self):
-        import bantz.core.brain as brain_mod
+        import butler.core.brain as brain_mod
 
         old_cb = brain_mod._toast_callback
         brain_mod._toast_callback = None
@@ -778,7 +778,7 @@ class TestNotifyToastFallback:
             brain_mod._toast_callback = old_cb
 
     def test_callback_takes_priority(self):
-        import bantz.core.brain as brain_mod
+        import butler.core.brain as brain_mod
 
         cb = MagicMock()
         old_cb = brain_mod._toast_callback
@@ -799,7 +799,7 @@ class TestNotifyToastFallback:
     def test_notifier_src_has_fallback(self):
         """notification_manager source must reference notifier.send as fallback."""
         import inspect
-        from bantz.core import notification_manager
+        from butler.core import notification_manager
         src = inspect.getsource(notification_manager.notify_toast)
         assert "notifier.send" in src
         assert "notifier" in src
@@ -813,7 +813,7 @@ class TestAudioDuckRoutes:
     """_quick_route must match audio ducking on/off commands."""
 
     def _route(self, text):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         return b._quick_route(text, text.lower())
 
@@ -850,7 +850,7 @@ class TestAudioDuckRoutes:
     
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True
@@ -918,7 +918,7 @@ class TestAmbientRoutes:
     """
 
     def _route(self, text):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         return b._quick_route(text, text.lower())
 
@@ -939,7 +939,7 @@ class TestAmbientRoutes:
     
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True
@@ -963,7 +963,7 @@ class TestAmbientRoutes:
         return b
 
     def test_process_ambient_with_data(self):
-        from bantz.agent.ambient import AmbientLabel, AmbientSnapshot
+        from butler.agent.ambient import AmbientLabel, AmbientSnapshot
         b = self._make_brain()
         snap = AmbientSnapshot(timestamp=1700000000, rms=2500, zcr=0.06, label=AmbientLabel.SPEECH, duration_s=3.0)
         mock_analyzer = MagicMock()
@@ -1022,7 +1022,7 @@ class TestPromptParity:
     def test_no_remote_hint_in_chat(self):
         """_chat() must NOT contain any remote_hint / mobile text injection."""
         import inspect
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         src = inspect.getsource(Brain._chat)
         assert "remote_hint" not in src
         assert "mobile text" not in src
@@ -1031,7 +1031,7 @@ class TestPromptParity:
     def test_no_remote_hint_in_stream(self):
         """_chat_stream() must NOT contain any remote_hint injection."""
         import inspect
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         src = inspect.getsource(Brain._chat_stream)
         assert "remote_hint" not in src
         assert "mobile text" not in src
@@ -1040,7 +1040,7 @@ class TestPromptParity:
     def test_no_telegraph_roleplay(self):
         """Neither path must have old Telegraph RP language."""
         import inspect
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         src_chat = inspect.getsource(Brain._chat)
         src_stream = inspect.getsource(Brain._chat_stream)
         assert "Telegraph Mode" not in src_chat
@@ -1051,7 +1051,7 @@ class TestPromptParity:
     def test_is_remote_still_suppresses_tts(self):
         """_is_remote flag must still exist (for TTS suppression), just not in prompts."""
         import inspect
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         src_process = inspect.getsource(Brain.process)
         assert "_is_remote" in src_process
 
@@ -1065,14 +1065,14 @@ class TestExceptionPersonaMapping:
 
     def test_exc_to_butler_generic(self):
         """Generic exception maps to the general butler-difficulty message."""
-        from bantz.core.brain import _exc_to_butler
+        from butler.core.brain import _exc_to_butler
         result = _exc_to_butler(ValueError("bad value"))
         assert "ma'am" in result
         assert "ValueError" not in result
 
     def test_exc_to_butler_connection_error(self):
         """Connection-type exceptions map to the network butler message."""
-        from bantz.core.brain import _exc_to_butler
+        from butler.core.brain import _exc_to_butler
         result = _exc_to_butler(ConnectionError("Connection refused"))
         assert "ma'am" in result
         assert "ConnectionError" not in result
@@ -1081,7 +1081,7 @@ class TestExceptionPersonaMapping:
 
     def test_exc_to_butler_timeout_error(self):
         """Timeout exceptions trigger the network butler message."""
-        from bantz.core.brain import _exc_to_butler
+        from butler.core.brain import _exc_to_butler
         result = _exc_to_butler(TimeoutError("timed out"))
         assert "ma'am" in result
         assert "TimeoutError" not in result
@@ -1089,20 +1089,20 @@ class TestExceptionPersonaMapping:
     def test_no_ollama_string_in_chat_error(self):
         """_chat must not leak '(Ollama error: ...)' strings to the user."""
         import inspect
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         src = inspect.getsource(Brain._chat)
         assert "(Ollama error:" not in src
 
     def test_no_ollama_string_in_stream_error(self):
         """_chat_stream must not leak '(Ollama error: ...)' strings to the user."""
         import inspect
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         src = inspect.getsource(Brain._chat_stream)
         assert "(Ollama error:" not in src
 
     def test_chat_ollama_error_returns_butler_voice(self):
         """_chat() Ollama failure returns a butler-voice message, not raw exc."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True
@@ -1135,7 +1135,7 @@ class TestExceptionPersonaMapping:
 
     def test_chat_stream_ollama_error_yields_butler_voice(self):
         """_chat_stream() Ollama failure yields a butler-voice token, not raw exc."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True
@@ -1174,7 +1174,7 @@ class TestExceptionPersonaMapping:
 
     def test_tool_execute_exception_caught_as_butler_voice(self):
         """If tool.execute() raises, process() returns a butler-voice BrainResult."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True

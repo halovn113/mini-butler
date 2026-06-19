@@ -19,7 +19,7 @@ import pytest
 
 pytest.importorskip('textual')
 
-from bantz.tools.input_control import (
+from butler.tools.input_control import (
     classify_action,
     _log_action,
     _action_log,
@@ -143,9 +143,9 @@ class TestBackendDetection:
     @patch.dict("os.environ", {"XDG_SESSION_TYPE": "x11"}, clear=False)
     @patch("bantz.tools.input_control._backend", None)
     def test_x11_prefers_pyautogui(self):
-        from bantz.tools.input_control import _detect_backend
+        from butler.tools.input_control import _detect_backend
         with patch.dict("sys.modules", {"pyautogui": MagicMock()}):
-            import bantz.tools.input_control as ic
+            import butler.tools.input_control as ic
             ic._backend = None
             backend = _detect_backend()
             assert backend == "pyautogui"
@@ -153,13 +153,13 @@ class TestBackendDetection:
     @patch.dict("os.environ", {"XDG_SESSION_TYPE": "wayland", "WAYLAND_DISPLAY": "wayland-0"}, clear=False)
     @patch("bantz.tools.input_control._backend", None)
     def test_wayland_prefers_pynput(self):
-        from bantz.tools.input_control import _detect_backend
+        from butler.tools.input_control import _detect_backend
         with patch.dict("sys.modules", {
             "pynput": MagicMock(),
             "pynput.mouse": MagicMock(),
             "pynput.keyboard": MagicMock(),
         }):
-            import bantz.tools.input_control as ic
+            import butler.tools.input_control as ic
             ic._backend = None
             backend = _detect_backend()
             assert backend == "pynput"
@@ -342,7 +342,7 @@ class TestQuickRoute:
 
     @staticmethod
     def _route(text: str):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         return Brain._quick_route(text, text)
 
     def test_scroll_down(self):

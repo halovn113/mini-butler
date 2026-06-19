@@ -55,7 +55,7 @@ class TestCreateFolderAndFile:
     @pytest.mark.asyncio
     async def test_creates_folder_and_file(self, tmp_path):
         """Happy path: folder is created, file is written, paths returned."""
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
         tool = FilesystemTool()
         folder = str(tmp_path / "Stark")
         with patch("bantz.tools.filesystem.SAFE_ROOT", tmp_path):
@@ -76,7 +76,7 @@ class TestCreateFolderAndFile:
     @pytest.mark.asyncio
     async def test_creates_nested_subfolders(self, tmp_path):
         """mkdir -p behaviour: creates intermediate directories."""
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
         tool = FilesystemTool()
         deep = str(tmp_path / "level1" / "level2" / "level3")
         with patch("bantz.tools.filesystem.SAFE_ROOT", tmp_path):
@@ -92,7 +92,7 @@ class TestCreateFolderAndFile:
     @pytest.mark.asyncio
     async def test_empty_content_creates_empty_file(self, tmp_path):
         """Content can be empty — creates a 0-byte file."""
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
         tool = FilesystemTool()
         folder = str(tmp_path / "EmptyTest")
         with patch("bantz.tools.filesystem.SAFE_ROOT", tmp_path):
@@ -109,7 +109,7 @@ class TestCreateFolderAndFile:
     @pytest.mark.asyncio
     async def test_existing_folder_no_error(self, tmp_path):
         """If the folder already exists, it should NOT fail (exist_ok=True)."""
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
         tool = FilesystemTool()
         folder = tmp_path / "Existing"
         folder.mkdir()
@@ -135,7 +135,7 @@ class TestMissingParams:
     @pytest.mark.asyncio
     async def test_missing_folder_path(self, tmp_path):
         """Missing folder_path → clear error."""
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
         tool = FilesystemTool()
         with patch("bantz.tools.filesystem.SAFE_ROOT", tmp_path):
             result = await tool.execute(
@@ -150,7 +150,7 @@ class TestMissingParams:
     @pytest.mark.asyncio
     async def test_missing_file_name(self, tmp_path):
         """Missing file_name → clear error."""
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
         tool = FilesystemTool()
         with patch("bantz.tools.filesystem.SAFE_ROOT", tmp_path):
             result = await tool.execute(
@@ -174,7 +174,7 @@ class TestSecurityBoundary:
     @pytest.mark.asyncio
     async def test_outside_home_rejected(self, tmp_path):
         """Folder path outside SAFE_ROOT → security error."""
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
         tool = FilesystemTool()
         with patch("bantz.tools.filesystem.SAFE_ROOT", tmp_path):
             result = await tool.execute(
@@ -189,7 +189,7 @@ class TestSecurityBoundary:
     @pytest.mark.asyncio
     async def test_traversal_attack_rejected(self, tmp_path):
         """Path traversal (../../) must be caught."""
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
         tool = FilesystemTool()
         with patch("bantz.tools.filesystem.SAFE_ROOT", tmp_path):
             result = await tool.execute(
@@ -210,7 +210,7 @@ class TestQuickRouteFilesystem:
     """_quick_route must catch folder+file creation via keyword detection."""
 
     def _route(self, text: str) -> dict | None:
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         return Brain._quick_route(text, text)
 
     # ── Keyword detection: routes to _fs_autochain ──
@@ -256,7 +256,7 @@ class TestExtractFsParams:
     @pytest.mark.asyncio
     async def test_extracts_all_params(self):
         """LLM returns valid JSON → params are extracted correctly."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
 
         llm_response = '{"folder_path": "~/Desktop/stark", "file_name": "notes.txt", "content": "heeey"}'
         brain = Brain.__new__(Brain)
@@ -273,7 +273,7 @@ class TestExtractFsParams:
     @pytest.mark.asyncio
     async def test_defaults_on_missing_keys(self):
         """LLM returns partial JSON → defaults fill in."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
 
         llm_response = '{"folder_path": "~/Desktop/work"}'
         brain = Brain.__new__(Brain)
@@ -287,7 +287,7 @@ class TestExtractFsParams:
     @pytest.mark.asyncio
     async def test_handles_markdown_fences(self):
         """LLM wraps JSON in markdown code fences → still parsed."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
 
         llm_response = '```json\n{"folder_path": "~/Desktop/test", "file_name": "a.txt", "content": "hi"}\n```'
         brain = Brain.__new__(Brain)
@@ -300,7 +300,7 @@ class TestExtractFsParams:
     @pytest.mark.asyncio
     async def test_raises_on_invalid_json(self):
         """LLM returns garbage → raises exception (caller handles fallback)."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
 
         llm_response = "I cannot do that, sorry."
         brain = Brain.__new__(Brain)
@@ -320,13 +320,13 @@ class TestFsExtractPrompt:
     """The LLM prompt for filesystem extraction must exist and be well-formed."""
 
     def test_prompt_exists(self):
-        from bantz.core.brain import _FS_EXTRACT_SYSTEM
+        from butler.core.brain import _FS_EXTRACT_SYSTEM
         assert "folder_path" in _FS_EXTRACT_SYSTEM
         assert "file_name" in _FS_EXTRACT_SYSTEM
         assert "content" in _FS_EXTRACT_SYSTEM
 
     def test_prompt_has_examples(self):
-        from bantz.core.brain import _FS_EXTRACT_SYSTEM
+        from butler.core.brain import _FS_EXTRACT_SYSTEM
         assert "stark" in _FS_EXTRACT_SYSTEM.lower()
         assert "Projects" in _FS_EXTRACT_SYSTEM or "readme" in _FS_EXTRACT_SYSTEM
 
@@ -341,21 +341,21 @@ class TestSchemaAndCOT:
 
     def test_tool_description_mentions_create_folder_and_file(self):
         """FilesystemTool.description must mention create_folder_and_file."""
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
         tool = FilesystemTool()
         assert "create_folder_and_file" in tool.description
 
     def test_cot_system_includes_create_folder_and_file(self):
         """COT_SYSTEM must list create_folder_and_file as a filesystem action."""
-        from bantz.core.intent import COT_SYSTEM
+        from butler.core.intent import COT_SYSTEM
         assert "create_folder_and_file" in COT_SYSTEM
 
     def test_cot_system_includes_folder_path_param(self):
         """COT_SYSTEM filesystem section must mention folder_path parameter."""
-        from bantz.core.intent import COT_SYSTEM
+        from butler.core.intent import COT_SYSTEM
         assert "folder_path" in COT_SYSTEM
 
     def test_cot_system_includes_file_name_param(self):
         """COT_SYSTEM filesystem section must mention file_name parameter."""
-        from bantz.core.intent import COT_SYSTEM
+        from butler.core.intent import COT_SYSTEM
         assert "file_name" in COT_SYSTEM

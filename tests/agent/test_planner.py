@@ -20,7 +20,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bantz.tools import ToolResult
+from butler.tools import ToolResult
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -39,7 +39,7 @@ class TestDecomposition:
     @pytest.mark.asyncio
     async def test_decomposes_search_and_save(self):
         """Search + save file decomposes into 2 steps."""
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         llm_response = json.dumps([
             {"step": 1, "tool": "web_search", "params": {"query": "AI news"},
@@ -66,7 +66,7 @@ class TestDecomposition:
     @pytest.mark.asyncio
     async def test_decomposes_three_steps(self):
         """Email + weather + calendar → 3 independent steps."""
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         llm_response = json.dumps([
             {"step": 1, "tool": "gmail", "params": {"action": "unread"},
@@ -90,7 +90,7 @@ class TestDecomposition:
     @pytest.mark.asyncio
     async def test_filters_unknown_tools(self):
         """Steps with unknown tool names are dropped."""
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         llm_response = json.dumps([
             {"step": 1, "tool": "web_search", "params": {"query": "test"},
@@ -109,7 +109,7 @@ class TestDecomposition:
     @pytest.mark.asyncio
     async def test_handles_markdown_fenced_json(self):
         """LLM wraps response in ```json fences → still parsed."""
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         llm_response = '```json\n[{"step": 1, "tool": "weather", "params": {"city": "London"}, "description": "Check weather", "depends_on": null}]\n```'
 
@@ -123,7 +123,7 @@ class TestDecomposition:
     @pytest.mark.asyncio
     async def test_process_text_step_not_filtered(self):
         """Steps with tool='process_text' must NOT be filtered out."""
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         llm_response = json.dumps([
             {"step": 1, "tool": "web_search", "params": {"query": "AI news"},
@@ -152,7 +152,7 @@ class TestDecomposition:
     @pytest.mark.asyncio
     async def test_read_url_step_not_filtered(self):
         """Steps with tool='read_url' must NOT be filtered out."""
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         llm_response = json.dumps([
             {"step": 1, "tool": "web_search", "params": {"query": "AI"},
@@ -176,7 +176,7 @@ class TestDecomposition:
         assert steps[1].tool == "read_url"
         assert steps[1].depends_on == 1
         """LLM returns garbage → empty list, no crash."""
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         agent = PlannerAgent()
         with patch("bantz.core.intent._stream_and_collect", new=AsyncMock(return_value="I'm just a butler, I can't do that.")):
@@ -194,7 +194,7 @@ class TestItineraryFormatting:
     """format_itinerary must produce butler-style announcements."""
 
     def test_formats_two_step_plan(self):
-        from bantz.agent.planner import PlannerAgent, PlanStep
+        from butler.agent.planner import PlannerAgent, PlanStep
 
         steps = [
             PlanStep(step=1, tool="web_search", params={"query": "AI"},
@@ -209,7 +209,7 @@ class TestItineraryFormatting:
         assert "Commencing forthwith" in text
 
     def test_shows_dependency(self):
-        from bantz.agent.planner import PlannerAgent, PlanStep
+        from butler.agent.planner import PlannerAgent, PlanStep
 
         steps = [
             PlanStep(step=1, tool="web_search", description="Search"),
@@ -219,7 +219,7 @@ class TestItineraryFormatting:
         assert "results from step 1" in text
 
     def test_empty_plan_returns_empty(self):
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
         assert PlannerAgent().format_itinerary([]) == ""
 
 
@@ -234,8 +234,8 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_executes_two_steps_sequentially(self):
         """Two independent steps both succeed → summary says 2/2."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="weather", params={"city": "London"},
@@ -269,8 +269,8 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_handles_step_failure_gracefully(self):
         """One step fails → circuit breaker aborts remaining steps (#255)."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="web_search",
@@ -307,8 +307,8 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_unknown_tool_doesnt_crash(self):
         """Step references unknown tool → noted as failure, doesn't crash."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="nonexistent", params={},
@@ -336,8 +336,8 @@ class TestContextPassing:
     @pytest.mark.asyncio
     async def test_step2_receives_step1_output(self):
         """Step 2 depends on step 1 → step 1 output injected into step 2 params."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         search_output = "Article: Quantum computing is the future of..."
 
@@ -379,8 +379,8 @@ class TestContextPassing:
     @pytest.mark.asyncio
     async def test_independent_steps_no_context_leak(self):
         """Steps without depends_on don't get injected context."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="weather",
@@ -409,7 +409,7 @@ class TestContextPassing:
     @pytest.mark.asyncio
     async def test_inject_context_replaces_placeholder(self):
         """_inject_context replaces {step_N_output} placeholders in params."""
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.executor import PlanExecutor
 
         params = {"content": "{step_1_output}", "path": "~/file.txt"}
         ctx = {1: {"params": {}, "output": "Hello World"}}
@@ -420,7 +420,7 @@ class TestContextPassing:
     @pytest.mark.asyncio
     async def test_inject_context_handles_hallucinated_placeholders(self):
         """_inject_context replaces LLM-hallucinated placeholders like {step_1_best_url}."""
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.executor import PlanExecutor
 
         # Hallucinated placeholder variants the LLM might invent
         for placeholder in [
@@ -441,7 +441,7 @@ class TestContextPassing:
     @pytest.mark.asyncio
     async def test_inject_context_canonical_and_hallucinated_mixed(self):
         """_inject_context replaces both canonical and hallucinated in same params."""
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.executor import PlanExecutor
 
         params = {
             "url": "{step_1_best_url}",
@@ -464,7 +464,7 @@ class TestExecutionSummary:
     """PlanExecutionResult.summary must produce butler-style summaries."""
 
     def test_all_success_summary(self):
-        from bantz.agent.executor import PlanExecutionResult, StepResult
+        from butler.agent.executor import PlanExecutionResult, StepResult
 
         result = PlanExecutionResult(step_results=[
             StepResult(step_number=1, tool="weather", description="Check weather",
@@ -477,7 +477,7 @@ class TestExecutionSummary:
         assert "✓" in s
 
     def test_partial_failure_summary(self):
-        from bantz.agent.executor import PlanExecutionResult, StepResult
+        from butler.agent.executor import PlanExecutionResult, StepResult
 
         result = PlanExecutionResult(step_results=[
             StepResult(step_number=1, tool="web_search", description="Search",
@@ -490,13 +490,13 @@ class TestExecutionSummary:
         assert "✗" in s
 
     def test_empty_result(self):
-        from bantz.agent.executor import PlanExecutionResult
+        from butler.agent.executor import PlanExecutionResult
 
         result = PlanExecutionResult()
         assert "empty" in result.summary().lower()
 
     def test_all_failed_summary(self):
-        from bantz.agent.executor import PlanExecutionResult, StepResult
+        from butler.agent.executor import PlanExecutionResult, StepResult
 
         result = PlanExecutionResult(step_results=[
             StepResult(step_number=1, tool="web_search", description="Search",
@@ -517,7 +517,7 @@ class TestBrainPlannerIntegration:
     @pytest.mark.asyncio
     async def test_complex_request_uses_planner(self):
         """Multi-tool request triggers planner path."""
-        from bantz.agent.planner import PlanStep
+        from butler.agent.planner import PlanStep
 
         plan_steps = [
             PlanStep(step=1, tool="web_search",
@@ -528,7 +528,7 @@ class TestBrainPlannerIntegration:
                      description="Save to file", depends_on=1),
         ]
 
-        from bantz.agent.executor import PlanExecutionResult, StepResult
+        from butler.agent.executor import PlanExecutionResult, StepResult
         exec_result = PlanExecutionResult(step_results=[
             StepResult(step_number=1, tool="web_search",
                        description="Search", success=True, output="AI stuff"),
@@ -554,7 +554,7 @@ class TestBrainPlannerIntegration:
             dal_re.conversations = MagicMock()
             ollama_re.chat = AsyncMock(return_value="")
 
-            from bantz.core.brain import Brain
+            from butler.core.brain import Brain
             brain = Brain.__new__(Brain)
             brain._memory_ready = True
             brain._graph_ready = True
@@ -604,7 +604,7 @@ class TestBrainPlannerIntegration:
             with patch("bantz.tools.shell.ShellTool.execute") as mock_shell:
                 mock_shell.return_value = ToolResult(success=True, output="test")
 
-            from bantz.core.brain import Brain
+            from butler.core.brain import Brain
             brain = Brain.__new__(Brain)
             brain._memory_ready = True
             brain._graph_ready = True
@@ -641,8 +641,8 @@ class TestBrainPlannerIntegration:
     @pytest.mark.asyncio
     async def test_planner_takes_priority_over_workflow_engine(self):
         """When planner claims a request, workflow_engine.detect must NOT run."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutionResult, StepResult
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutionResult, StepResult
 
         plan_steps = [
             PlanStep(step=1, tool="web_search",
@@ -675,7 +675,7 @@ class TestBrainPlannerIntegration:
             dal_re.conversations = MagicMock()
             ollama_re.chat = AsyncMock(return_value="")
 
-            from bantz.core.brain import Brain
+            from butler.core.brain import Brain
             brain = Brain.__new__(Brain)
             brain._memory_ready = True
             brain._graph_ready = True
@@ -720,42 +720,42 @@ class TestPlannerPrompt:
     """The planner system prompt must contain required elements."""
 
     def test_prompt_mentions_butler(self):
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "butler" in PLANNER_SYSTEM.lower()
 
     def test_prompt_mentions_json(self):
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "JSON" in PLANNER_SYSTEM
 
     def test_prompt_has_tool_reference(self):
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "web_search" in PLANNER_SYSTEM
         assert "filesystem" in PLANNER_SYSTEM
         assert "gmail" in PLANNER_SYSTEM
 
     def test_prompt_has_depends_on(self):
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "depends_on" in PLANNER_SYSTEM
 
     def test_prompt_has_examples(self):
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "quantum computing" in PLANNER_SYSTEM.lower()
 
     def test_prompt_has_process_text_tool(self):
         """TOOL REFERENCE must include process_text."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "process_text" in PLANNER_SYSTEM
 
     def test_prompt_has_critical_tool_rules(self):
         """Prompt must contain CRITICAL TOOL RULES forbidding web_search misuse."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "CRITICAL TOOL RULES" in PLANNER_SYSTEM
         assert "NEVER use" in PLANNER_SYSTEM
         assert "summarize" in PLANNER_SYSTEM.lower()
 
     def test_example_uses_three_step_flow(self):
         """The examples must show web_search → read_url → summarizer → filesystem (4-step)."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         # process_text must appear in the example section
         idx_examples = PLANNER_SYSTEM.index("EXAMPLES:")
         example_block = PLANNER_SYSTEM[idx_examples:]
@@ -766,13 +766,13 @@ class TestPlannerPrompt:
 
     def test_prompt_has_read_url_tool(self):
         """TOOL REFERENCE must include read_url."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "read_url" in PLANNER_SYSTEM
         assert "full text" in PLANNER_SYSTEM.lower() or "full content" in PLANNER_SYSTEM.lower()
 
     def test_prompt_has_deep_reading_rule(self):
         """CRITICAL TOOL RULES must mention read_url for thorough research."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "read_url" in PLANNER_SYSTEM
         # The rule about using read_url for full article text
         rules_start = PLANNER_SYSTEM.index("CRITICAL TOOL RULES")
@@ -783,14 +783,14 @@ class TestPlannerPrompt:
 
     def test_prompt_forbids_custom_placeholder_names(self):
         """RULES must enforce exact {step_N_output} format and forbid inventions."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "step_N_output" in PLANNER_SYSTEM
         # Must explicitly warn against hallucinating custom names
         assert "step_1_url" in PLANNER_SYSTEM or "custom variable" in PLANNER_SYSTEM.lower()
 
     def test_example_uses_canonical_placeholders_only(self):
         """Example in prompt must use {step_N_output} or {step_N_params_KEY}, not hallucinated names."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         import re
         idx_examples = PLANNER_SYSTEM.index("EXAMPLES:")
         example_block = PLANNER_SYSTEM[idx_examples:]
@@ -803,12 +803,12 @@ class TestPlannerPrompt:
 
     def test_prompt_has_tool_usage_best_practices(self):
         """Prompt must contain TOOL USAGE BEST PRACTICES section."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "TOOL USAGE BEST PRACTICES" in PLANNER_SYSTEM
 
     def test_best_practices_web_search_short_queries(self):
         """Best practices must instruct short/broad web_search queries."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         idx = PLANNER_SYSTEM.index("TOOL USAGE BEST PRACTICES")
         block = PLANNER_SYSTEM[idx:]
         assert "web_search" in block
@@ -817,7 +817,7 @@ class TestPlannerPrompt:
 
     def test_best_practices_read_url_requires_http(self):
         """Best practices must state read_url needs a valid HTTP/HTTPS URL."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         idx = PLANNER_SYSTEM.index("TOOL USAGE BEST PRACTICES")
         block = PLANNER_SYSTEM[idx:]
         assert "read_url" in block
@@ -826,14 +826,14 @@ class TestPlannerPrompt:
 
     def test_best_practices_short_plans(self):
         """Best practices must recommend 3-4 step deep reading workflow."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         idx = PLANNER_SYSTEM.index("TOOL USAGE BEST PRACTICES")
         block = PLANNER_SYSTEM[idx:]
         assert "3 or 4 steps" in block or "3 or 4" in block
 
     def test_example_shows_url_data_flow(self):
         """Example description must show that read_url receives URL from web_search."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         idx = PLANNER_SYSTEM.index("EXAMPLES:")
         block = PLANNER_SYSTEM[idx:]
         # read_url description should mention it gets URL from a previous step
@@ -841,7 +841,7 @@ class TestPlannerPrompt:
 
     def test_news_tool_forbidden_for_research(self):
         """CRITICAL TOOL RULES must forbid news tool for specific research."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         rules_start = PLANNER_SYSTEM.index("CRITICAL TOOL RULES")
         rules_end = PLANNER_SYSTEM.index("\nTOOL USAGE BEST PRACTICES", rules_start)
         rules_block = PLANNER_SYSTEM[rules_start:rules_end]
@@ -850,7 +850,7 @@ class TestPlannerPrompt:
 
     def test_web_search_required_for_articles(self):
         """CRITICAL TOOL RULES must mandate web_search for article finding."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         rules_start = PLANNER_SYSTEM.index("CRITICAL TOOL RULES")
         rules_end = PLANNER_SYSTEM.index("\nTOOL USAGE BEST PRACTICES", rules_start)
         rules_block = PLANNER_SYSTEM[rules_start:rules_end]
@@ -859,7 +859,7 @@ class TestPlannerPrompt:
 
     def test_no_invented_intermediate_steps(self):
         """CRITICAL TOOL RULES must forbid inventing 'Extract URL' steps."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         rules_start = PLANNER_SYSTEM.index("CRITICAL TOOL RULES")
         rules_end = PLANNER_SYSTEM.index("\nTOOL USAGE BEST PRACTICES", rules_start)
         rules_block = PLANNER_SYSTEM[rules_start:rules_end]
@@ -867,7 +867,7 @@ class TestPlannerPrompt:
 
     def test_example_step1_uses_web_search(self):
         """Example step 1 must use web_search with a concise query."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         idx = PLANNER_SYSTEM.index("EXAMPLES:")
         block = PLANNER_SYSTEM[idx:]
         assert '"tool": "web_search"' in block
@@ -875,7 +875,7 @@ class TestPlannerPrompt:
 
     def test_example_step3_uses_process_text(self):
         """Example step 3 must use summarizer referencing $REF_STEP_2."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         idx = PLANNER_SYSTEM.index("EXAMPLES:")
         block = PLANNER_SYSTEM[idx:]
         assert '"tool": "summarizer"' in block
@@ -891,7 +891,7 @@ class TestPlanStepParsing:
     """Edge cases in _parse_steps."""
 
     def test_parse_valid_array(self):
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
         data = PlannerAgent._parse_steps(
             '[{"step": 1, "tool": "weather", "params": {"city": "X"}, "description": "Y", "depends_on": null}]'
         )
@@ -899,24 +899,24 @@ class TestPlanStepParsing:
         assert data[0]["tool"] == "weather"
 
     def test_parse_strips_fences(self):
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
         data = PlannerAgent._parse_steps(
             '```json\n[{"step": 1, "tool": "a", "params": {}, "description": "", "depends_on": null}]\n```'
         )
         assert len(data) == 1
 
     def test_parse_rejects_non_array(self):
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
         with pytest.raises(ValueError, match="Expected JSON array"):
             PlannerAgent._parse_steps('{"not": "an array"}')
 
     def test_parse_rejects_empty_array(self):
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
         with pytest.raises(ValueError, match="Empty"):
             PlannerAgent._parse_steps('[]')
 
     def test_parse_rejects_garbage(self):
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
         with pytest.raises(Exception):
             PlannerAgent._parse_steps("I'm just a butler, I can't do that.")
 
@@ -932,8 +932,8 @@ class TestProcessTextVirtualTool:
     @pytest.mark.asyncio
     async def test_process_text_calls_llm(self):
         """process_text step invokes the llm_fn with the instruction."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="web_search",
@@ -966,8 +966,8 @@ class TestProcessTextVirtualTool:
     @pytest.mark.asyncio
     async def test_process_text_no_llm_fn(self):
         """process_text without llm_fn → graceful failure."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="process_text",
@@ -986,8 +986,8 @@ class TestProcessTextVirtualTool:
     @pytest.mark.asyncio
     async def test_process_text_no_instruction(self):
         """process_text without 'instruction' param → graceful failure."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="process_text",
@@ -1005,8 +1005,8 @@ class TestProcessTextVirtualTool:
     @pytest.mark.asyncio
     async def test_process_text_llm_exception(self):
         """LLM raises an exception → process_text fails gracefully."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="process_text",
@@ -1026,8 +1026,8 @@ class TestProcessTextVirtualTool:
     @pytest.mark.asyncio
     async def test_process_text_context_passed_to_next_step(self):
         """Output from process_text is stored and injected into the next step."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="process_text",
@@ -1065,8 +1065,8 @@ class TestProcessTextVirtualTool:
     @pytest.mark.asyncio
     async def test_three_step_search_summarize_save(self):
         """Full 3-step flow: web_search → process_text → filesystem."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="web_search",
@@ -1118,8 +1118,8 @@ class TestProcessTextVirtualTool:
     @pytest.mark.asyncio
     async def test_four_step_deep_research_flow(self):
         """Full 4-step: web_search → read_url → process_text → filesystem."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="web_search",
@@ -1187,8 +1187,8 @@ class TestBrainProcessTextIntegration:
     @pytest.mark.asyncio
     async def test_execute_plan_passes_llm_fn(self):
         """execute_plan must call plan_executor.run with llm_fn=ollama.chat."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutionResult, StepResult
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutionResult, StepResult
 
         plan_steps = [
             PlanStep(step=1, tool="web_search",
@@ -1218,7 +1218,7 @@ class TestBrainProcessTextIntegration:
             mock_dal.conversations = MagicMock()
             mock_ollama.chat = AsyncMock(return_value="llm output")
 
-            from bantz.core.routing_engine import execute_plan
+            from butler.core.routing_engine import execute_plan
 
             result = await execute_plan(
                 "search AI and summarize",
@@ -1235,8 +1235,8 @@ class TestBrainProcessTextIntegration:
     @pytest.mark.asyncio
     async def test_tool_names_include_process_text(self):
         """execute_plan adds 'process_text' to tool_names."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutionResult
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutionResult
 
         with patch("bantz.agent.planner.planner_agent") as mock_planner, \
              patch("bantz.agent.executor.plan_executor") as mock_executor, \
@@ -1255,7 +1255,7 @@ class TestBrainProcessTextIntegration:
             mock_dal.conversations = MagicMock()
             mock_ollama.chat = AsyncMock()
 
-            from bantz.core.routing_engine import execute_plan
+            from butler.core.routing_engine import execute_plan
 
             await execute_plan("test", "test", {})
 
@@ -1277,8 +1277,8 @@ class TestProcessTextCitation:
     @pytest.mark.asyncio
     async def test_system_prompt_has_citation_rule(self):
         """The system prompt sent to LLM must mention Telegraph References."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="process_text",
@@ -1306,8 +1306,8 @@ class TestProcessTextCitation:
     @pytest.mark.asyncio
     async def test_system_prompt_forbids_markdown_links(self):
         """Citation rule must explicitly forbid Markdown link syntax."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="process_text",
@@ -1332,8 +1332,8 @@ class TestProcessTextCitation:
     @pytest.mark.asyncio
     async def test_system_prompt_has_anti_leakage_rule(self):
         """process_text system prompt must forbid acknowledging instructions."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="process_text",
@@ -1375,7 +1375,7 @@ class TestCoreferenceResolution:
     @pytest.mark.asyncio
     async def test_recent_history_injected_into_prompt(self):
         """When recent_history is provided, coreference block appears in system prompt."""
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         captured_messages: list = []
 
@@ -1410,7 +1410,7 @@ class TestCoreferenceResolution:
     @pytest.mark.asyncio
     async def test_no_history_shows_none_marker(self):
         """Without history, the coreference block says '(none)'."""
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         captured_messages: list = []
 
@@ -1432,7 +1432,7 @@ class TestCoreferenceResolution:
     @pytest.mark.asyncio
     async def test_backward_compat_decompose_without_history(self):
         """decompose() works without recent_history (default None)."""
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         llm_response = json.dumps([
             {"step": 1, "tool": "weather", "params": {"city": "Tokyo"},
@@ -1451,7 +1451,7 @@ class TestFormatRecentHistoryPlanner:
     """PlannerAgent._format_recent_history formatting helper."""
 
     def test_formats_turns(self):
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         history = [
             {"role": "user", "content": "Hello"},
@@ -1463,17 +1463,17 @@ class TestFormatRecentHistoryPlanner:
         assert "assistant: Hi!" in result
 
     def test_none_returns_none_marker(self):
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
         result = PlannerAgent._format_recent_history(None)
         assert "(none)" in result
 
     def test_empty_returns_none_marker(self):
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
         result = PlannerAgent._format_recent_history([])
         assert "(none)" in result
 
     def test_limits_to_six_turns(self):
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         history = [{"role": "user", "content": f"msg {i}"} for i in range(10)]
         result = PlannerAgent._format_recent_history(history)
@@ -1482,7 +1482,7 @@ class TestFormatRecentHistoryPlanner:
         assert "msg 3" not in result
 
     def test_truncates_long_content(self):
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         history = [{"role": "user", "content": "x" * 300}]
         result = PlannerAgent._format_recent_history(history)
@@ -1503,7 +1503,7 @@ class TestRefStepResolution:
     @pytest.mark.asyncio
     async def test_ref_step_exact_output(self):
         """$REF_STEP_1 as entire value → replaced at object level."""
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.executor import PlanExecutor
 
         params = {"content": "$REF_STEP_1", "path": "~/file.txt"}
         ctx = {1: {"params": {}, "output": "Hello World"}}
@@ -1514,7 +1514,7 @@ class TestRefStepResolution:
     @pytest.mark.asyncio
     async def test_ref_step_exact_params(self):
         """$REF_STEP_1_PARAMS_folder_path → replaced with param value."""
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.executor import PlanExecutor
 
         params = {"path": "$REF_STEP_1_PARAMS_folder_path/summary.txt"}
         ctx = {1: {"params": {"folder_path": "~/Desktop/research"}, "output": "Folder created"}}
@@ -1524,7 +1524,7 @@ class TestRefStepResolution:
     @pytest.mark.asyncio
     async def test_ref_step_inline_substitution(self):
         """$REF_STEP_1 embedded in text → string substitution."""
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.executor import PlanExecutor
 
         params = {"instruction": "Summarize this: $REF_STEP_1"}
         ctx = {1: {"params": {}, "output": "Article about quantum computing"}}
@@ -1535,7 +1535,7 @@ class TestRefStepResolution:
     @pytest.mark.asyncio
     async def test_ref_step_special_chars_safe(self):
         """$REF_STEP_N as entire value preserves special characters safely."""
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.executor import PlanExecutor
 
         difficult_output = 'He said: "Hello {world}" — with\nnewlines & "quotes"'
         params = {"content": "$REF_STEP_1"}
@@ -1547,7 +1547,7 @@ class TestRefStepResolution:
     @pytest.mark.asyncio
     async def test_ref_step_mixed_with_legacy(self):
         """Both $REF and legacy {step_N_*} placeholders work in same params dict."""
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.executor import PlanExecutor
 
         params = {
             "new_style": "$REF_STEP_1",
@@ -1564,7 +1564,7 @@ class TestRefStepResolution:
     @pytest.mark.asyncio
     async def test_ref_step_unresolved_left_intact(self):
         """$REF_STEP_99 with no step 99 → left as-is."""
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.executor import PlanExecutor
 
         params = {"content": "$REF_STEP_99"}
         ctx = {1: {"params": {}, "output": "Hello"}}
@@ -1574,7 +1574,7 @@ class TestRefStepResolution:
     @pytest.mark.asyncio
     async def test_ref_step_read_url_extraction(self):
         """$REF_STEP_1 for read_url → extracts first HTTP URL from prose."""
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.executor import PlanExecutor
 
         prose = "Here are results:\n1. Quantum Computing\n   URL: https://example.com/quantum"
         params = {"url": "$REF_STEP_1"}
@@ -1585,8 +1585,8 @@ class TestRefStepResolution:
     @pytest.mark.asyncio
     async def test_ref_step_full_pipeline(self):
         """Full 3-step flow with $REF_STEP_N: search → summarizer → filesystem."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="web_search",
@@ -1647,8 +1647,8 @@ class TestSummarizerRouting:
     @pytest.mark.asyncio
     async def test_process_text_routes_to_summarizer_when_registered(self):
         """When SummarizerTool is registered, process_text uses it instead of llm_fn."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         mock_summarizer = MagicMock()
         mock_summarizer.execute = AsyncMock(
@@ -1680,8 +1680,8 @@ class TestSummarizerRouting:
     @pytest.mark.asyncio
     async def test_summarizer_tool_name_direct(self):
         """tool='summarizer' directly → also routes to registered tool."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         mock_summarizer = MagicMock()
         mock_summarizer.execute = AsyncMock(
@@ -1709,8 +1709,8 @@ class TestSummarizerRouting:
     @pytest.mark.asyncio
     async def test_process_text_fallback_when_no_summarizer(self):
         """Without summarizer in registry, falls back to llm_fn."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="process_text",
@@ -1732,7 +1732,7 @@ class TestSummarizerRouting:
     @pytest.mark.asyncio
     async def test_summarizer_not_filtered_by_decompose(self):
         """Steps with tool='summarizer' must NOT be filtered out."""
-        from bantz.agent.planner import PlannerAgent
+        from butler.agent.planner import PlannerAgent
 
         llm_response = json.dumps([
             {"step": 1, "tool": "web_search", "params": {"query": "AI news"},
@@ -1755,8 +1755,8 @@ class TestSummarizerRouting:
     @pytest.mark.asyncio
     async def test_tool_names_include_summarizer(self):
         """execute_plan passes 'summarizer' in tool_names to decompose."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutionResult
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutionResult
 
         with patch("bantz.agent.planner.planner_agent") as mock_planner, \
              patch("bantz.agent.executor.plan_executor") as mock_executor, \
@@ -1775,7 +1775,7 @@ class TestSummarizerRouting:
             mock_dal.conversations = MagicMock()
             mock_ollama.chat = AsyncMock()
 
-            from bantz.core.routing_engine import execute_plan
+            from butler.core.routing_engine import execute_plan
 
             await execute_plan("test", "test", {})
 
@@ -1796,8 +1796,8 @@ class TestButlerLoreToasts:
     @pytest.mark.asyncio
     async def test_per_step_toast_emitted(self):
         """Each step triggers a toast notification."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutor
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutor
 
         steps = [
             PlanStep(step=1, tool="weather", params={"city": "London"},
@@ -1825,8 +1825,8 @@ class TestButlerLoreToasts:
     @pytest.mark.asyncio
     async def test_routing_engine_toast_on_plan_start(self):
         """execute_plan sends a toast when planning starts."""
-        from bantz.agent.planner import PlanStep
-        from bantz.agent.executor import PlanExecutionResult, StepResult
+        from butler.agent.planner import PlanStep
+        from butler.agent.executor import PlanExecutionResult, StepResult
 
         with patch("bantz.agent.planner.planner_agent") as mock_planner, \
              patch("bantz.agent.executor.plan_executor") as mock_executor, \
@@ -1849,7 +1849,7 @@ class TestButlerLoreToasts:
             mock_dal.conversations = MagicMock()
             mock_ollama.chat = AsyncMock()
 
-            from bantz.core.routing_engine import execute_plan
+            from butler.core.routing_engine import execute_plan
             await execute_plan("test", "test", {})
 
         # At least one toast with "itinerary" or "Drafting"
@@ -1866,27 +1866,27 @@ class TestPlannerPromptRefSyntax:
     """PLANNER_SYSTEM now teaches $REF_STEP_N syntax."""
 
     def test_prompt_uses_ref_step_syntax(self):
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "$REF_STEP_" in PLANNER_SYSTEM
 
     def test_prompt_has_summarizer_tool(self):
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "summarizer" in PLANNER_SYSTEM
 
     def test_prompt_has_ref_params_syntax(self):
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "$REF_STEP_" in PLANNER_SYSTEM
         assert "_PARAMS_" in PLANNER_SYSTEM
 
     def test_prompt_has_legacy_compat_note(self):
         """Prompt must mention legacy {step_N_output} for backward compat."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         assert "step_N_output" in PLANNER_SYSTEM
         assert "deprecated" in PLANNER_SYSTEM.lower() or "legacy" in PLANNER_SYSTEM.lower()
 
     def test_example_uses_ref_syntax(self):
         """Examples must use $REF_STEP_N, not {step_N_output}."""
-        from bantz.agent.planner import PLANNER_SYSTEM
+        from butler.agent.planner import PLANNER_SYSTEM
         idx = PLANNER_SYSTEM.index("EXAMPLES:")
         block = PLANNER_SYSTEM[idx:]
         assert "$REF_STEP_1" in block

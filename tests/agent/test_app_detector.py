@@ -10,7 +10,7 @@ import pytest
 
 pytest.importorskip('telegram')
 
-from bantz.agent.app_detector import (
+from butler.agent.app_detector import (
     Activity,
     AppDetector,
     WindowInfo,
@@ -426,7 +426,7 @@ class TestWaylandBackend:
 class TestAtspiFallback:
     def test_atspi_active_window_returns_none_gracefully(self):
         """AT-SPI fallback returns None when AT-SPI is unavailable."""
-        # The function imports from bantz.tools.accessibility internally
+        # The function imports from butler.tools.accessibility internally
         # If AT-SPI is not available, it returns None gracefully
         win = _atspi_active_window()
         # On CI / headless systems, AT-SPI won't find active windows
@@ -1193,14 +1193,14 @@ class TestAppDetector:
 
 class TestConfigFields:
     def test_config_has_app_detector_fields(self):
-        from bantz.config import config
+        from butler.config import config
         assert hasattr(config, "app_detector_enabled")
         assert hasattr(config, "app_detector_cache_ttl")
         assert hasattr(config, "app_detector_polling_interval")
         assert hasattr(config, "app_detector_auto_focus")
 
     def test_config_defaults(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None)
         assert c.app_detector_enabled is False
         assert c.app_detector_cache_ttl == 5.0
@@ -1217,7 +1217,7 @@ class TestLayerIntegration:
     def test_layer_init_calls_app_detector(self, tmp_path):
         """When app_detector_enabled=True, layer.init() should initialize app_detector."""
         from unittest.mock import patch as _patch
-        from bantz.config import config
+        from butler.config import config
 
         with _patch.object(config, "app_detector_enabled", True), \
              _patch.object(config, "app_detector_cache_ttl", 3.0), \
@@ -1470,15 +1470,15 @@ class TestEventDrivenSourceAudit:
 
     def test_new_exports_importable(self):
         """All new #220 exports must be importable."""
-        from bantz.agent.app_detector import _start_x11_listener
-        from bantz.agent.app_detector import _start_dbus_listener
-        from bantz.agent.app_detector import _start_slow_poll
+        from butler.agent.app_detector import _start_x11_listener
+        from butler.agent.app_detector import _start_dbus_listener
+        from butler.agent.app_detector import _start_slow_poll
         assert callable(_start_x11_listener)
         assert callable(_start_dbus_listener)
         assert callable(_start_slow_poll)
 
     def test_bus_import_exists(self):
         """EventBus must be imported in app_detector."""
-        from bantz.agent import app_detector as mod
+        from butler.agent import app_detector as mod
         assert hasattr(mod, "bus")
 

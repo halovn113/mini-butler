@@ -17,7 +17,7 @@ from __future__ import annotations
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _qr(orig: str, en: str | None = None):
-    from bantz.core.brain import Brain
+    from butler.core.brain import Brain
     return Brain._quick_route(orig, en or orig)
 
 
@@ -324,7 +324,7 @@ class TestRegexAuditStructural:
 
     def _src(self) -> str:
         import inspect
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         return inspect.getsource(Brain._quick_route)
 
     def test_save_place_no_bare_this_is(self):

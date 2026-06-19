@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 
-from bantz.agent.interventions import (
+from butler.agent.interventions import (
     Intervention,
     InterventionLog,
     InterventionQueue,
@@ -618,27 +618,27 @@ class TestFocusMode:
 
 class TestInterventionConfig:
     def test_default_rate_limit(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(BANTZ_OLLAMA_MODEL="test", _env_file=None)
         assert cfg.intervention_rate_limit == 3
 
     def test_default_toast_ttl(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(BANTZ_OLLAMA_MODEL="test", _env_file=None)
         assert cfg.intervention_toast_ttl == 20.0
 
     def test_default_quiet_mode(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(BANTZ_OLLAMA_MODEL="test", _env_file=None)
         assert cfg.intervention_quiet_mode is False
 
     def test_default_focus_mode(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(BANTZ_OLLAMA_MODEL="test", _env_file=None)
         assert cfg.intervention_focus_mode is False
 
     def test_env_override_rate_limit(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(
             BANTZ_OLLAMA_MODEL="test",
             BANTZ_INTERVENTION_RATE_LIMIT="5",
@@ -647,7 +647,7 @@ class TestInterventionConfig:
         assert cfg.intervention_rate_limit == 5
 
     def test_env_override_toast_ttl(self):
-        from bantz.config import Config
+        from butler.config import Config
         cfg = Config(
             BANTZ_OLLAMA_MODEL="test",
             BANTZ_INTERVENTION_TOAST_TTL="30",

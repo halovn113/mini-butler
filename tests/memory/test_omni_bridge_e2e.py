@@ -56,7 +56,7 @@ def mock_config(tmp_palace):
 def live_bridge(mock_config):
     """Create a real MemPalaceBridge backed by on-disk ChromaDB."""
     with patch("bantz.memory.bridge._get_config", return_value=mock_config):
-        from bantz.memory.bridge import MemPalaceBridge
+        from butler.memory.bridge import MemPalaceBridge
         b = MemPalaceBridge()
         import asyncio
         try:
@@ -80,7 +80,7 @@ class TestOmniGraphSearch:
     def test_graph_search_returns_string(self, live_bridge):
         """_graph_search returns a string (possibly empty) from real KG."""
         with patch("bantz.memory.bridge.palace_bridge", live_bridge):
-            from bantz.memory.omni_memory import OmniMemoryManager
+            from butler.memory.omni_memory import OmniMemoryManager
             omni = OmniMemoryManager()
             result = _run(omni._graph_search("hello world"))
         assert isinstance(result, str)
@@ -93,7 +93,7 @@ class TestOmniGraphSearch:
         kg.add_triple(subject="User", predicate="decided_to", obj="learn Rust this year")
 
         with patch("bantz.memory.bridge.palace_bridge", live_bridge):
-            from bantz.memory.omni_memory import OmniMemoryManager
+            from butler.memory.omni_memory import OmniMemoryManager
             omni = OmniMemoryManager()
             result = _run(omni._graph_search("Murat"))
         assert isinstance(result, str)
@@ -150,7 +150,7 @@ class TestOmniRecallPipeline:
     def test_recall_returns_result_type(self, live_bridge):
         """recall() returns a MemoryRecallResult even with empty palace."""
         with patch("bantz.memory.bridge.palace_bridge", live_bridge):
-            from bantz.memory.omni_memory import OmniMemoryManager, MemoryRecallResult
+            from butler.memory.omni_memory import OmniMemoryManager, MemoryRecallResult
             omni = OmniMemoryManager()
             result = _run(omni.recall("hello"))
         assert isinstance(result, MemoryRecallResult)
@@ -170,7 +170,7 @@ class TestOmniRecallPipeline:
         ))
 
         with patch("bantz.memory.bridge.palace_bridge", live_bridge):
-            from bantz.memory.omni_memory import OmniMemoryManager
+            from butler.memory.omni_memory import OmniMemoryManager
             omni = OmniMemoryManager()
 
             # Ask about the cat
@@ -189,7 +189,7 @@ class TestOmniRecallPipeline:
             ))
 
         with patch("bantz.memory.bridge.palace_bridge", live_bridge):
-            from bantz.memory.omni_memory import OmniMemoryManager
+            from butler.memory.omni_memory import OmniMemoryManager
             omni = OmniMemoryManager(max_memory_tokens=100)  # tight budget
             result = _run(omni.recall("random subjects"))
         # 100 tokens × 4 chars ≈ 400 chars max
@@ -213,7 +213,7 @@ class TestOmniCRUD:
 
         with patch("bantz.memory.bridge.palace_bridge", live_bridge), \
              patch("bantz.data.data_layer", mock_dl):
-            from bantz.memory.omni_memory import OmniMemoryManager
+            from butler.memory.omni_memory import OmniMemoryManager
             omni = OmniMemoryManager()
             _run(omni.store("test_key", "test_value"))
             mock_kv.set.assert_called_once()
@@ -229,7 +229,7 @@ class TestOmniSummarize:
     def test_summarize_returns_string(self, live_bridge):
         """summarize() should return a string (distilled or empty)."""
         with patch("bantz.memory.bridge.palace_bridge", live_bridge):
-            from bantz.memory.omni_memory import OmniMemoryManager
+            from butler.memory.omni_memory import OmniMemoryManager
             omni = OmniMemoryManager()
             # No messages for session 999 → should return string, not crash
             result = _run(omni.summarize(999))
@@ -250,7 +250,7 @@ class TestOmniGraphQuery:
         kg.add_triple(subject="Alice", predicate="knows", obj="Bob")
 
         with patch("bantz.memory.bridge.palace_bridge", live_bridge):
-            from bantz.memory.omni_memory import OmniMemoryManager
+            from butler.memory.omni_memory import OmniMemoryManager
             omni = OmniMemoryManager()
             result = _run(omni.graph_query("recent triples", limit=10))
         assert isinstance(result, list)
@@ -259,7 +259,7 @@ class TestOmniGraphQuery:
     def test_graph_query_empty_kg(self, live_bridge):
         """graph_query on empty KG returns empty list."""
         with patch("bantz.memory.bridge.palace_bridge", live_bridge):
-            from bantz.memory.omni_memory import OmniMemoryManager
+            from butler.memory.omni_memory import OmniMemoryManager
             omni = OmniMemoryManager()
             result = _run(omni.graph_query("nothing here"))
         assert result == []
@@ -274,7 +274,7 @@ class TestOmniDeepSearch:
 
     def test_deep_search_returns_string(self, live_bridge):
         with patch("bantz.memory.bridge.palace_bridge", live_bridge):
-            from bantz.memory.omni_memory import OmniMemoryManager
+            from butler.memory.omni_memory import OmniMemoryManager
             omni = OmniMemoryManager()
             result = _run(omni._deep_search("anything"))
         assert isinstance(result, str)
@@ -287,7 +287,7 @@ class TestOmniDeepSearch:
         ))
 
         with patch("bantz.memory.bridge.palace_bridge", live_bridge):
-            from bantz.memory.omni_memory import OmniMemoryManager
+            from butler.memory.omni_memory import OmniMemoryManager
             omni = OmniMemoryManager()
             result = _run(omni._deep_search("Deniz meeting"))
         assert isinstance(result, str)

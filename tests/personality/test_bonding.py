@@ -25,7 +25,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from bantz.personality.bonding import (
+from butler.personality.bonding import (
     TIERS,
     DEFAULT_TIER,
     BondingMeter,
@@ -294,22 +294,22 @@ class TestSingleton:
 
 class TestConfig:
     def test_bonding_enabled_field(self):
-        from bantz.config import Config
+        from butler.config import Config
         fields = Config.model_fields
         assert "bonding_enabled" in fields
 
     def test_bonding_sigmoid_rate_field(self):
-        from bantz.config import Config
+        from butler.config import Config
         fields = Config.model_fields
         assert "bonding_sigmoid_rate" in fields
 
     def test_bonding_sigmoid_midpoint_field(self):
-        from bantz.config import Config
+        from butler.config import Config
         fields = Config.model_fields
         assert "bonding_sigmoid_midpoint" in fields
 
     def test_defaults(self):
-        from bantz.config import Config
+        from butler.config import Config
         fields = Config.model_fields
         assert fields["bonding_enabled"].default is True
         assert fields["bonding_sigmoid_rate"].default == 0.04
@@ -323,19 +323,19 @@ class TestConfig:
 
 class TestTemplateIntegration:
     def test_chat_system_has_formality_hint(self):
-        from bantz.core.brain import CHAT_SYSTEM
+        from butler.core.brain import CHAT_SYSTEM
         assert "{formality_hint}" in CHAT_SYSTEM
 
     def test_finalizer_system_has_formality_hint(self):
-        from bantz.core.finalizer import FINALIZER_SYSTEM
+        from butler.core.finalizer import FINALIZER_SYSTEM
         assert "{formality_hint}" in FINALIZER_SYSTEM
 
     def test_brain_formality_hint_helper(self):
-        from bantz.core import brain
+        from butler.core import brain
         assert callable(getattr(brain, "_formality_hint", None))
 
     def test_formality_hint_returns_string(self):
-        from bantz.core.brain import _formality_hint
+        from butler.core.brain import _formality_hint
         # Without RL engine being initialised, should return "" safely
         result = _formality_hint()
         assert isinstance(result, str)

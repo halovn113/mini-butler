@@ -31,7 +31,7 @@ import pytest
 
 pytest.importorskip('telegram')
 
-from bantz.core.brain import (
+from butler.core.brain import (
     _detect_feedback,
     POSITIVE_FEEDBACK_KWS,
     NEGATIVE_FEEDBACK_KWS,
@@ -210,14 +210,14 @@ class TestFeedbackChatAction:
     """Feedback chat action label exists in the intervention system."""
 
     def test_action_label_exists(self):
-        from bantz.agent.interventions import ACTION_LABELS
+        from butler.agent.interventions import ACTION_LABELS
         assert "feedback_chat" in ACTION_LABELS
 
     def test_affinity_engine_add_reward(self, tmp_db):
         """AffinityEngine.add_reward() adds cumulative score."""
-        from bantz.data.connection_pool import SQLitePool
+        from butler.data.connection_pool import SQLitePool
         SQLitePool.reset()
-        from bantz.agent.affinity_engine import AffinityEngine
+        from butler.agent.affinity_engine import AffinityEngine
         ae = AffinityEngine()
         ae.init(tmp_db)
         ae.add_reward(2.0)
@@ -226,9 +226,9 @@ class TestFeedbackChatAction:
         SQLitePool.reset()
 
     def test_negative_affinity_reward(self, tmp_db):
-        from bantz.data.connection_pool import SQLitePool
+        from butler.data.connection_pool import SQLitePool
         SQLitePool.reset()
-        from bantz.agent.affinity_engine import AffinityEngine
+        from butler.agent.affinity_engine import AffinityEngine
         ae = AffinityEngine()
         ae.init(tmp_db)
         ae.add_reward(-2.0)
@@ -249,7 +249,7 @@ def _make_brain():
         mock_dl.conversations.context = MagicMock(return_value=[])
         mock_cfg.telegram_llm_mode = True
         mock_cfg.shell_confirm_destructive = False
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain()
     return b
 
@@ -385,9 +385,9 @@ class TestAffinityRewardLogging:
     """Affinity engine reward accumulation from feedback (#221)."""
 
     def test_positive_feedback_logs_plus_two(self, tmp_db):
-        from bantz.data.connection_pool import SQLitePool
+        from butler.data.connection_pool import SQLitePool
         SQLitePool.reset()
-        from bantz.agent.affinity_engine import AffinityEngine
+        from butler.agent.affinity_engine import AffinityEngine
         ae = AffinityEngine()
         ae.init(tmp_db)
         ae.add_reward(2.0)
@@ -396,9 +396,9 @@ class TestAffinityRewardLogging:
         SQLitePool.reset()
 
     def test_negative_feedback_logs_minus_two(self, tmp_db):
-        from bantz.data.connection_pool import SQLitePool
+        from butler.data.connection_pool import SQLitePool
         SQLitePool.reset()
-        from bantz.agent.affinity_engine import AffinityEngine
+        from butler.agent.affinity_engine import AffinityEngine
         ae = AffinityEngine()
         ae.init(tmp_db)
         ae.add_reward(-2.0)
@@ -408,9 +408,9 @@ class TestAffinityRewardLogging:
 
     def test_cumulative_reward_changes(self, tmp_db):
         """Bonding meter is affected — cumulative_reward reflects feedback."""
-        from bantz.data.connection_pool import SQLitePool
+        from butler.data.connection_pool import SQLitePool
         SQLitePool.reset()
-        from bantz.agent.affinity_engine import AffinityEngine
+        from butler.agent.affinity_engine import AffinityEngine
         ae = AffinityEngine()
         ae.init(tmp_db)
 
@@ -427,9 +427,9 @@ class TestAffinityRewardLogging:
         SQLitePool.reset()
 
     def test_avg_reward_reflects_feedback(self, tmp_db):
-        from bantz.data.connection_pool import SQLitePool
+        from butler.data.connection_pool import SQLitePool
         SQLitePool.reset()
-        from bantz.agent.affinity_engine import AffinityEngine
+        from butler.agent.affinity_engine import AffinityEngine
         ae = AffinityEngine()
         ae.init(tmp_db)
 

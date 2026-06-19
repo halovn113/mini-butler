@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from bantz.agent.ambient import (
+from butler.agent.ambient import (
     AmbientAnalyzer,
     AmbientLabel,
     AmbientSnapshot,
@@ -385,7 +385,7 @@ class TestAmbientEventBus:
         """ambient.py must NOT import from brain or TUI."""
         import ast
         import inspect
-        from bantz.agent import ambient
+        from butler.agent import ambient
         tree = ast.parse(inspect.getsource(ambient))
         imports = [n for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)]
         for imp in imports:

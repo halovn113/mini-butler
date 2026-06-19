@@ -30,7 +30,7 @@ class TestVoiceMasterSwitch:
         env vars with highest priority (after init), so this is the
         reliable way to control Config values in tests.
         """
-        from bantz.config import Config
+        from butler.config import Config
         with patch.dict(os.environ, env_vars, clear=False):
             return Config(_env_file=None)
 
@@ -102,13 +102,13 @@ class TestVoiceMasterSwitch:
 
     def test_voice_enabled_field_exists(self):
         """Config should expose voice_enabled as a bool field."""
-        from bantz.config import Config
+        from butler.config import Config
         fields = Config.model_fields
         assert "voice_enabled" in fields
 
     def test_voice_enabled_alias(self):
         """voice_enabled should read from BANTZ_VOICE_ENABLED env var."""
-        from bantz.config import Config
+        from butler.config import Config
         field_info = Config.model_fields["voice_enabled"]
         assert field_info.alias == "BANTZ_VOICE_ENABLED"
 
@@ -120,13 +120,13 @@ class TestWhisperModelCached:
 
     def test_no_cache_dir(self, tmp_path):
         """Returns False when HuggingFace cache doesn't exist."""
-        from bantz.cli.setup import _check_whisper_model_cached
+        from butler.cli.setup import _check_whisper_model_cached
         with patch("pathlib.Path.home", return_value=tmp_path):
             assert _check_whisper_model_cached("tiny") is False
 
     def test_model_found_in_hf_cache(self, tmp_path):
         """Returns True when matching model dir exists in HF cache."""
-        from bantz.cli.setup import _check_whisper_model_cached
+        from butler.cli.setup import _check_whisper_model_cached
         hf_dir = tmp_path / ".cache" / "huggingface" / "hub"
         model_dir = hf_dir / "models--Systran--faster-whisper-tiny"
         model_dir.mkdir(parents=True)
@@ -135,7 +135,7 @@ class TestWhisperModelCached:
 
     def test_model_found_in_faster_whisper_cache(self, tmp_path):
         """Returns True when matching dir exists in faster_whisper cache."""
-        from bantz.cli.setup import _check_whisper_model_cached
+        from butler.cli.setup import _check_whisper_model_cached
         fw_dir = tmp_path / ".cache" / "faster_whisper"
         model_dir = fw_dir / "tiny"
         model_dir.mkdir(parents=True)
@@ -144,7 +144,7 @@ class TestWhisperModelCached:
 
     def test_wrong_model_not_found(self, tmp_path):
         """Returns False when cached model is different size."""
-        from bantz.cli.setup import _check_whisper_model_cached
+        from butler.cli.setup import _check_whisper_model_cached
         hf_dir = tmp_path / ".cache" / "huggingface" / "hub"
         model_dir = hf_dir / "models--Systran--faster-whisper-base"
         model_dir.mkdir(parents=True)
@@ -153,7 +153,7 @@ class TestWhisperModelCached:
 
     def test_exception_returns_false(self):
         """Returns False on any exception (graceful degradation)."""
-        from bantz.cli.setup import _check_whisper_model_cached
+        from butler.cli.setup import _check_whisper_model_cached
         with patch("pathlib.Path.home", side_effect=RuntimeError("boom")):
             assert _check_whisper_model_cached("tiny") is False
 
@@ -165,7 +165,7 @@ class TestGhostLoopPreloadEvents:
 
     def test_preload_emits_loading_and_ready(self):
         """Successful preload emits stt_model_loading + stt_model_ready."""
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         emitted = []
         with patch("bantz.agent.ghost_loop.bus") as mock_bus:
             mock_bus.emit_threadsafe = lambda event, **kw: emitted.append(event)
@@ -177,7 +177,7 @@ class TestGhostLoopPreloadEvents:
 
     def test_preload_emits_failed_on_error(self):
         """Failed preload emits stt_model_loading + stt_model_failed."""
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         events = {}
         def track(event, **kw):
             events[event] = kw
@@ -196,7 +196,7 @@ class TestGhostLoopPreloadEvents:
 
     def test_preload_logs_info(self):
         """Preload should log info messages about loading status."""
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         with patch("bantz.agent.ghost_loop.bus"):
             with patch("bantz.agent.ghost_loop.log") as mock_log:
                 with patch("bantz.agent.stt.stt_engine") as mock_stt:
@@ -214,12 +214,12 @@ class TestDoctorVoiceSection:
 
     def test_section_for_voice(self):
         """voice_enabled should map to 'Voice' or 'TTS / Audio' section."""
-        from bantz.cli.setup import _section_for
+        from butler.cli.setup import _section_for
         # voice_enabled is new — it should map to TTS / Audio or Voice
         result = _section_for("voice_enabled")
         assert isinstance(result, str)
 
     def test_check_whisper_model_cached_importable(self):
         """_check_whisper_model_cached should be importable from __main__."""
-        from bantz.cli.setup import _check_whisper_model_cached
+        from butler.cli.setup import _check_whisper_model_cached
         assert callable(_check_whisper_model_cached)

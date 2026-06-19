@@ -19,9 +19,9 @@ memory.db
 # Session logs & chat exports
 *_session.txt
 *_session_log.txt
-*_bantz_session.txt
-*_bantz_chat.txt
-latest_bantz_chat.txt
+*_butler_session.txt
+*_butler_chat.txt
+latest_butler_chat.txt
 
 # Picovoice wake word model (binary, licensed)
 *.ppn

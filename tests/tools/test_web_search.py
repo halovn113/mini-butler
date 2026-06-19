@@ -15,8 +15,8 @@ import asyncio
 import threading
 from unittest.mock import patch
 
-from bantz.tools import registry
-from bantz.tools.web_search import (
+from butler.tools import registry
+from butler.tools.web_search import (
     WebNewsTool,
     WebResearchTool,
     WebSearchTool,

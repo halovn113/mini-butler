@@ -7,7 +7,7 @@ import pytest
 
 pytest.importorskip('telegram')
 
-from bantz.interface.telegram_bot import _TelegramSpamFilter
+from butler.interface.telegram_bot import _TelegramSpamFilter
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

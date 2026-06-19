@@ -1,0 +1,23 @@
+[Unit]
+Description=Butler v2 — Personal AI Assistant (Daemon)
+After=network-online.target ollama.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/butler
+EnvironmentFile=/home/%i/butler/.env
+ExecStart=/home/%i/butler/.venv/bin/python -m butler --daemon
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=butler
+
+# Security hardening
+NoNewPrivileges=yes
+ReadWritePaths=/home/%i
+
+[Install]
+WantedBy=multi-user.target

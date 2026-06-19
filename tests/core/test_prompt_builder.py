@@ -16,7 +16,7 @@ import pytest
 pytest.importorskip('telegram')
 
 try:
-    from bantz.core.context import BantzContext
+    from butler.core.context import BantzContext
 except ImportError:
 
     @dataclass
@@ -33,7 +33,7 @@ except ImportError:
         feedback_hint: str = ""
 
 
-from bantz.core.prompt_builder import (
+from butler.core.prompt_builder import (
     CHAT_SYSTEM,
     COMMAND_SYSTEM,
     COMPUTER_USE_AUTHORIZATION,
@@ -59,7 +59,7 @@ class TestTemplates:
             assert f"{{{name}}}" in CHAT_SYSTEM, f"Missing placeholder: {name}"
 
     def test_chat_system_contains_character_description(self):
-        assert "Bantz" in CHAT_SYSTEM
+        assert "Butler" in CHAT_SYSTEM
         assert "1920s" in CHAT_SYSTEM
 
     def test_command_system_non_empty(self):
@@ -98,23 +98,23 @@ class TestBrevityRules:
 
     def test_finalizer_system_has_dynamic_limit(self):
         """FINALIZER_SYSTEM uses a flexible sentence limit, not a fixed 5."""
-        from bantz.core.finalizer import FINALIZER_SYSTEM
+        from butler.core.finalizer import FINALIZER_SYSTEM
         assert "3–5" in FINALIZER_SYSTEM or "3-5" in FINALIZER_SYSTEM
 
     def test_bantz_chat_has_brevity(self):
         """BANTZ_CHAT persona template must include brevity instruction."""
-        from bantz.personality.system_prompt import BANTZ_CHAT
+        from butler.personality.system_prompt import BANTZ_CHAT
         lower = BANTZ_CHAT.lower()
         assert "crisp" in lower or "brevity" in lower or "brief" in lower
 
     def test_bantz_chat_persona_through_word_choice(self):
         """BANTZ_CHAT must express persona through word choice, not length."""
-        from bantz.personality.system_prompt import BANTZ_CHAT
+        from butler.personality.system_prompt import BANTZ_CHAT
         assert "word choice" in BANTZ_CHAT or "elegant" in BANTZ_CHAT
 
     def test_bantz_finalizer_has_dynamic_limit(self):
         """BANTZ_FINALIZER uses flexible sentence limit."""
-        from bantz.personality.system_prompt import BANTZ_FINALIZER
+        from butler.personality.system_prompt import BANTZ_FINALIZER
         assert "3–5" in BANTZ_FINALIZER or "3-5" in BANTZ_FINALIZER
 
 
@@ -164,7 +164,7 @@ class TestBuildChatSystem:
         tc = {"prompt_hint": ""}
         result = build_chat_system(ctx, tc)
         # Should still be valid without feedback
-        assert "Bantz" in result
+        assert "Butler" in result
 
     def test_empty_fields_produce_valid_output(self):
         ctx = self._make_ctx(
@@ -175,14 +175,14 @@ class TestBuildChatSystem:
         tc = {"prompt_hint": ""}
         result = build_chat_system(ctx, tc)
         # Template renders without error; character preamble is intact
-        assert "Bantz" in result
+        assert "Butler" in result
         assert "1920s" in result
 
     def test_missing_prompt_hint_key_uses_empty(self):
         ctx = self._make_ctx()
         tc = {}  # no prompt_hint key
         result = build_chat_system(ctx, tc)
-        assert "Bantz" in result  # renders fine with empty time_hint
+        assert "Butler" in result  # renders fine with empty time_hint
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -277,15 +277,15 @@ class TestBrainReExports:
     """Verify that existing imports from brain.py still work."""
 
     def test_chat_system_available_from_brain(self):
-        from bantz.core.brain import CHAT_SYSTEM as brain_cs
+        from butler.core.brain import CHAT_SYSTEM as brain_cs
         assert brain_cs is CHAT_SYSTEM
 
     def test_command_system_available_from_brain(self):
-        from bantz.core.brain import COMMAND_SYSTEM as brain_cmd
+        from butler.core.brain import COMMAND_SYSTEM as brain_cmd
         assert brain_cmd is COMMAND_SYSTEM
 
     def test_is_refusal_available_from_brain(self):
-        from bantz.core.brain import _is_refusal as brain_ir
+        from butler.core.brain import _is_refusal as brain_ir
         assert brain_ir is is_refusal
 
 
@@ -298,46 +298,46 @@ class TestToolDescriptionGuardrails:
     """Verify all tool descriptions contain required guardrail keywords."""
 
     def test_gmail_has_follow_up_rule(self):
-        from bantz.tools.gmail import GmailTool
+        from butler.tools.gmail import GmailTool
         desc = GmailTool.description.lower()
         assert "follow-up" in desc or "message id" in desc
 
     def test_gmail_forbids_repeat_search(self):
-        from bantz.tools.gmail import GmailTool
+        from butler.tools.gmail import GmailTool
         assert "NEVER repeat" in GmailTool.description or "never repeat" in GmailTool.description.lower()
 
     def test_shell_has_absolute_path_rule(self):
-        from bantz.tools.shell import ShellTool
+        from butler.tools.shell import ShellTool
         desc = ShellTool.description
         assert "absolute path" in desc.lower()
 
     def test_shell_has_dynamic_home_dir(self):
         """Shell description must contain actual home directory, not a placeholder."""
         import os
-        from bantz.tools.shell import ShellTool
+        from butler.tools.shell import ShellTool
         assert os.path.expanduser("~") in ShellTool.description
 
     def test_shell_has_wrong_right_example(self):
-        from bantz.tools.shell import ShellTool
+        from butler.tools.shell import ShellTool
         assert "WRONG:" in ShellTool.description and "RIGHT:" in ShellTool.description
 
     def test_filesystem_has_path_rule(self):
-        from bantz.tools.filesystem import FilesystemTool
+        from butler.tools.filesystem import FilesystemTool
         desc = FilesystemTool.description.lower()
         assert "absolute path" in desc or "never guess" in desc
 
     def test_web_search_has_specificity_rule(self):
-        from bantz.tools.web_search import WebSearchTool
+        from butler.tools.web_search import WebSearchTool
         desc = WebSearchTool.description.lower()
         assert "specific" in desc or "vague" in desc
 
     def test_calendar_has_no_invent_rule(self):
-        from bantz.tools.calendar import CalendarTool
+        from butler.tools.calendar import CalendarTool
         desc = CalendarTool.description.lower()
         assert "never invent" in desc
 
     def test_web_reader_has_url_validation_rule(self):
-        from bantz.tools.web_reader import WebReaderTool
+        from butler.tools.web_reader import WebReaderTool
         desc = WebReaderTool.description.lower()
         assert "never fabricate" in desc or "valid url" in desc
 
@@ -351,7 +351,7 @@ class TestBuildToolContext:
     """Verify brain._build_tool_context injects data only when relevant."""
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         brain = object.__new__(Brain)
         brain._last_messages = []
         brain._last_events = []
@@ -472,7 +472,7 @@ class TestIsRefusalNoFalsePositives:
 
     def test_thinking_block_with_sorry_not_refusal(self):
         """CoT output with 'sorry' inside thinking tags should not trigger."""
-        from bantz.core.intent import _is_refusal as intent_is_refusal
+        from butler.core.intent import _is_refusal as intent_is_refusal
         raw = '<thinking>I\'m sorry, I need to re-read the request.</thinking>{"route":"tool","tool_name":"gmail","tool_args":{}}'
         assert intent_is_refusal(raw) is False
 
@@ -486,7 +486,7 @@ class TestFuzzyToolRegistry:
     """ToolRegistry.get() handles casing, spaces, and hyphens."""
 
     def test_exact_match(self):
-        from bantz.tools import ToolRegistry, BaseTool, ToolResult
+        from butler.tools import ToolRegistry, BaseTool, ToolResult
 
         class FakeTool(BaseTool):
             name = "web_search"
@@ -500,7 +500,7 @@ class TestFuzzyToolRegistry:
 
     def test_capitalized_with_space(self):
         """'Web Search' should resolve to 'web_search'."""
-        from bantz.tools import ToolRegistry, BaseTool, ToolResult
+        from butler.tools import ToolRegistry, BaseTool, ToolResult
 
         class FakeTool(BaseTool):
             name = "web_search"
@@ -515,7 +515,7 @@ class TestFuzzyToolRegistry:
 
     def test_hyphenated(self):
         """'web-search' should resolve to 'web_search'."""
-        from bantz.tools import ToolRegistry, BaseTool, ToolResult
+        from butler.tools import ToolRegistry, BaseTool, ToolResult
 
         class FakeTool(BaseTool):
             name = "web_search"
@@ -529,7 +529,7 @@ class TestFuzzyToolRegistry:
 
     def test_visual_click_variants(self):
         """'Visual Click', 'visual-click', 'VISUAL_CLICK' should all match."""
-        from bantz.tools import ToolRegistry, BaseTool, ToolResult
+        from butler.tools import ToolRegistry, BaseTool, ToolResult
 
         class FakeTool(BaseTool):
             name = "visual_click"
@@ -543,7 +543,7 @@ class TestFuzzyToolRegistry:
             assert reg.get(variant) is not None, f"Failed for: {variant}"
 
     def test_miss_returns_none(self):
-        from bantz.tools import ToolRegistry
+        from butler.tools import ToolRegistry
         reg = ToolRegistry()
         assert reg.get("nonexistent") is None
 
@@ -552,22 +552,22 @@ class TestCotPromptVisualClick:
     """CoT prompt must properly route click requests to visual_click."""
 
     def test_visual_click_in_parameter_reference(self):
-        from bantz.core.intent import COT_SYSTEM
+        from butler.core.intent import COT_SYSTEM
         assert "visual_click" in COT_SYSTEM
         assert '"target"' in COT_SYSTEM
 
     def test_visual_click_in_routing_rules(self):
-        from bantz.core.intent import COT_SYSTEM
+        from butler.core.intent import COT_SYSTEM
         assert "visual_click: click a button" in COT_SYSTEM
 
     def test_click_routes_to_visual_click_not_accessibility(self):
         """The routing rules should NOT say 'accessibility: click UI element'."""
-        from bantz.core.intent import COT_SYSTEM
+        from butler.core.intent import COT_SYSTEM
         assert "accessibility: click" not in COT_SYSTEM
 
     def test_snake_case_instruction(self):
         """CoT prompt must instruct models to use snake_case tool names."""
-        from bantz.core.intent import COT_SYSTEM
+        from butler.core.intent import COT_SYSTEM
         assert "snake_case" in COT_SYSTEM
 
 
@@ -579,7 +579,7 @@ class TestToolContextTTL:
     """Turn-based TTL for _last_messages / _last_events (#276)."""
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._memory_ready = True
         b._graph_ready = True
@@ -691,7 +691,7 @@ class TestEmbedMetadata:
 
     def test_email_metadata_embedded(self):
         """Email message IDs are embedded in ToolResult output."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         data = {"messages": [
             {"id": "abc123", "from": "alice@test.com", "subject": "Hello"},
             {"id": "def456", "from": "bob@test.com", "subject": "Meeting"},
@@ -703,7 +703,7 @@ class TestEmbedMetadata:
 
     def test_calendar_metadata_embedded(self):
         """Calendar event IDs are embedded in ToolResult output."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         data = {"events": [
             {"id": "evt1", "summary": "Lecture"},
         ]}
@@ -713,13 +713,13 @@ class TestEmbedMetadata:
 
     def test_no_metadata_for_empty_data(self):
         """No [CONTEXT:] block when data is empty or None."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         assert Brain._embed_metadata("ok", "shell", None) == "ok"
         assert Brain._embed_metadata("ok", "shell", {}) == "ok"
 
     def test_single_item_metadata(self):
         """Single message_id / event_id / thread_id are embedded."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         data = {"message_id": "xyz789", "thread_id": "t123"}
         result = Brain._embed_metadata("Email read.", "gmail", data)
         assert "xyz789" in result
@@ -727,7 +727,7 @@ class TestEmbedMetadata:
 
     def test_path_metadata_for_filesystem(self):
         """File path is embedded for filesystem tool results."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         data = {"path": "/home/user/notes.txt"}
         result = Brain._embed_metadata("File created.", "filesystem", data)
         assert "/home/user/notes.txt" in result
@@ -737,7 +737,7 @@ class TestStoreToolContext:
     """_store_tool_context stores and resets TTL (#276)."""
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._memory_ready = True
         b._graph_ready = True
@@ -759,7 +759,7 @@ class TestStoreToolContext:
         return b
 
     def test_stores_email_messages(self):
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
         b = self._make_brain()
         msgs = [{"id": "m1", "from": "a", "subject": "b"}]
         result = ToolResult(success=True, output="Emails", data={"messages": msgs})
@@ -768,7 +768,7 @@ class TestStoreToolContext:
         assert b._context_turn == 5  # reset to current turn
 
     def test_stores_calendar_events(self):
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
         b = self._make_brain()
         evts = [{"id": "e1", "summary": "Lecture"}]
         result = ToolResult(success=True, output="Events", data={"events": evts})
@@ -777,7 +777,7 @@ class TestStoreToolContext:
         assert b._context_turn == 5
 
     def test_stores_generic_output(self):
-        from bantz.tools import ToolResult
+        from butler.tools import ToolResult
         b = self._make_brain()
         result = ToolResult(success=True, output="Search results: AI news...")
         b._store_tool_context("web_search", result)

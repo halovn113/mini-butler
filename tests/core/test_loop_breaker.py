@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 
-from bantz.core.brain import Brain
+from butler.core.brain import Brain
 
 
 def _asst(text: str) -> dict:

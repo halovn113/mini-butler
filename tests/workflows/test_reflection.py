@@ -40,7 +40,7 @@ pytest.importorskip('telegram')
 def _reset_pool():
     """Reset the connection pool after every test."""
     yield
-    from bantz.data.connection_pool import SQLitePool
+    from butler.data.connection_pool import SQLitePool
     SQLitePool.reset()
 
 
@@ -58,7 +58,7 @@ def tmp_db(tmp_path):
     db_path = tmp_path / "bantz.db"
 
     # Initialize pool first — this creates the DB file
-    from bantz.data.connection_pool import get_pool
+    from butler.data.connection_pool import get_pool
     pool = get_pool(db_path)
 
     # Create schema via pool
@@ -205,7 +205,7 @@ def mock_memory(populated_db):
 
 class TestReflectionResult:
     def test_defaults(self):
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.workflows.reflection import ReflectionResult
         r = ReflectionResult()
         assert r.date == ""
         assert r.sessions == 0
@@ -213,7 +213,7 @@ class TestReflectionResult:
         assert r.entities_extracted == 0
 
     def test_to_dict(self):
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.workflows.reflection import ReflectionResult
         r = ReflectionResult(
             date="2026-03-10",
             sessions=3,
@@ -230,14 +230,14 @@ class TestReflectionResult:
         assert "people_mentioned" in d
 
     def test_to_dict_roundtrip(self):
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.workflows.reflection import ReflectionResult
         r = ReflectionResult(date="2026-03-10", summary="Test")
         s = json.dumps(r.to_dict())
         d = json.loads(s)
         assert d["date"] == "2026-03-10"
 
     def test_summary_line(self):
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.workflows.reflection import ReflectionResult
         r = ReflectionResult(
             date="2026-03-10",
             sessions=4,
@@ -260,13 +260,13 @@ class TestReflectionResult:
         assert "100 old messages" in line
 
     def test_summary_line_empty(self):
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.workflows.reflection import ReflectionResult
         r = ReflectionResult(date="2026-03-10")
         line = r.summary_line()
         assert "2026-03-10" in line
 
     def test_summary_line_with_pruning(self):
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.workflows.reflection import ReflectionResult
         r = ReflectionResult(raw_pruned=50, vectors_pruned=40)
         line = r.summary_line()
         assert "50" in line
@@ -279,7 +279,7 @@ class TestReflectionResult:
 
 class TestDataCollection:
     def test_collect_today_distillations(self, populated_db):
-        from bantz.agent.workflows.reflection import _collect_today_distillations
+        from butler.agent.workflows.reflection import _collect_today_distillations
         pool, _ = populated_db
         today = datetime.now().strftime("%Y-%m-%d")
         distills = _collect_today_distillations(today)
@@ -287,13 +287,13 @@ class TestDataCollection:
         assert "weather" in distills[0]["summary"].lower() or "docker" in distills[0]["summary"].lower()
 
     def test_collect_today_distillations_empty(self, tmp_db):
-        from bantz.agent.workflows.reflection import _collect_today_distillations
+        from butler.agent.workflows.reflection import _collect_today_distillations
         pool, _ = tmp_db
         distills = _collect_today_distillations("2099-01-01")
         assert distills == []
 
     def test_collect_today_sessions_meta(self, populated_db):
-        from bantz.agent.workflows.reflection import _collect_today_sessions_meta
+        from butler.agent.workflows.reflection import _collect_today_sessions_meta
         pool, _ = populated_db
         today = datetime.now().strftime("%Y-%m-%d")
         sessions, messages = _collect_today_sessions_meta(today)
@@ -301,7 +301,7 @@ class TestDataCollection:
         assert messages == 12
 
     def test_collect_undistilled_sessions(self, populated_db):
-        from bantz.agent.workflows.reflection import _collect_undistilled_sessions
+        from butler.agent.workflows.reflection import _collect_undistilled_sessions
         pool, _ = populated_db
         today = datetime.now().strftime("%Y-%m-%d")
         # All sessions have distillations
@@ -309,7 +309,7 @@ class TestDataCollection:
         assert len(undistilled) == 0
 
     def test_collect_undistilled_sessions_with_gap(self, populated_db):
-        from bantz.agent.workflows.reflection import _collect_undistilled_sessions
+        from butler.agent.workflows.reflection import _collect_undistilled_sessions
         pool, _ = populated_db
         today = datetime.now().strftime("%Y-%m-%d")
         # Add a third conversation without distillation
@@ -330,7 +330,7 @@ class TestDataCollection:
 
 class TestBuildSummariesText:
     def test_with_distillations(self):
-        from bantz.agent.workflows.reflection import _build_summaries_text
+        from butler.agent.workflows.reflection import _build_summaries_text
         distills = [
             {"summary": "Checked weather", "topics": "weather", "decisions": "", "people": "Ali", "exchange_count": 5},
             {"summary": "Fixed Docker", "topics": "docker", "decisions": "Use bridge", "people": "", "exchange_count": 3},
@@ -342,14 +342,14 @@ class TestBuildSummariesText:
         assert "Fixed Docker" in text
 
     def test_with_undistilled(self):
-        from bantz.agent.workflows.reflection import _build_summaries_text
+        from butler.agent.workflows.reflection import _build_summaries_text
         undistilled = [{"msg_count": 5, "user_preview": "help with Docker"}]
         text = _build_summaries_text([], undistilled)
         assert "no distillation" in text
         assert "Docker" in text
 
     def test_empty(self):
-        from bantz.agent.workflows.reflection import _build_summaries_text
+        from butler.agent.workflows.reflection import _build_summaries_text
         text = _build_summaries_text([], [])
         assert "No conversations" in text
 
@@ -360,7 +360,7 @@ class TestBuildSummariesText:
 
 class TestParseReflectionJson:
     def test_valid_json(self):
-        from bantz.agent.workflows.reflection import _parse_reflection_json
+        from butler.agent.workflows.reflection import _parse_reflection_json
         raw = json.dumps({
             "summary": "Good day",
             "decisions": ["Use LanceDB"],
@@ -375,19 +375,19 @@ class TestParseReflectionJson:
         assert result["decisions"] == ["Use LanceDB"]
 
     def test_fenced_json(self):
-        from bantz.agent.workflows.reflection import _parse_reflection_json
+        from butler.agent.workflows.reflection import _parse_reflection_json
         raw = '```json\n{"summary": "Test", "decisions": [], "tasks_created": [], "tasks_completed": [], "people_mentioned": [], "reflection": "", "unresolved": []}\n```'
         result = _parse_reflection_json(raw)
         assert result["summary"] == "Test"
 
     def test_json_with_prefix(self):
-        from bantz.agent.workflows.reflection import _parse_reflection_json
+        from butler.agent.workflows.reflection import _parse_reflection_json
         raw = 'Here is the reflection:\n{"summary": "Test", "decisions": []}'
         result = _parse_reflection_json(raw)
         assert result["summary"] == "Test"
 
     def test_malformed_fallback(self):
-        from bantz.agent.workflows.reflection import _parse_reflection_json
+        from butler.agent.workflows.reflection import _parse_reflection_json
         raw = "This is just plain text without JSON"
         result = _parse_reflection_json(raw)
         assert result["summary"]  # should contain the raw text
@@ -396,7 +396,7 @@ class TestParseReflectionJson:
 
 class TestParseEntityJson:
     def test_valid_array(self):
-        from bantz.agent.workflows.reflection import _parse_entity_json
+        from butler.agent.workflows.reflection import _parse_entity_json
         raw = json.dumps([
             {"label": "Person", "key_prop": "name", "value": "Ali"},
         ])
@@ -405,17 +405,17 @@ class TestParseEntityJson:
         assert result[0]["label"] == "Person"
 
     def test_fenced_array(self):
-        from bantz.agent.workflows.reflection import _parse_entity_json
+        from butler.agent.workflows.reflection import _parse_entity_json
         raw = '```json\n[{"label": "Topic", "key_prop": "name", "value": "Docker"}]\n```'
         result = _parse_entity_json(raw)
         assert len(result) == 1
 
     def test_empty(self):
-        from bantz.agent.workflows.reflection import _parse_entity_json
+        from butler.agent.workflows.reflection import _parse_entity_json
         assert _parse_entity_json("[]") == []
 
     def test_malformed(self):
-        from bantz.agent.workflows.reflection import _parse_entity_json
+        from butler.agent.workflows.reflection import _parse_entity_json
         assert _parse_entity_json("not json") == []
 
 
@@ -425,7 +425,7 @@ class TestParseEntityJson:
 
 class TestRuleBasedEntityExtraction:
     def test_extracts_people(self):
-        from bantz.agent.workflows.reflection import _rule_based_entity_extraction
+        from butler.agent.workflows.reflection import _rule_based_entity_extraction
         reflection = {
             "people_mentioned": ["Ali (study group)", "Prof. Yilmaz (exam)"],
             "decisions": [],
@@ -438,7 +438,7 @@ class TestRuleBasedEntityExtraction:
         assert "Prof. Yilmaz" in person_names
 
     def test_extracts_decisions(self):
-        from bantz.agent.workflows.reflection import _rule_based_entity_extraction
+        from butler.agent.workflows.reflection import _rule_based_entity_extraction
         reflection = {
             "people_mentioned": [],
             "decisions": ["Use LanceDB", "AT-SPI before VLM"],
@@ -450,7 +450,7 @@ class TestRuleBasedEntityExtraction:
         assert "Use LanceDB" in decision_vals
 
     def test_extracts_tasks(self):
-        from bantz.agent.workflows.reflection import _rule_based_entity_extraction
+        from butler.agent.workflows.reflection import _rule_based_entity_extraction
         reflection = {
             "people_mentioned": [],
             "decisions": [],
@@ -463,7 +463,7 @@ class TestRuleBasedEntityExtraction:
         assert "Fix Docker" in task_vals
 
     def test_empty_reflection(self):
-        from bantz.agent.workflows.reflection import _rule_based_entity_extraction
+        from butler.agent.workflows.reflection import _rule_based_entity_extraction
         entities = _rule_based_entity_extraction({})
         assert entities == []
 
@@ -475,7 +475,7 @@ class TestRuleBasedEntityExtraction:
 class TestEntityResolution:
     @pytest.mark.asyncio
     async def test_fetch_existing_entities_graph_disabled(self):
-        from bantz.agent.workflows.reflection import _fetch_existing_entities_from_graph
+        from butler.agent.workflows.reflection import _fetch_existing_entities_from_graph
         mock_bridge = MagicMock()
         mock_bridge.enabled = False
         with patch("bantz.memory.bridge.palace_bridge", mock_bridge):
@@ -484,7 +484,7 @@ class TestEntityResolution:
 
     @pytest.mark.asyncio
     async def test_fetch_existing_entities_graph_enabled(self):
-        from bantz.agent.workflows.reflection import _fetch_existing_entities_from_graph
+        from butler.agent.workflows.reflection import _fetch_existing_entities_from_graph
         mock_bridge = MagicMock()
         mock_bridge.enabled = True
         mock_kg = MagicMock()
@@ -500,7 +500,7 @@ class TestEntityResolution:
 
     @pytest.mark.asyncio
     async def test_fetch_existing_entities_no_graph(self):
-        from bantz.agent.workflows.reflection import _fetch_existing_entities_from_graph
+        from butler.agent.workflows.reflection import _fetch_existing_entities_from_graph
         with patch.dict("sys.modules", {"bantz.memory.bridge": None}):
             result = await _fetch_existing_entities_from_graph()
         assert "not available" in result.lower() or "graph" in result.lower()
@@ -513,7 +513,7 @@ class TestEntityResolution:
 class TestPruneOldMessages:
     def test_prune_removes_old_messages_and_vectors(self, populated_db):
         """Messages AND vectors older than 30 days should be deleted."""
-        from bantz.agent.workflows.reflection import _prune_old_messages
+        from butler.agent.workflows.reflection import _prune_old_messages
         pool, _ = populated_db
 
         # Add an old conversation (40 days ago) with distillation
@@ -571,14 +571,14 @@ class TestPruneOldMessages:
             assert dist == 1
 
     def test_prune_skips_recent_messages(self, populated_db):
-        from bantz.agent.workflows.reflection import _prune_old_messages
+        from butler.agent.workflows.reflection import _prune_old_messages
         pool, _ = populated_db
         msgs_deleted, vecs_deleted = _prune_old_messages(keep_days=30)
         # Today's messages should NOT be deleted
         assert msgs_deleted == 0
 
     def test_prune_dry_run(self, populated_db):
-        from bantz.agent.workflows.reflection import _prune_old_messages
+        from butler.agent.workflows.reflection import _prune_old_messages
         pool, _ = populated_db
         # Add old data
         old_date = (datetime.now() - timedelta(days=40)).isoformat()
@@ -611,7 +611,7 @@ class TestPruneOldMessages:
 
     def test_prune_only_distilled_conversations(self, populated_db):
         """Only conversations WITH distillations should be pruned."""
-        from bantz.agent.workflows.reflection import _prune_old_messages
+        from butler.agent.workflows.reflection import _prune_old_messages
         pool, _ = populated_db
 
         old_date = (datetime.now() - timedelta(days=40)).isoformat()
@@ -643,8 +643,8 @@ class TestPruneOldMessages:
 class TestStoreReflection:
     @pytest.mark.asyncio
     async def test_stores_to_kv(self, tmp_path):
-        from bantz.agent.workflows.reflection import _store_reflection, ReflectionResult
-        from bantz.data.connection_pool import get_pool
+        from butler.agent.workflows.reflection import _store_reflection, ReflectionResult
+        from butler.data.connection_pool import get_pool
         # The KV store inside _store_reflection opens _data_dir()/bantz.db
         kv_db_path = tmp_path / "bantz.db"
         pool = get_pool(kv_db_path)
@@ -661,7 +661,7 @@ class TestStoreReflection:
                 mock_mem.add = MagicMock()
                 await _store_reflection(result)
 
-        from bantz.data.sqlite_store import SQLiteKVStore
+        from butler.data.sqlite_store import SQLiteKVStore
         kv = SQLiteKVStore(kv_db_path)
         stored = json.loads(kv.get("reflection_2026-03-10", "{}"))
         assert stored["summary"] == "Good day"
@@ -675,7 +675,7 @@ class TestStoreReflection:
 class TestSendReport:
     @pytest.mark.asyncio
     async def test_sends_notification(self):
-        from bantz.agent.workflows.reflection import _send_report, ReflectionResult
+        from butler.agent.workflows.reflection import _send_report, ReflectionResult
         result = ReflectionResult(date="2026-03-10", sessions=2, total_messages=12)
         mock_notifier = MagicMock()
         mock_notifier.enabled = True
@@ -688,7 +688,7 @@ class TestSendReport:
 
     @pytest.mark.asyncio
     async def test_skips_telegram_if_no_token(self):
-        from bantz.agent.workflows.reflection import _send_report, ReflectionResult
+        from butler.agent.workflows.reflection import _send_report, ReflectionResult
         result = ReflectionResult(date="2026-03-10")
         with patch("bantz.agent.notifier.notifier") as mock_not:
             mock_not.enabled = False
@@ -708,7 +708,7 @@ class TestRunReflection:
     @pytest.mark.asyncio
     async def test_zero_sessions_graceful(self, tmp_db):
         """0 sessions → immediate return with 'No conversations today'."""
-        from bantz.agent.workflows.reflection import run_reflection
+        from butler.agent.workflows.reflection import run_reflection
         pool, tmp_path = tmp_db
 
         with patch("bantz.agent.workflows.reflection._data_dir", return_value=tmp_path):
@@ -728,7 +728,7 @@ class TestRunReflection:
     @pytest.mark.asyncio
     async def test_dry_run_no_llm_calls(self, populated_db):
         """Dry-run mode should NOT call the LLM."""
-        from bantz.agent.workflows.reflection import run_reflection
+        from butler.agent.workflows.reflection import run_reflection
         pool, tmp_path = populated_db
 
         with patch("bantz.agent.workflows.reflection._data_dir", return_value=tmp_path):
@@ -749,7 +749,7 @@ class TestRunReflection:
     @pytest.mark.asyncio
     async def test_normal_run_with_mocked_llm(self, populated_db):
         """Normal run should call LLM, parse result, and store."""
-        from bantz.agent.workflows.reflection import run_reflection
+        from butler.agent.workflows.reflection import run_reflection
         pool, tmp_path = populated_db
 
         llm_response = json.dumps({
@@ -791,19 +791,19 @@ class TestRunReflection:
     @pytest.mark.asyncio
     async def test_timeout_constant_is_generous(self):
         """Rec #2: verify total timeout is 10 min (generous for local LLM)."""
-        from bantz.agent.workflows.reflection import _TOTAL_TIMEOUT
+        from butler.agent.workflows.reflection import _TOTAL_TIMEOUT
         assert _TOTAL_TIMEOUT >= 600  # at least 10 minutes
 
     @pytest.mark.asyncio
     async def test_llm_timeout_is_reasonable(self):
         """Each LLM call should have a per-call timeout."""
-        from bantz.agent.workflows.reflection import _LLM_TIMEOUT
+        from butler.agent.workflows.reflection import _LLM_TIMEOUT
         assert _LLM_TIMEOUT >= 60  # at least 1 minute per call
 
     @pytest.mark.asyncio
     async def test_date_override(self, populated_db):
         """date_override should reflect on a specific date."""
-        from bantz.agent.workflows.reflection import run_reflection
+        from butler.agent.workflows.reflection import run_reflection
         pool, tmp_path = populated_db
 
         with patch("bantz.agent.workflows.reflection._data_dir", return_value=tmp_path):
@@ -830,15 +830,15 @@ class TestRunReflection:
 
 class TestListReflections:
     def test_list_empty(self, tmp_db):
-        from bantz.agent.workflows.reflection import list_reflections
+        from butler.agent.workflows.reflection import list_reflections
         _, tmp_path = tmp_db
         with patch("bantz.agent.workflows.reflection._data_dir", return_value=tmp_path):
             results = list_reflections()
         assert results == []
 
     def test_list_with_data(self, tmp_db):
-        from bantz.agent.workflows.reflection import list_reflections
-        from bantz.data.sqlite_store import SQLiteKVStore
+        from butler.agent.workflows.reflection import list_reflections
+        from butler.data.sqlite_store import SQLiteKVStore
         _, tmp_path = tmp_db
         kv = SQLiteKVStore(tmp_path / "bantz.db")
         kv.set("reflection_2026-03-08", json.dumps({"date": "2026-03-08", "summary": "Day 1"}))
@@ -883,8 +883,8 @@ class TestCLIArgs:
 class TestJobSchedulerDelegation:
     @pytest.mark.asyncio
     async def test_job_reflection_delegates(self):
-        from bantz.agent.job_scheduler import _job_reflection
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.job_scheduler import _job_reflection
+        from butler.agent.workflows.reflection import ReflectionResult
 
         mock_result = ReflectionResult(
             date="2026-03-10",
@@ -898,7 +898,7 @@ class TestJobSchedulerDelegation:
         mock_run.assert_awaited_once_with(dry_run=False)
 
     def test_registry_updated(self):
-        from bantz.agent.job_scheduler import _JOB_REGISTRY
+        from butler.agent.job_scheduler import _JOB_REGISTRY
         assert "reflection" in _JOB_REGISTRY
         fn, desc = _JOB_REGISTRY["reflection"]
         assert "reflection" in desc.lower()
@@ -910,7 +910,7 @@ class TestJobSchedulerDelegation:
 
 class TestEdgeCases:
     def test_parse_reflection_empty_decisions(self):
-        from bantz.agent.workflows.reflection import _parse_reflection_json
+        from butler.agent.workflows.reflection import _parse_reflection_json
         raw = json.dumps({
             "summary": "Quiet day", "decisions": [],
             "tasks_created": [], "tasks_completed": [],
@@ -921,7 +921,7 @@ class TestEdgeCases:
         assert result["decisions"] == []
 
     def test_reflection_result_serializable(self):
-        from bantz.agent.workflows.reflection import ReflectionResult
+        from butler.agent.workflows.reflection import ReflectionResult
         r = ReflectionResult(
             date="2026-03-10",
             decisions=["a", "b"],
@@ -933,7 +933,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_llm_failure_falls_back_to_rules(self, populated_db):
         """If LLM entity extraction fails, fallback to rule-based."""
-        from bantz.agent.workflows.reflection import _llm_extract_entities
+        from butler.agent.workflows.reflection import _llm_extract_entities
 
         with patch("bantz.llm.gemini.gemini") as mock_gemini:
             mock_gemini.is_enabled.return_value = False
@@ -952,12 +952,12 @@ class TestEdgeCases:
         assert len(entities) >= 2  # Ali + Use LanceDB
 
     def test_prune_raw_days_constant(self):
-        from bantz.agent.workflows.reflection import _PRUNE_RAW_DAYS
+        from butler.agent.workflows.reflection import _PRUNE_RAW_DAYS
         assert _PRUNE_RAW_DAYS == 30
 
     @pytest.mark.asyncio
     async def test_store_entities_graph_disabled(self):
-        from bantz.agent.workflows.reflection import _store_entities_to_graph
+        from butler.agent.workflows.reflection import _store_entities_to_graph
         mock_bridge = MagicMock()
         mock_bridge.enabled = False
         with patch("bantz.memory.bridge.palace_bridge", mock_bridge):

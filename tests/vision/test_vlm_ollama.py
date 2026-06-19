@@ -42,43 +42,43 @@ FAKE_B64 = "aGVsbG8="  # base64("hello")
 
 class TestVLMConfigFields:
     def test_vlm_backend_field_exists(self):
-        from bantz.config import config
+        from butler.config import config
         assert hasattr(config, "vlm_backend")
 
     def test_vlm_model_field_exists(self):
-        from bantz.config import config
+        from butler.config import config
         assert hasattr(config, "vlm_model")
 
     def test_vlm_backend_default_is_ollama(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None, BANTZ_OLLAMA_MODEL="x")
         assert c.vlm_backend == "ollama"
 
     def test_vlm_model_default_is_llava(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None, BANTZ_OLLAMA_MODEL="x")
         assert c.vlm_model == "llava"
 
     def test_vlm_timeout_default_is_30(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None, BANTZ_OLLAMA_MODEL="x")
         assert c.vlm_timeout == 30
 
     def test_vlm_enabled_auto_on_when_ollama_backend(self):
         """backend=ollama auto-enables VLM even when BANTZ_VLM_ENABLED is not set."""
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None, BANTZ_OLLAMA_MODEL="x", BANTZ_VLM_BACKEND="ollama")
         assert c.vlm_enabled is True
 
     def test_vlm_enabled_not_auto_on_when_remote_backend(self):
         """backend=remote does NOT auto-enable; user must set BANTZ_VLM_ENABLED=true."""
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None, BANTZ_OLLAMA_MODEL="x", BANTZ_VLM_BACKEND="remote")
         assert c.vlm_enabled is False
 
     def test_vlm_enabled_explicit_false_overrides_nothing(self):
         """Explicitly disabled VLM stays disabled regardless of backend."""
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(
             _env_file=None,
             BANTZ_OLLAMA_MODEL="x",
@@ -93,7 +93,7 @@ class TestVLMConfigFields:
         assert hasattr(c, "vlm_enabled")
 
     def test_custom_vlm_model_accepted(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None, BANTZ_OLLAMA_MODEL="x", BANTZ_VLM_MODEL="llava:13b")
         assert c.vlm_model == "llava:13b"
 
@@ -104,7 +104,7 @@ class TestAnalyzeScreenshotRouting:
     @pytest.mark.asyncio
     async def test_ollama_backend_calls_ollama_not_remote(self):
         """When backend=ollama, _call_remote must never be called."""
-        from bantz.vision.remote_vlm import analyze_screenshot
+        from butler.vision.remote_vlm import analyze_screenshot
 
         mock_cfg = MagicMock()
         mock_cfg.vlm_enabled = True
@@ -133,7 +133,7 @@ class TestAnalyzeScreenshotRouting:
     @pytest.mark.asyncio
     async def test_remote_backend_calls_remote_first(self):
         """When backend=remote, _call_remote is tried first."""
-        from bantz.vision.remote_vlm import analyze_screenshot
+        from butler.vision.remote_vlm import analyze_screenshot
 
         mock_cfg = MagicMock()
         mock_cfg.vlm_enabled = True
@@ -163,7 +163,7 @@ class TestAnalyzeScreenshotRouting:
     @pytest.mark.asyncio
     async def test_remote_backend_falls_back_to_ollama_on_failure(self):
         """When backend=remote and remote fails, Ollama is tried as fallback."""
-        from bantz.vision.remote_vlm import analyze_screenshot
+        from butler.vision.remote_vlm import analyze_screenshot
 
         mock_cfg = MagicMock()
         mock_cfg.vlm_enabled = True
@@ -194,7 +194,7 @@ class TestAnalyzeScreenshotRouting:
 
     @pytest.mark.asyncio
     async def test_vlm_disabled_returns_error(self):
-        from bantz.vision.remote_vlm import analyze_screenshot
+        from butler.vision.remote_vlm import analyze_screenshot
 
         mock_cfg = MagicMock()
         mock_cfg.vlm_enabled = False
@@ -212,7 +212,7 @@ class TestCallOllamaVlmModelSelection:
     @pytest.mark.asyncio
     async def test_configured_model_tried_first(self):
         """config.vlm_model is the first model attempted."""
-        from bantz.vision.remote_vlm import _call_ollama_vlm
+        from butler.vision.remote_vlm import _call_ollama_vlm
 
         mock_cfg = MagicMock()
         mock_cfg.vlm_model = "llava:13b"
@@ -241,7 +241,7 @@ class TestCallOllamaVlmModelSelection:
     @pytest.mark.asyncio
     async def test_fallback_on_404(self):
         """When configured model returns 404, fall back to llava."""
-        from bantz.vision.remote_vlm import _call_ollama_vlm
+        from butler.vision.remote_vlm import _call_ollama_vlm
 
         mock_cfg = MagicMock()
         mock_cfg.vlm_model = "nonexistent-model"
@@ -272,7 +272,7 @@ class TestCallOllamaVlmModelSelection:
     @pytest.mark.asyncio
     async def test_all_models_unavailable_returns_failure(self):
         """All 404s → VLMResult(success=False)."""
-        from bantz.vision.remote_vlm import _call_ollama_vlm
+        from butler.vision.remote_vlm import _call_ollama_vlm
 
         mock_cfg = MagicMock()
         mock_cfg.vlm_model = "no-model"
@@ -297,7 +297,7 @@ class TestCallOllamaVlmModelSelection:
     @pytest.mark.asyncio
     async def test_result_source_includes_model_name(self):
         """result.source should be 'ollama:<model>'."""
-        from bantz.vision.remote_vlm import _call_ollama_vlm
+        from butler.vision.remote_vlm import _call_ollama_vlm
 
         mock_cfg = MagicMock()
         mock_cfg.vlm_model = "llava"
@@ -323,7 +323,7 @@ class TestScreenshotToolVlmAnalyze:
     @pytest.mark.asyncio
     async def test_vlm_analyze_calls_describe_screen(self):
         """_vlm_analyze delegates entirely to describe_screen."""
-        from bantz.tools.screenshot_tool import ScreenshotTool
+        from butler.tools.screenshot_tool import ScreenshotTool
 
         fake_result = MagicMock()
         fake_result.success = True
@@ -342,7 +342,7 @@ class TestScreenshotToolVlmAnalyze:
     @pytest.mark.asyncio
     async def test_vlm_analyze_returns_empty_on_failure(self):
         """Returns '' when VLM fails, without raising."""
-        from bantz.tools.screenshot_tool import ScreenshotTool
+        from butler.tools.screenshot_tool import ScreenshotTool
 
         failed_result = MagicMock()
         failed_result.success = False
@@ -358,7 +358,7 @@ class TestScreenshotToolVlmAnalyze:
     @pytest.mark.asyncio
     async def test_vlm_analyze_no_double_call(self):
         """_vlm_analyze must call describe_screen exactly once (no fallback double-call)."""
-        from bantz.tools.screenshot_tool import ScreenshotTool
+        from butler.tools.screenshot_tool import ScreenshotTool
 
         ok_result = MagicMock()
         ok_result.success = True

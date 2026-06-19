@@ -63,7 +63,7 @@ def mock_config(tmp_data_dir):
 
 class TestStepResult:
     def test_defaults(self):
-        from bantz.agent.workflows.maintenance import StepResult
+        from butler.agent.workflows.maintenance import StepResult
         sr = StepResult(name="test")
         assert sr.ok is True
         assert sr.skipped is False
@@ -72,7 +72,7 @@ class TestStepResult:
         assert sr.detail == ""
 
     def test_custom_values(self):
-        from bantz.agent.workflows.maintenance import StepResult
+        from butler.agent.workflows.maintenance import StepResult
         sr = StepResult(name="docker", ok=False, detail="err", bytes_freed=1024)
         assert not sr.ok
         assert sr.bytes_freed == 1024
@@ -80,7 +80,7 @@ class TestStepResult:
 
 class TestMaintenanceReport:
     def _make_report(self, **kw):
-        from bantz.agent.workflows.maintenance import StepResult, MaintenanceReport
+        from butler.agent.workflows.maintenance import StepResult, MaintenanceReport
         defaults = dict(
             started_at="2025-01-01T03:00:00",
             finished_at="2025-01-01T03:01:00",
@@ -117,7 +117,7 @@ class TestMaintenanceReport:
         assert "+0.1" in s
 
     def test_summary_counts(self):
-        from bantz.agent.workflows.maintenance import StepResult
+        from butler.agent.workflows.maintenance import StepResult
         r = self._make_report(steps=[
             StepResult(name="a", ok=True),
             StepResult(name="b", ok=True, skipped=True),
@@ -150,27 +150,27 @@ class TestMaintenanceReport:
 
 class TestParseDockerSize:
     def test_gb(self):
-        from bantz.agent.workflows.maintenance import _parse_docker_size
+        from butler.agent.workflows.maintenance import _parse_docker_size
         assert _parse_docker_size("Total reclaimed space: 1.5GB") == int(1.5 * 1024**3)
 
     def test_mb(self):
-        from bantz.agent.workflows.maintenance import _parse_docker_size
+        from butler.agent.workflows.maintenance import _parse_docker_size
         assert _parse_docker_size("Total reclaimed space: 250MB") == int(250 * 1024**2)
 
     def test_kb(self):
-        from bantz.agent.workflows.maintenance import _parse_docker_size
+        from butler.agent.workflows.maintenance import _parse_docker_size
         assert _parse_docker_size("Total reclaimed space: 512KB") == int(512 * 1024)
 
     def test_bytes(self):
-        from bantz.agent.workflows.maintenance import _parse_docker_size
+        from butler.agent.workflows.maintenance import _parse_docker_size
         assert _parse_docker_size("Total reclaimed space: 1024B") == 1024
 
     def test_no_match(self):
-        from bantz.agent.workflows.maintenance import _parse_docker_size
+        from butler.agent.workflows.maintenance import _parse_docker_size
         assert _parse_docker_size("nothing here") == 0
 
     def test_case_insensitive(self):
-        from bantz.agent.workflows.maintenance import _parse_docker_size
+        from butler.agent.workflows.maintenance import _parse_docker_size
         assert _parse_docker_size("Total reclaimed space: 2.0gb") == int(2.0 * 1024**3)
 
 
@@ -181,28 +181,28 @@ class TestParseDockerSize:
 class TestRunCmd:
     @pytest.mark.asyncio
     async def test_success(self):
-        from bantz.agent.workflows.maintenance import _run_cmd
+        from butler.agent.workflows.maintenance import _run_cmd
         rc, out, err = await _run_cmd("echo", "hello")
         assert rc == 0
         assert "hello" in out
 
     @pytest.mark.asyncio
     async def test_missing_binary(self):
-        from bantz.agent.workflows.maintenance import _run_cmd
+        from butler.agent.workflows.maintenance import _run_cmd
         rc, out, err = await _run_cmd("__noexist_bantz__", "--version")
         assert rc == -1
         assert "not installed" in err
 
     @pytest.mark.asyncio
     async def test_timeout(self):
-        from bantz.agent.workflows.maintenance import _run_cmd
+        from butler.agent.workflows.maintenance import _run_cmd
         rc, out, err = await _run_cmd("sleep", "60", timeout=0.1)
         assert rc == -1
         assert "timed out" in err
 
     @pytest.mark.asyncio
     async def test_nonzero_exit(self):
-        from bantz.agent.workflows.maintenance import _run_cmd
+        from butler.agent.workflows.maintenance import _run_cmd
         rc, out, err = await _run_cmd("false")
         assert rc != 0
 
@@ -213,7 +213,7 @@ class TestRunCmd:
 
 class TestDiskUsage:
     def test_returns_tuple(self):
-        from bantz.agent.workflows.maintenance import _disk_usage
+        from butler.agent.workflows.maintenance import _disk_usage
         free_bytes, free_pct = _disk_usage("/")
         assert free_bytes > 0
         assert 0 < free_pct <= 100
@@ -226,7 +226,7 @@ class TestDiskUsage:
 class TestStepDockerCleanup:
     @pytest.mark.asyncio
     async def test_docker_not_installed(self):
-        from bantz.agent.workflows.maintenance import _step_docker_cleanup
+        from butler.agent.workflows.maintenance import _step_docker_cleanup
         with patch("bantz.agent.workflows.maintenance._run_cmd",
                    new_callable=AsyncMock,
                    return_value=(-1, "", "docker: not installed")):
@@ -236,7 +236,7 @@ class TestStepDockerCleanup:
 
     @pytest.mark.asyncio
     async def test_docker_dry_run(self):
-        from bantz.agent.workflows.maintenance import _step_docker_cleanup
+        from butler.agent.workflows.maintenance import _step_docker_cleanup
 
         async def fake_cmd(*args, **kw):
             if args[0] == "docker" and args[1] == "info":
@@ -250,7 +250,7 @@ class TestStepDockerCleanup:
 
     @pytest.mark.asyncio
     async def test_docker_success(self):
-        from bantz.agent.workflows.maintenance import _step_docker_cleanup
+        from butler.agent.workflows.maintenance import _step_docker_cleanup
 
         async def fake_cmd(*args, **kw):
             if args[1] == "info":
@@ -291,13 +291,13 @@ class TestStepTempCleanup:
             pass
 
         # Simpler approach — mock the function and verify its contract
-        from bantz.agent.workflows.maintenance import StepResult
+        from butler.agent.workflows.maintenance import StepResult
         result = StepResult(name="Temp cleanup", detail="cleaned 1 items (0.0 MB)")
         assert "cleaned" in result.detail
 
     @pytest.mark.asyncio
     async def test_dry_run_skips(self, tmp_path):
-        from bantz.agent.workflows.maintenance import _step_temp_cleanup
+        from butler.agent.workflows.maintenance import _step_temp_cleanup
         # Dry-run: should skip
         r = await _step_temp_cleanup(dry_run=True)
         assert r.skipped or "would clean" in r.detail
@@ -310,7 +310,7 @@ class TestStepTempCleanup:
 class TestStepDiskCheck:
     @pytest.mark.asyncio
     async def test_normal_disk(self):
-        from bantz.agent.workflows.maintenance import _step_disk_check
+        from butler.agent.workflows.maintenance import _step_disk_check
         with patch("bantz.agent.workflows.maintenance._disk_usage", return_value=(100 * 1024**3, 50.0)):
             r = await _step_disk_check(dry_run=False)
         assert r.ok
@@ -318,7 +318,7 @@ class TestStepDiskCheck:
 
     @pytest.mark.asyncio
     async def test_low_disk(self):
-        from bantz.agent.workflows.maintenance import _step_disk_check
+        from butler.agent.workflows.maintenance import _step_disk_check
         with patch("bantz.agent.workflows.maintenance._disk_usage", return_value=(5 * 1024**3, 8.0)):
             r = await _step_disk_check(dry_run=False)
         assert r.ok  # warn but still ok
@@ -326,7 +326,7 @@ class TestStepDiskCheck:
 
     @pytest.mark.asyncio
     async def test_emergency_disk(self):
-        from bantz.agent.workflows.maintenance import _step_disk_check
+        from butler.agent.workflows.maintenance import _step_disk_check
         with patch("bantz.agent.workflows.maintenance._disk_usage", return_value=(1 * 1024**3, 3.0)):
             r = await _step_disk_check(dry_run=False)
         assert not r.ok
@@ -334,7 +334,7 @@ class TestStepDiskCheck:
 
     @pytest.mark.asyncio
     async def test_emergency_dry_run_no_cleanup(self):
-        from bantz.agent.workflows.maintenance import _step_disk_check
+        from butler.agent.workflows.maintenance import _step_disk_check
         with patch("bantz.agent.workflows.maintenance._disk_usage", return_value=(1 * 1024**3, 3.0)):
             with patch("shutil.rmtree") as mock_rm:
                 r = await _step_disk_check(dry_run=True)
@@ -349,7 +349,7 @@ class TestStepDiskCheck:
 class TestStepServiceHealth:
     @pytest.mark.asyncio
     async def test_ollama_up_db_ok(self, tmp_data_dir, mock_config):
-        from bantz.agent.workflows.maintenance import _step_service_health
+        from butler.agent.workflows.maintenance import _step_service_health
 
         # Create a sqlite DB
         db_path = tmp_data_dir / "bantz.db"
@@ -373,7 +373,7 @@ class TestStepServiceHealth:
 
     @pytest.mark.asyncio
     async def test_ollama_down(self, tmp_data_dir):
-        from bantz.agent.workflows.maintenance import _step_service_health
+        from butler.agent.workflows.maintenance import _step_service_health
         mock_client = AsyncMock()
         mock_client.get = AsyncMock(side_effect=Exception("conn refused"))
         with patch("bantz.agent.workflows.maintenance._data_dir", return_value=tmp_data_dir):
@@ -383,7 +383,7 @@ class TestStepServiceHealth:
 
     @pytest.mark.asyncio
     async def test_db_not_found(self, tmp_data_dir):
-        from bantz.agent.workflows.maintenance import _step_service_health
+        from butler.agent.workflows.maintenance import _step_service_health
         # No DB file — should report "not found"
         mock_client = AsyncMock()
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -403,7 +403,7 @@ class TestStepServiceHealth:
 class TestStepLogRotation:
     @pytest.mark.asyncio
     async def test_no_log_file(self, tmp_data_dir):
-        from bantz.agent.workflows.maintenance import _step_log_rotation
+        from butler.agent.workflows.maintenance import _step_log_rotation
         with patch("bantz.agent.workflows.maintenance._data_dir", return_value=tmp_data_dir):
             r = await _step_log_rotation(dry_run=False)
         assert r.skipped
@@ -411,7 +411,7 @@ class TestStepLogRotation:
 
     @pytest.mark.asyncio
     async def test_empty_log_file(self, tmp_data_dir):
-        from bantz.agent.workflows.maintenance import _step_log_rotation
+        from butler.agent.workflows.maintenance import _step_log_rotation
         (tmp_data_dir / "bantz.log").write_text("")
         with patch("bantz.agent.workflows.maintenance._data_dir", return_value=tmp_data_dir):
             r = await _step_log_rotation(dry_run=False)
@@ -419,7 +419,7 @@ class TestStepLogRotation:
 
     @pytest.mark.asyncio
     async def test_dry_run(self, tmp_data_dir):
-        from bantz.agent.workflows.maintenance import _step_log_rotation
+        from butler.agent.workflows.maintenance import _step_log_rotation
         (tmp_data_dir / "bantz.log").write_text("log data\n" * 100)
         with patch("bantz.agent.workflows.maintenance._data_dir", return_value=tmp_data_dir):
             r = await _step_log_rotation(dry_run=True)
@@ -428,7 +428,7 @@ class TestStepLogRotation:
 
     @pytest.mark.asyncio
     async def test_normal_rotation(self, tmp_data_dir):
-        from bantz.agent.workflows.maintenance import _step_log_rotation
+        from butler.agent.workflows.maintenance import _step_log_rotation
         log_content = "lots of log content\n" * 1000
         (tmp_data_dir / "bantz.log").write_text(log_content)
 
@@ -449,7 +449,7 @@ class TestStepLogRotation:
 
     @pytest.mark.asyncio
     async def test_rotation_shifts_existing(self, tmp_data_dir):
-        from bantz.agent.workflows.maintenance import _step_log_rotation
+        from butler.agent.workflows.maintenance import _step_log_rotation
 
         # Create existing rotated logs
         for i in range(1, 4):
@@ -475,7 +475,7 @@ class TestStepLogRotation:
 class TestStepReport:
     @pytest.mark.asyncio
     async def test_stores_to_kv(self, tmp_data_dir, mock_config):
-        from bantz.agent.workflows.maintenance import (
+        from butler.agent.workflows.maintenance import (
             _step_report, MaintenanceReport, StepResult,
         )
         report = MaintenanceReport(
@@ -496,7 +496,7 @@ class TestStepReport:
 
         assert r.ok
         # Verify KV store
-        from bantz.data.sqlite_store import SQLiteKVStore
+        from butler.data.sqlite_store import SQLiteKVStore
         kv = SQLiteKVStore(tmp_data_dir / "bantz.db")
         assert kv.get("maintenance_last_run") is not None
         stored = json.loads(kv.get("maintenance_last_report", "{}"))
@@ -504,7 +504,7 @@ class TestStepReport:
 
     @pytest.mark.asyncio
     async def test_rl_reward_above_threshold(self, tmp_data_dir):
-        from bantz.agent.workflows.maintenance import (
+        from butler.agent.workflows.maintenance import (
             _step_report, MaintenanceReport, StepResult,
             _RL_REWARD_THRESHOLD_MB,
         )
@@ -530,7 +530,7 @@ class TestStepReport:
 
     @pytest.mark.asyncio
     async def test_rl_reward_below_threshold(self, tmp_data_dir):
-        from bantz.agent.workflows.maintenance import (
+        from butler.agent.workflows.maintenance import (
             _step_report, MaintenanceReport, StepResult,
         )
         report = MaintenanceReport(
@@ -555,7 +555,7 @@ class TestStepReport:
 
     @pytest.mark.asyncio
     async def test_rl_reward_skipped_dry_run(self, tmp_data_dir):
-        from bantz.agent.workflows.maintenance import (
+        from butler.agent.workflows.maintenance import (
             _step_report, MaintenanceReport, StepResult,
             _RL_REWARD_THRESHOLD_MB,
         )
@@ -587,7 +587,7 @@ class TestStepReport:
 class TestRunMaintenance:
     @pytest.mark.asyncio
     async def test_dry_run_all_steps(self, tmp_data_dir, mock_config):
-        from bantz.agent.workflows.maintenance import run_maintenance
+        from butler.agent.workflows.maintenance import run_maintenance
 
         with patch("bantz.agent.workflows.maintenance._data_dir", return_value=tmp_data_dir):
             with patch("bantz.agent.workflows.maintenance._run_cmd",
@@ -607,7 +607,7 @@ class TestRunMaintenance:
 
     @pytest.mark.asyncio
     async def test_normal_run_completes(self, tmp_data_dir, mock_config):
-        from bantz.agent.workflows.maintenance import run_maintenance
+        from butler.agent.workflows.maintenance import run_maintenance
 
         with patch("bantz.agent.workflows.maintenance._data_dir", return_value=tmp_data_dir):
             with patch("bantz.agent.workflows.maintenance._run_cmd",
@@ -627,7 +627,7 @@ class TestRunMaintenance:
     @pytest.mark.asyncio
     async def test_step_timeout_handled(self, tmp_data_dir):
         """A step that exceeds _STEP_TIMEOUT should be caught."""
-        from bantz.agent.workflows.maintenance import run_maintenance
+        from butler.agent.workflows.maintenance import run_maintenance
 
         async def slow_docker(dry_run):
             await asyncio.sleep(60)  # hang forever — will be timed out
@@ -653,7 +653,7 @@ class TestRunMaintenance:
     @pytest.mark.asyncio
     async def test_total_timeout_enforced(self, tmp_data_dir):
         """If total time exceeds _TOTAL_TIMEOUT, remaining steps should fail."""
-        from bantz.agent.workflows.maintenance import run_maintenance
+        from butler.agent.workflows.maintenance import run_maintenance
 
         with patch("bantz.agent.workflows.maintenance._data_dir", return_value=tmp_data_dir):
             with patch("bantz.agent.workflows.maintenance._run_cmd",
@@ -682,7 +682,7 @@ class TestCLIArgs:
         """--maintenance flag is in argparse."""
         import argparse
         # Parse --help equivalent
-        parser = argparse.ArgumentParser(prog="bantz")
+        parser = argparse.ArgumentParser(prog="butler")
         parser.add_argument("--maintenance", action="store_true")
         parser.add_argument("--dry-run", action="store_true")
         ns = parser.parse_args(["--maintenance", "--dry-run"])
@@ -691,7 +691,7 @@ class TestCLIArgs:
 
     def test_maintenance_without_dry_run(self):
         import argparse
-        parser = argparse.ArgumentParser(prog="bantz")
+        parser = argparse.ArgumentParser(prog="butler")
         parser.add_argument("--maintenance", action="store_true")
         parser.add_argument("--dry-run", action="store_true")
         ns = parser.parse_args(["--maintenance"])
@@ -707,8 +707,8 @@ class TestJobSchedulerDelegation:
     @pytest.mark.asyncio
     async def test_job_maintenance_delegates(self):
         """_job_maintenance() should call run_maintenance()."""
-        from bantz.agent.job_scheduler import _job_maintenance
-        from bantz.agent.workflows.maintenance import MaintenanceReport
+        from butler.agent.job_scheduler import _job_maintenance
+        from butler.agent.workflows.maintenance import MaintenanceReport
 
         mock_report = MaintenanceReport(
             started_at="now",
@@ -723,7 +723,7 @@ class TestJobSchedulerDelegation:
         mock_run.assert_awaited_once_with(dry_run=False)
 
     def test_registry_entry_updated(self):
-        from bantz.agent.job_scheduler import _JOB_REGISTRY
+        from butler.agent.job_scheduler import _JOB_REGISTRY
         assert "maintenance" in _JOB_REGISTRY
         fn, desc = _JOB_REGISTRY["maintenance"]
         assert "maintenance" in desc.lower() or "nightly" in desc.lower()
@@ -735,12 +735,12 @@ class TestJobSchedulerDelegation:
 
 class TestEdgeCases:
     def test_step_result_elapsed_tracked(self):
-        from bantz.agent.workflows.maintenance import StepResult
+        from butler.agent.workflows.maintenance import StepResult
         sr = StepResult(name="x", elapsed=1.234)
         assert sr.elapsed == pytest.approx(1.234)
 
     def test_report_zero_freed(self):
-        from bantz.agent.workflows.maintenance import MaintenanceReport, StepResult
+        from butler.agent.workflows.maintenance import MaintenanceReport, StepResult
         r = MaintenanceReport(steps=[StepResult(name="a")], total_freed_mb=0)
         s = r.summary()
         assert "0" in s
@@ -748,7 +748,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_report_telegram_skipped_if_no_token(self, tmp_data_dir):
         """Telegram should not send if no token configured."""
-        from bantz.agent.workflows.maintenance import (
+        from butler.agent.workflows.maintenance import (
             _step_report, MaintenanceReport, StepResult,
         )
         report = MaintenanceReport(
@@ -774,7 +774,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_docker_system_prune_failure(self):
         """Docker system prune failure should mark step not ok."""
-        from bantz.agent.workflows.maintenance import _step_docker_cleanup
+        from butler.agent.workflows.maintenance import _step_docker_cleanup
 
         async def fail_prune(*args, **kw):
             if args[1] == "info":
@@ -791,7 +791,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_log_rotation_keeps_max_7(self, tmp_data_dir):
         """Old logs beyond _LOG_KEEP should be deleted during rotation."""
-        from bantz.agent.workflows.maintenance import _step_log_rotation, _LOG_KEEP
+        from butler.agent.workflows.maintenance import _step_log_rotation, _LOG_KEEP
 
         # Create exactly _LOG_KEEP-1 existing rotated logs (1 through 6)
         # After rotation: current → .1.gz, existing shift up by 1,

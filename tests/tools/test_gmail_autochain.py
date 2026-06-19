@@ -28,7 +28,7 @@ def _run(coro):
 
 def _make_tool(*, compose_body: str = "Generated body.", subject: str = ""):
     """Create a GmailTool with mocked deps."""
-    from bantz.tools.gmail import GmailTool
+    from butler.tools.gmail import GmailTool
 
     tool = GmailTool()
     # Patch LLM compose — returns compose_body for _llm_compose
@@ -159,7 +159,7 @@ class TestComposeAndSend:
 class TestQuickRouteEmailPattern:
     @staticmethod
     def _route(text: str):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         return Brain._quick_route(text, text)
 
     def test_send_email_single_name(self):
@@ -215,7 +215,7 @@ class TestExistingFlowsUnchanged:
 
     def test_existing_send_requires_all_params(self):
         """Regular 'send' requires to + subject + body."""
-        from bantz.tools.gmail import GmailTool
+        from butler.tools.gmail import GmailTool
         tool = GmailTool()
         creds = _fake_creds()
 

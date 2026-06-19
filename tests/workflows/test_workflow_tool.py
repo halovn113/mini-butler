@@ -6,8 +6,8 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, patch
 
-from bantz.tools.workflow_tool import WorkflowTool
-from bantz.workflows.models import WorkflowDef, StepResult, WorkflowResult
+from butler.tools.workflow_tool import WorkflowTool
+from butler.workflows.models import WorkflowDef, StepResult, WorkflowResult
 
 
 @pytest.fixture
@@ -100,7 +100,7 @@ class TestRunAction:
 
     @pytest.mark.asyncio
     async def test_run_not_found(self, tool):
-        from bantz.workflows.errors import WorkflowNotFoundError
+        from butler.workflows.errors import WorkflowNotFoundError
         with patch("bantz.tools.workflow_tool.workflow_registry") as mock_reg:
             mock_reg.get.side_effect = WorkflowNotFoundError("nope")
             result = await tool.execute(action="run", name="missing")
@@ -149,7 +149,7 @@ class TestCreateAction:
 
     @pytest.mark.asyncio
     async def test_create_invalid_yaml(self, tool):
-        from bantz.workflows.errors import WorkflowValidationError
+        from butler.workflows.errors import WorkflowValidationError
         with patch("bantz.tools.workflow_tool.workflow_registry") as mock_reg:
             mock_reg.parse_yaml.side_effect = WorkflowValidationError("bad yaml")
             result = await tool.execute(action="create", name="bad", yaml_content="invalid: [")
@@ -166,7 +166,7 @@ class TestUnknownAction:
 
 class TestRegistration:
     def test_tool_registered(self):
-        from bantz.tools import registry
+        from butler.tools import registry
         t = registry.get("run_workflow")
         assert t is not None
         assert t.name == "run_workflow"

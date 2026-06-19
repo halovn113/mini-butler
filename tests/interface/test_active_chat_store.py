@@ -32,7 +32,7 @@ def _make_store(kv_mock):
     with patch.dict(sys.modules, {"bantz.data.sqlite_store": MagicMock(SQLiteKVStore=lambda _: kv_mock)}):
         # Re-import _ActiveChatStore fresh from module source to pick up the patch
         import importlib
-        import bantz.interface.telegram_bot as tg_mod
+        import butler.interface.telegram_bot as tg_mod
         importlib.reload(tg_mod)
         return tg_mod._ActiveChatStore()
 
@@ -92,7 +92,7 @@ class TestActiveChatStoreMemoryFallback:
     def test_fallback_add_and_iter(self):
         with patch("bantz.data.sqlite_store.SQLiteKVStore", side_effect=RuntimeError("no db")):
             import importlib
-            import bantz.interface.telegram_bot as tg_mod
+            import butler.interface.telegram_bot as tg_mod
             importlib.reload(tg_mod)
             store = tg_mod._ActiveChatStore()
 
@@ -104,7 +104,7 @@ class TestActiveChatStoreMemoryFallback:
     def test_fallback_bool_false_initially(self):
         with patch("bantz.data.sqlite_store.SQLiteKVStore", side_effect=RuntimeError("no db")):
             import importlib
-            import bantz.interface.telegram_bot as tg_mod
+            import butler.interface.telegram_bot as tg_mod
             importlib.reload(tg_mod)
             store = tg_mod._ActiveChatStore()
 
@@ -115,7 +115,7 @@ class TestBridgeNoRedisReference:
     """memory/bridge.py must not reference Redis in its docstring."""
 
     def test_redis_removed_from_bridge_docstring(self):
-        from bantz.memory import bridge
+        from butler.memory import bridge
         import inspect
         src = inspect.getsource(bridge.MemPalaceBridge)
         assert "Redis" not in src, (

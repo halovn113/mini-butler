@@ -23,7 +23,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from bantz.tools.desktop import (
+from butler.tools.desktop import (
     DesktopTool,
     parse_locator,
     _resolve_app_command,
@@ -755,18 +755,18 @@ class TestErrorHandling:
 
 class TestRegistration:
     def test_registered_in_global_registry(self):
-        from bantz.tools import registry
+        from butler.tools import registry
         tool = registry.get("desktop")
         assert tool is not None
         assert tool.name == "desktop"
 
     def test_risk_level(self):
-        from bantz.tools import registry
+        from butler.tools import registry
         tool = registry.get("desktop")
         assert tool.risk_level == "moderate"
 
     def test_schema_has_description(self):
-        from bantz.tools import registry
+        from butler.tools import registry
         tool = registry.get("desktop")
         schema = tool.schema()
         assert "desktop" in schema["description"].lower() or "automation" in schema["description"].lower()

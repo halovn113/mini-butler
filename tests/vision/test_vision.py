@@ -26,14 +26,14 @@ pytest.importorskip('PIL')
 
 class TestVLMConfig:
     def test_vlm_config_defaults(self):
-        from bantz.config import config
+        from butler.config import config
         assert hasattr(config, "vlm_enabled")
         assert hasattr(config, "vlm_endpoint")
         assert hasattr(config, "vlm_timeout")
         assert hasattr(config, "screenshot_quality")
 
     def test_vlm_defaults_values(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(
             _env_file=None,
             BANTZ_OLLAMA_MODEL="test",
@@ -48,29 +48,29 @@ class TestVLMConfig:
 
 class TestDisplayDetection:
     def test_x11(self):
-        from bantz.vision.screenshot import _detect_display
+        from butler.vision.screenshot import _detect_display
         with patch.dict("os.environ", {"XDG_SESSION_TYPE": "x11"}, clear=False):
             assert _detect_display() == "x11"
 
     def test_wayland(self):
-        from bantz.vision.screenshot import _detect_display
+        from butler.vision.screenshot import _detect_display
         with patch.dict("os.environ", {"XDG_SESSION_TYPE": "wayland"}, clear=False):
             assert _detect_display() == "wayland"
 
     def test_wayland_display(self):
-        from bantz.vision.screenshot import _detect_display
+        from butler.vision.screenshot import _detect_display
         with patch.dict("os.environ", {"XDG_SESSION_TYPE": "", "WAYLAND_DISPLAY": "wayland-0"}, clear=False):
             assert _detect_display() == "wayland"
 
     def test_unknown(self):
-        from bantz.vision.screenshot import _detect_display
+        from butler.vision.screenshot import _detect_display
         with patch.dict("os.environ", {"XDG_SESSION_TYPE": "", "WAYLAND_DISPLAY": "", "DISPLAY": ""}, clear=False):
             assert _detect_display() == "unknown"
 
 
 class TestJPEGCompression:
     def test_raw_to_jpeg_without_pillow(self):
-        from bantz.vision.screenshot import _raw_to_jpeg
+        from butler.vision.screenshot import _raw_to_jpeg
         with patch.dict("sys.modules", {"PIL": None, "PIL.Image": None}):
             # Should return raw bytes as-is
             data = b"fake-png-data"
@@ -81,7 +81,7 @@ class TestJPEGCompression:
     def test_raw_to_jpeg_with_pillow(self):
         """Test JPEG conversion with Pillow."""
         from PIL import Image
-        from bantz.vision.screenshot import _raw_to_jpeg
+        from butler.vision.screenshot import _raw_to_jpeg
 
         # Create a real PNG in memory
         img = Image.new("RGB", (100, 50), color="blue")
@@ -98,7 +98,7 @@ class TestJPEGCompression:
 
     def test_crop_image_with_pillow(self):
         from PIL import Image
-        from bantz.vision.screenshot import _crop_image
+        from butler.vision.screenshot import _crop_image
 
         img = Image.new("RGB", (200, 200), color="green")
         buf = io.BytesIO()
@@ -113,14 +113,14 @@ class TestJPEGCompression:
 
 class TestScreenshot:
     def test_screenshot_dataclass(self):
-        from bantz.vision.screenshot import Screenshot
+        from butler.vision.screenshot import Screenshot
         s = Screenshot(data=b"test", width=100, height=50, source="full")
         assert s.format == "jpeg"
         assert s.width == 100
 
     @pytest.mark.asyncio
     async def test_capture_raw_all_fail(self):
-        from bantz.vision.screenshot import capture_raw
+        from butler.vision.screenshot import capture_raw
         with patch("bantz.vision.screenshot._detect_display", return_value="unknown"), \
              patch("bantz.vision.screenshot._capture_pillow", new_callable=AsyncMock, return_value=None):
             result = await capture_raw()
@@ -129,7 +129,7 @@ class TestScreenshot:
     @pytest.mark.asyncio
     async def test_capture_returns_screenshot(self):
         from PIL import Image
-        from bantz.vision.screenshot import capture
+        from butler.vision.screenshot import capture
 
         # Create a fake PNG
         img = Image.new("RGB", (64, 64), color="red")
@@ -147,7 +147,7 @@ class TestScreenshot:
     @pytest.mark.asyncio
     async def test_capture_with_roi(self):
         from PIL import Image
-        from bantz.vision.screenshot import capture
+        from butler.vision.screenshot import capture
 
         img = Image.new("RGB", (200, 200), color="red")
         buf = io.BytesIO()
@@ -164,7 +164,7 @@ class TestScreenshot:
     @pytest.mark.asyncio
     async def test_capture_base64(self):
         from PIL import Image
-        from bantz.vision.screenshot import capture_base64
+        from butler.vision.screenshot import capture_base64
 
         img = Image.new("RGB", (32, 32), color="blue")
         buf = io.BytesIO()
@@ -182,7 +182,7 @@ class TestScreenshot:
     async def test_capture_window_fallback(self):
         """Window capture falls back to full screen."""
         from PIL import Image
-        from bantz.vision.screenshot import capture_window
+        from butler.vision.screenshot import capture_window
 
         img = Image.new("RGB", (64, 64), color="green")
         buf = io.BytesIO()
@@ -203,7 +203,7 @@ class TestScreenshot:
 
 class TestParseVLMResponse:
     def test_clean_json(self):
-        from bantz.vision.remote_vlm import parse_vlm_response
+        from butler.vision.remote_vlm import parse_vlm_response
         raw = json.dumps({
             "elements": [
                 {"label": "Search", "role": "entry", "x": 100, "y": 50,
@@ -216,26 +216,26 @@ class TestParseVLMResponse:
         assert elems[0].confidence == 0.95
 
     def test_markdown_fenced(self):
-        from bantz.vision.remote_vlm import parse_vlm_response
+        from butler.vision.remote_vlm import parse_vlm_response
         raw = '```json\n{"elements": [{"label": "OK", "x": 10, "y": 20}]}\n```'
         elems = parse_vlm_response(raw)
         assert len(elems) == 1
         assert elems[0].label == "OK"
 
     def test_bare_array(self):
-        from bantz.vision.remote_vlm import parse_vlm_response
+        from butler.vision.remote_vlm import parse_vlm_response
         raw = '[{"label": "Cancel", "role": "button", "x": 5, "y": 5, "width": 60, "height": 25}]'
         elems = parse_vlm_response(raw)
         assert len(elems) == 1
         assert elems[0].role == "button"
 
     def test_invalid_json(self):
-        from bantz.vision.remote_vlm import parse_vlm_response
+        from butler.vision.remote_vlm import parse_vlm_response
         elems = parse_vlm_response("this is not json at all")
         assert elems == []
 
     def test_empty_elements(self):
-        from bantz.vision.remote_vlm import parse_vlm_response
+        from butler.vision.remote_vlm import parse_vlm_response
         raw = '{"elements": []}'
         elems = parse_vlm_response(raw)
         assert elems == []
@@ -243,12 +243,12 @@ class TestParseVLMResponse:
 
 class TestVLMElement:
     def test_center(self):
-        from bantz.vision.remote_vlm import VLMElement
+        from butler.vision.remote_vlm import VLMElement
         e = VLMElement(label="btn", x=100, y=200, width=50, height=30)
         assert e.center == (125, 215)
 
     def test_to_dict(self):
-        from bantz.vision.remote_vlm import VLMElement
+        from butler.vision.remote_vlm import VLMElement
         e = VLMElement(label="Search", role="entry", x=10, y=20, width=100, height=30, confidence=0.9)
         d = e.to_dict()
         assert d["label"] == "Search"
@@ -257,7 +257,7 @@ class TestVLMElement:
 
 class TestVLMResult:
     def test_best(self):
-        from bantz.vision.remote_vlm import VLMResult, VLMElement
+        from butler.vision.remote_vlm import VLMResult, VLMElement
         r = VLMResult(
             success=True,
             elements=[
@@ -269,7 +269,7 @@ class TestVLMResult:
         assert r.best.label == "B"
 
     def test_find(self):
-        from bantz.vision.remote_vlm import VLMResult, VLMElement
+        from butler.vision.remote_vlm import VLMResult, VLMElement
         r = VLMResult(
             success=True,
             elements=[
@@ -282,12 +282,12 @@ class TestVLMResult:
         assert r.find("nonexistent") is None
 
     def test_empty_best(self):
-        from bantz.vision.remote_vlm import VLMResult
+        from butler.vision.remote_vlm import VLMResult
         r = VLMResult(success=True)
         assert r.best is None
 
     def test_to_dict(self):
-        from bantz.vision.remote_vlm import VLMResult, VLMElement
+        from butler.vision.remote_vlm import VLMResult, VLMElement
         r = VLMResult(success=True, elements=[VLMElement(label="X", confidence=0.5)])
         d = r.to_dict()
         assert d["success"] is True
@@ -296,14 +296,14 @@ class TestVLMResult:
 
 class TestSpatialCache:
     def test_put_get(self):
-        from bantz.vision.remote_vlm import SpatialCache, VLMResult
+        from butler.vision.remote_vlm import SpatialCache, VLMResult
         cache = SpatialCache(max_entries=5, ttl_seconds=10.0)
         r = VLMResult(success=True, raw_text="test")
         cache.put("key1", r)
         assert cache.get("key1") is r
 
     def test_ttl_expiry(self):
-        from bantz.vision.remote_vlm import SpatialCache, VLMResult
+        from butler.vision.remote_vlm import SpatialCache, VLMResult
         cache = SpatialCache(max_entries=5, ttl_seconds=0.01)
         r = VLMResult(success=True)
         cache.put("key1", r)
@@ -311,7 +311,7 @@ class TestSpatialCache:
         assert cache.get("key1") is None
 
     def test_eviction(self):
-        from bantz.vision.remote_vlm import SpatialCache, VLMResult
+        from butler.vision.remote_vlm import SpatialCache, VLMResult
         cache = SpatialCache(max_entries=2, ttl_seconds=60.0)
         cache.put("a", VLMResult(success=True))
         cache.put("b", VLMResult(success=True))
@@ -321,7 +321,7 @@ class TestSpatialCache:
         assert cache.get("a") is None
 
     def test_invalidate(self):
-        from bantz.vision.remote_vlm import SpatialCache, VLMResult
+        from butler.vision.remote_vlm import SpatialCache, VLMResult
         cache = SpatialCache()
         cache.put("a", VLMResult(success=True))
         cache.put("b", VLMResult(success=True))
@@ -335,7 +335,7 @@ class TestSpatialCache:
 class TestCallRemote:
     @pytest.mark.asyncio
     async def test_success(self):
-        from bantz.vision.remote_vlm import _call_remote
+        from butler.vision.remote_vlm import _call_remote
 
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -360,7 +360,7 @@ class TestCallRemote:
     @pytest.mark.asyncio
     async def test_timeout(self):
         import httpx
-        from bantz.vision.remote_vlm import _call_remote
+        from butler.vision.remote_vlm import _call_remote
 
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(side_effect=httpx.TimeoutException("timeout"))
@@ -374,7 +374,7 @@ class TestCallRemote:
 class TestAnalyzeScreenshot:
     @pytest.mark.asyncio
     async def test_disabled(self):
-        from bantz.vision.remote_vlm import analyze_screenshot
+        from butler.vision.remote_vlm import analyze_screenshot
         with patch("bantz.vision.remote_vlm.config") as mock_cfg:
             mock_cfg.vlm_enabled = False
             result = await analyze_screenshot("fake_b64")
@@ -383,7 +383,7 @@ class TestAnalyzeScreenshot:
 
     @pytest.mark.asyncio
     async def test_label_prompt(self):
-        from bantz.vision.remote_vlm import analyze_screenshot
+        from butler.vision.remote_vlm import analyze_screenshot
 
         mock_result_obj = MagicMock()
         mock_result_obj.success = True
@@ -403,20 +403,20 @@ class TestAnalyzeScreenshot:
 
 class TestAccessibilityVLMFallback:
     def test_vlm_available_false(self):
-        from bantz.tools.accessibility import AccessibilityTool
+        from butler.tools.accessibility import AccessibilityTool
         tool = AccessibilityTool()
         with patch("bantz.config.config.vlm_enabled", False):
             assert tool._vlm_available() is False
 
     def test_vlm_available_true(self):
-        from bantz.tools.accessibility import AccessibilityTool
+        from butler.tools.accessibility import AccessibilityTool
         tool = AccessibilityTool()
         with patch("bantz.config.config.vlm_enabled", True):
             assert tool._vlm_available() is True
 
     def test_vlm_result_to_tool_find(self):
-        from bantz.tools.accessibility import AccessibilityTool
-        from bantz.vision.remote_vlm import VLMResult, VLMElement
+        from butler.tools.accessibility import AccessibilityTool
+        from butler.vision.remote_vlm import VLMResult, VLMElement
 
         vlm = VLMResult(
             success=True,
@@ -433,8 +433,8 @@ class TestAccessibilityVLMFallback:
         assert result.data["via"] == "vlm"
 
     def test_vlm_result_to_tool_tree(self):
-        from bantz.tools.accessibility import AccessibilityTool
-        from bantz.vision.remote_vlm import VLMResult, VLMElement
+        from butler.tools.accessibility import AccessibilityTool
+        from butler.vision.remote_vlm import VLMResult, VLMElement
 
         vlm = VLMResult(
             success=True,
@@ -451,8 +451,8 @@ class TestAccessibilityVLMFallback:
         assert result.data["via"] == "vlm"
 
     def test_vlm_result_to_tool_failure(self):
-        from bantz.tools.accessibility import AccessibilityTool
-        from bantz.vision.remote_vlm import VLMResult
+        from butler.tools.accessibility import AccessibilityTool
+        from butler.vision.remote_vlm import VLMResult
 
         vlm = VLMResult(success=False, error="connection refused")
         result = AccessibilityTool._vlm_result_to_tool(vlm, "find", "app", "btn")
@@ -461,7 +461,7 @@ class TestAccessibilityVLMFallback:
 
     @pytest.mark.asyncio
     async def test_screenshot_analyze_disabled(self):
-        from bantz.tools.accessibility import AccessibilityTool
+        from butler.tools.accessibility import AccessibilityTool
         tool = AccessibilityTool()
         with patch("bantz.config.config.vlm_enabled", False):
             result = await tool._screenshot_analyze("firefox", "")
@@ -469,7 +469,7 @@ class TestAccessibilityVLMFallback:
 
     @pytest.mark.asyncio
     async def test_describe_screen_disabled(self):
-        from bantz.tools.accessibility import AccessibilityTool
+        from butler.tools.accessibility import AccessibilityTool
         tool = AccessibilityTool()
         with patch("bantz.config.config.vlm_enabled", False):
             result = await tool._describe_screen("firefox")
@@ -482,7 +482,7 @@ class TestAccessibilityVLMFallback:
 
 class TestQuickRouteVLM:
     def _route(self, text: str) -> dict | None:
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         return Brain._quick_route(text, text)
 
     def test_whats_on_screen(self):

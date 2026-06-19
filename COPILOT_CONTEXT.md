@@ -32,7 +32,7 @@ Bantz is a local-first, offline-capable AI assistant written in Python that runs
 ## Architecture Map
 
 ```
-src/bantz/
+src/butler/
 ├── __main__.py              Entry point — argparse dispatch to TUI / daemon / --once / --doctor / --setup
 ├── config.py                Pydantic-settings Config — all env vars; _voice_master_switch cascade validator
 │
@@ -185,16 +185,16 @@ Every user message travels this pipeline:
 
 | File | Description |
 |------|-------------|
-| `src/bantz/core/brain.py` | Central orchestrator — all request handling flows through here |
-| `src/bantz/core/intent.py` | `cot_route()` — the LLM routing brain; returns `(plan, thinking)` tuple |
-| `src/bantz/config.py` | All configuration; `_voice_master_switch` cascades voice flags |
-| `src/bantz/memory/bridge.py` | MemPalace adapter; `.enabled` is always False until `await init()` called |
-| `src/bantz/agent/tts.py` | TTS engine — confirmed working; pw-play priority, sentence streaming |
-| `src/bantz/agent/stt.py` | STT engine — broken; `faster-whisper` not installed |
-| `src/bantz/interface/live_ui.py` | Textual TUI — primary user interface |
-| `src/bantz/interface/telegram_bot.py` | Telegram integration — complete code, blocked on missing token |
-| `src/bantz/agent/job_scheduler.py` | APScheduler — 6 cron jobs running; persistent reminders via SQLAlchemy |
-| `src/bantz/core/memory_injector.py` | Parallel async memory injection into BantzContext before every prompt |
+| `src/butler/core/brain.py` | Central orchestrator — all request handling flows through here |
+| `src/butler/core/intent.py` | `cot_route()` — the LLM routing brain; returns `(plan, thinking)` tuple |
+| `src/butler/config.py` | All configuration; `_voice_master_switch` cascades voice flags |
+| `src/butler/memory/bridge.py` | MemPalace adapter; `.enabled` is always False until `await init()` called |
+| `src/butler/agent/tts.py` | TTS engine — confirmed working; pw-play priority, sentence streaming |
+| `src/butler/agent/stt.py` | STT engine — broken; `faster-whisper` not installed |
+| `src/butler/interface/live_ui.py` | Textual TUI — primary user interface |
+| `src/butler/interface/telegram_bot.py` | Telegram integration — complete code, blocked on missing token |
+| `src/butler/agent/job_scheduler.py` | APScheduler — 6 cron jobs running; persistent reminders via SQLAlchemy |
+| `src/butler/core/memory_injector.py` | Parallel async memory injection into BantzContext before every prompt |
 
 ---
 

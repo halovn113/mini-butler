@@ -21,7 +21,7 @@ import pytest
 
 pytest.importorskip('textual')
 
-from bantz.core.event_bus import Event, EventBus
+from butler.core.event_bus import Event, EventBus
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -30,16 +30,16 @@ from bantz.core.event_bus import Event, EventBus
 
 class TestBantzEventMessage:
     def test_import(self):
-        from bantz.interface.tui.app import BantzEventMessage
+        from butler.interface.tui.app import BantzEventMessage
         assert BantzEventMessage is not None
 
     def test_is_textual_message(self):
-        from bantz.interface.tui.app import BantzEventMessage
+        from butler.interface.tui.app import BantzEventMessage
         from textual.message import Message
         assert issubclass(BantzEventMessage, Message)
 
     def test_wraps_event(self):
-        from bantz.interface.tui.app import BantzEventMessage
+        from butler.interface.tui.app import BantzEventMessage
         ev = Event(name="test_event", data={"k": 42})
         msg = BantzEventMessage(ev)
         assert msg.event is ev
@@ -47,7 +47,7 @@ class TestBantzEventMessage:
         assert msg.event.data["k"] == 42
 
     def test_different_events(self):
-        from bantz.interface.tui.app import BantzEventMessage
+        from butler.interface.tui.app import BantzEventMessage
         ev1 = Event(name="a")
         ev2 = Event(name="b", data={"x": 1})
         m1 = BantzEventMessage(ev1)
@@ -55,7 +55,7 @@ class TestBantzEventMessage:
         assert m1.event.name != m2.event.name
 
     def test_event_data_preserved(self):
-        from bantz.interface.tui.app import BantzEventMessage
+        from butler.interface.tui.app import BantzEventMessage
         data = {"label": "loud", "rms": 420.5, "zcr": 0.12}
         ev = Event(name="ambient_change", data=data)
         msg = BantzEventMessage(ev)
@@ -69,12 +69,12 @@ class TestBantzEventMessage:
 class TestWakeWordDetectedLegacy:
     def test_legacy_class_removed(self):
         """WakeWordDetected was dead code — verify it's been removed."""
-        from bantz.interface.tui import app as tui_app
+        from butler.interface.tui import app as tui_app
         assert not hasattr(tui_app, "WakeWordDetected")
 
     def test_bus_wake_handler_exists(self):
         """The canonical wake word handler is via EventBus bridge."""
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_on_bus_wake_word")
 
 
@@ -85,7 +85,7 @@ class TestWakeWordDetectedLegacy:
 class TestSubscribeEventBus:
     def _make_app(self):
         """Create a BantzApp with mocked-out Textual internals."""
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = object.__new__(BantzApp)
         # Minimal mocks so call_from_thread / post_message don't crash
         app.call_from_thread = MagicMock()
@@ -134,7 +134,7 @@ class TestSubscribeEventBus:
 
 class TestUnsubscribeEventBus:
     def _make_subscribed_app(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = object.__new__(BantzApp)
         app.call_from_thread = MagicMock()
         app.post_message = MagicMock()
@@ -178,14 +178,14 @@ class TestUnsubscribeEventBus:
 
 class TestRelayBusEvent:
     def _make_app(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = object.__new__(BantzApp)
         app.call_from_thread = MagicMock()
         app.post_message = MagicMock()
         return app
 
     def test_calls_call_from_thread(self):
-        from bantz.interface.tui.app import BantzEventMessage
+        from butler.interface.tui.app import BantzEventMessage
         app = self._make_app()
         ev = Event(name="test", data={"x": 1})
         app._relay_bus_event(ev)
@@ -211,7 +211,7 @@ class TestRelayBusEvent:
 
 class TestOnBantzEventMessage:
     def _make_app(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = object.__new__(BantzApp)
         app._on_bus_wake_word = MagicMock()
         app._on_bus_ambient_change = MagicMock()
@@ -219,7 +219,7 @@ class TestOnBantzEventMessage:
         return app
 
     def test_dispatches_wake_word(self):
-        from bantz.interface.tui.app import BantzEventMessage
+        from butler.interface.tui.app import BantzEventMessage
         app = self._make_app()
         ev = Event(name="wake_word_detected", data={"count": 5})
         msg = BantzEventMessage(ev)
@@ -229,7 +229,7 @@ class TestOnBantzEventMessage:
         app._on_bus_health_alert.assert_not_called()
 
     def test_dispatches_ambient(self):
-        from bantz.interface.tui.app import BantzEventMessage
+        from butler.interface.tui.app import BantzEventMessage
         app = self._make_app()
         ev = Event(name="ambient_change", data={"label": "loud", "rms": 300.0})
         msg = BantzEventMessage(ev)
@@ -238,7 +238,7 @@ class TestOnBantzEventMessage:
         app._on_bus_wake_word.assert_not_called()
 
     def test_dispatches_health_alert(self):
-        from bantz.interface.tui.app import BantzEventMessage
+        from butler.interface.tui.app import BantzEventMessage
         app = self._make_app()
         ev = Event(name="health_alert", data={"title": "CPU Hot", "reason": "95°C"})
         msg = BantzEventMessage(ev)
@@ -246,7 +246,7 @@ class TestOnBantzEventMessage:
         app._on_bus_health_alert.assert_called_once_with(ev)
 
     def test_unknown_event_no_crash(self):
-        from bantz.interface.tui.app import BantzEventMessage
+        from butler.interface.tui.app import BantzEventMessage
         app = self._make_app()
         ev = Event(name="unknown_event")
         msg = BantzEventMessage(ev)
@@ -256,7 +256,7 @@ class TestOnBantzEventMessage:
         app._on_bus_health_alert.assert_not_called()
 
     def test_handler_error_swallowed(self):
-        from bantz.interface.tui.app import BantzEventMessage
+        from butler.interface.tui.app import BantzEventMessage
         app = self._make_app()
         app._on_bus_wake_word.side_effect = RuntimeError("boom")
         ev = Event(name="wake_word_detected")
@@ -270,7 +270,7 @@ class TestOnBantzEventMessage:
 
 class TestOnBusWakeWord:
     def _make_app(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = object.__new__(BantzApp)
         return app
 
@@ -293,7 +293,7 @@ class TestOnBusWakeWord:
 
 class TestOnBusAmbientChange:
     def _make_app(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = object.__new__(BantzApp)
         return app
 
@@ -339,7 +339,7 @@ class TestOnBusAmbientChange:
 
 class TestOnBusHealthAlert:
     def _make_app(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = object.__new__(BantzApp)
         app.push_toast = MagicMock()
         return app
@@ -377,7 +377,7 @@ class TestOnBusHealthAlert:
 class TestStartWakeWordListenerRefactored:
     def test_no_on_wake_callback_passed(self):
         """After Part 3, wake_listener.start() is called without on_wake."""
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = object.__new__(BantzApp)
         chat = MagicMock()
         app.query_one = MagicMock(return_value=chat)
@@ -396,7 +396,7 @@ class TestStartWakeWordListenerRefactored:
                 assert "on_wake" not in kwargs
 
     def test_skips_when_disabled(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = object.__new__(BantzApp)
 
         with patch("bantz.interface.tui.app.config") as mock_cfg:
@@ -407,7 +407,7 @@ class TestStartWakeWordListenerRefactored:
                 mock_listener.start.assert_not_called()
 
     def test_skips_when_no_api_key(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = object.__new__(BantzApp)
 
         with patch("bantz.interface.tui.app.config") as mock_cfg:
@@ -426,7 +426,7 @@ class TestStartWakeWordListenerRefactored:
 class TestActionQuitBusTeardown:
     @pytest.mark.asyncio
     async def test_unsubscribes_and_shuts_down(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = object.__new__(BantzApp)
         app._unsubscribe_event_bus = MagicMock()
         app.exit = MagicMock()
@@ -459,7 +459,7 @@ class TestSourceAudit:
         ).read_text()
 
     def test_imports_event_bus(self):
-        assert "from bantz.core.event_bus import bus, Event" in self.src
+        assert "from butler.core.event_bus import bus, Event" in self.src
 
     def test_bantz_event_message_class(self):
         assert "class BantzEventMessage(Message):" in self.src
@@ -491,7 +491,7 @@ class TestSourceAudit:
     def test_no_on_wake_closure_in_start_listener(self):
         """The legacy _on_wake closure must be gone from _start_wake_word_listener."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         method_body = inspect.getsource(BantzApp._start_wake_word_listener)
         assert "def _on_wake()" not in method_body
         assert "on_wake=_on_wake" not in method_body
@@ -499,7 +499,7 @@ class TestSourceAudit:
     def test_wake_listener_start_no_callback(self):
         """wake_listener.start() should be called without on_wake arg."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         method_body = inspect.getsource(BantzApp._start_wake_word_listener)
         assert "wake_listener.start()" in method_body
 

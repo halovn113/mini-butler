@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from bantz.workflows.models import (
+from butler.workflows.models import (
     InputDef,
     RetryPolicy,
     StepDef,

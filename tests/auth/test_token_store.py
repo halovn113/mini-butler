@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock, patch
-from bantz.auth.token_store import TokenStore, TokenNotFoundError
+from butler.auth.token_store import TokenStore, TokenNotFoundError
 
 def test_get_or_none_returns_none_on_exception():
     store = TokenStore()

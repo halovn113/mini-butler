@@ -16,8 +16,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bantz.agent.agent_manager import AgentManager, DelegationRecord
-from bantz.agent.sub_agent import SubAgentResult
+from butler.agent.agent_manager import AgentManager, DelegationRecord
+from butler.agent.sub_agent import SubAgentResult
 
 
 # ═══════════════════════════════════════════════════════════════════════════

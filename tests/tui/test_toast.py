@@ -29,7 +29,7 @@ pytest.importorskip('textual')
 
 class TestToastType:
     def test_all_types(self):
-        from bantz.interface.tui.widgets.toast import ToastType
+        from butler.interface.tui.widgets.toast import ToastType
         assert ToastType.INFO.value == "info"
         assert ToastType.SUCCESS.value == "success"
         assert ToastType.WARNING.value == "warning"
@@ -37,68 +37,68 @@ class TestToastType:
         assert ToastType.ACTION.value == "action"
 
     def test_unique_values(self):
-        from bantz.interface.tui.widgets.toast import ToastType
+        from butler.interface.tui.widgets.toast import ToastType
         values = [t.value for t in ToastType]
         assert len(values) == len(set(values))
 
     def test_five_types(self):
-        from bantz.interface.tui.widgets.toast import ToastType
+        from butler.interface.tui.widgets.toast import ToastType
         assert len(list(ToastType)) == 5
 
 
 class TestToastAutoDismiss:
     def test_all_types_present(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
         for tt in ToastType:
             assert tt in TOAST_AUTO_DISMISS
 
     def test_info_5s(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
         assert TOAST_AUTO_DISMISS[ToastType.INFO] == 5.0
 
     def test_success_3s(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
         assert TOAST_AUTO_DISMISS[ToastType.SUCCESS] == 3.0
 
     def test_warning_10s(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
         assert TOAST_AUTO_DISMISS[ToastType.WARNING] == 10.0
 
     def test_error_no_auto(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
         assert TOAST_AUTO_DISMISS[ToastType.ERROR] is None
 
     def test_action_no_auto(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_AUTO_DISMISS
         assert TOAST_AUTO_DISMISS[ToastType.ACTION] is None
 
 
 class TestToastIcons:
     def test_all_types_have_icons(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_ICONS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_ICONS
         for tt in ToastType:
             assert tt in TOAST_ICONS
             assert isinstance(TOAST_ICONS[tt], str)
             assert len(TOAST_ICONS[tt]) > 0
 
     def test_info_icon(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_ICONS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_ICONS
         assert "ℹ" in TOAST_ICONS[ToastType.INFO]
 
     def test_success_icon(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_ICONS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_ICONS
         assert "✓" in TOAST_ICONS[ToastType.SUCCESS]
 
     def test_warning_icon(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_ICONS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_ICONS
         assert "⚠" in TOAST_ICONS[ToastType.WARNING]
 
     def test_error_icon(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_ICONS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_ICONS
         assert "✗" in TOAST_ICONS[ToastType.ERROR]
 
     def test_action_icon(self):
-        from bantz.interface.tui.widgets.toast import ToastType, TOAST_ICONS
+        from butler.interface.tui.widgets.toast import ToastType, TOAST_ICONS
         assert "◆" in TOAST_ICONS[ToastType.ACTION]
 
 
@@ -108,13 +108,13 @@ class TestToastIcons:
 
 class TestToastData:
     def test_creation(self):
-        from bantz.interface.tui.widgets.toast import ToastData
+        from butler.interface.tui.widgets.toast import ToastData
         td = ToastData(title="Hello", reason="world")
         assert td.title == "Hello"
         assert td.reason == "world"
 
     def test_defaults(self):
-        from bantz.interface.tui.widgets.toast import ToastData
+        from butler.interface.tui.widgets.toast import ToastData
         td = ToastData(title="Test")
         assert td.reason == ""
         assert td.ttl == 0.0
@@ -124,18 +124,18 @@ class TestToastData:
         assert td.type is None
 
     def test_remaining_ttl(self):
-        from bantz.interface.tui.widgets.toast import ToastData
+        from butler.interface.tui.widgets.toast import ToastData
         td = ToastData(title="X", ttl=15.0)
         assert td.remaining_ttl == 15.0
 
     def test_expired_always_false(self):
-        from bantz.interface.tui.widgets.toast import ToastData
+        from butler.interface.tui.widgets.toast import ToastData
         td = ToastData(title="X")
         assert td.expired is False
 
     def test_intervention_attribute_compat(self):
         """ToastData has the same getattr interface as Intervention."""
-        from bantz.interface.tui.widgets.toast import ToastData
+        from butler.interface.tui.widgets.toast import ToastData
         td = ToastData(title="T", reason="R", ttl=5.0, source="brain")
         assert getattr(td, "title") == "T"
         assert getattr(td, "reason") == "R"
@@ -149,25 +149,25 @@ class TestToastData:
 
 class TestToastMessages:
     def test_toast_accepted(self):
-        from bantz.interface.tui.widgets.toast import ToastAccepted
+        from butler.interface.tui.widgets.toast import ToastAccepted
         iv = MagicMock()
         msg = ToastAccepted(iv)
         assert msg.intervention is iv
 
     def test_toast_dismissed(self):
-        from bantz.interface.tui.widgets.toast import ToastDismissed
+        from butler.interface.tui.widgets.toast import ToastDismissed
         iv = MagicMock()
         msg = ToastDismissed(iv)
         assert msg.intervention is iv
 
     def test_toast_expired(self):
-        from bantz.interface.tui.widgets.toast import ToastExpired
+        from butler.interface.tui.widgets.toast import ToastExpired
         iv = MagicMock()
         msg = ToastExpired(iv)
         assert msg.intervention is iv
 
     def test_messages_are_textual_messages(self):
-        from bantz.interface.tui.widgets.toast import (
+        from butler.interface.tui.widgets.toast import (
             ToastAccepted, ToastDismissed, ToastExpired,
         )
         from textual.message import Message
@@ -184,60 +184,60 @@ class TestToastMessages:
 class TestToastWidget:
     def test_can_focus_false(self):
         """CRITICAL: Toast must never steal focus from chat input."""
-        from bantz.interface.tui.widgets.toast import ToastWidget
+        from butler.interface.tui.widgets.toast import ToastWidget
         assert ToastWidget.can_focus is False
 
     def test_creation(self):
-        from bantz.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
+        from butler.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
         td = ToastData(title="Test")
         tw = ToastWidget(td, ToastType.INFO)
         assert tw.intervention is td
         assert tw.toast_type == ToastType.INFO
 
     def test_default_type(self):
-        from bantz.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
+        from butler.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
         td = ToastData(title="Test")
         tw = ToastWidget(td)
         assert tw.toast_type == ToastType.INFO
 
     def test_css_class_info(self):
-        from bantz.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
+        from butler.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
         td = ToastData(title="Test")
         tw = ToastWidget(td, ToastType.INFO)
         assert tw.has_class("toast--info")
 
     def test_css_class_warning(self):
-        from bantz.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
+        from butler.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
         td = ToastData(title="Test")
         tw = ToastWidget(td, ToastType.WARNING)
         assert tw.has_class("toast--warning")
 
     def test_css_class_error(self):
-        from bantz.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
+        from butler.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
         td = ToastData(title="Test")
         tw = ToastWidget(td, ToastType.ERROR)
         assert tw.has_class("toast--error")
 
     def test_css_class_success(self):
-        from bantz.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
+        from butler.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
         td = ToastData(title="Test")
         tw = ToastWidget(td, ToastType.SUCCESS)
         assert tw.has_class("toast--success")
 
     def test_css_class_action(self):
-        from bantz.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
+        from butler.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
         td = ToastData(title="Test")
         tw = ToastWidget(td, ToastType.ACTION)
         assert tw.has_class("toast--action")
 
     def test_dismiss_timer_initially_none(self):
-        from bantz.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
+        from butler.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
         td = ToastData(title="Test")
         tw = ToastWidget(td, ToastType.ERROR)
         assert tw._dismiss_timer is None
 
     def test_all_five_types_produce_valid_widgets(self):
-        from bantz.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
+        from butler.interface.tui.widgets.toast import ToastWidget, ToastType, ToastData
         for tt in ToastType:
             tw = ToastWidget(ToastData(title=f"t-{tt.value}"), tt)
             assert tw.toast_type == tt
@@ -250,61 +250,61 @@ class TestToastWidget:
 
 class TestToastContainer:
     def test_can_focus_false(self):
-        from bantz.interface.tui.widgets.toast import ToastContainer
+        from butler.interface.tui.widgets.toast import ToastContainer
         assert ToastContainer.can_focus is False
 
     def test_max_visible(self):
-        from bantz.interface.tui.widgets.toast import ToastContainer
+        from butler.interface.tui.widgets.toast import ToastContainer
         assert ToastContainer.MAX_VISIBLE == 3
 
     def test_creation(self):
-        from bantz.interface.tui.widgets.toast import ToastContainer
+        from butler.interface.tui.widgets.toast import ToastContainer
         tc = ToastContainer()
         assert tc._overflow == []
 
     def test_infer_type_error_alert(self):
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
         iv = MagicMock()
         iv.type = MagicMock(value="error_alert")
         iv.action = None
         assert ToastContainer._infer_type(iv) == ToastType.ERROR
 
     def test_infer_type_with_action(self):
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
         iv = MagicMock()
         iv.type = MagicMock(value="routine")
         iv.action = "launch_docker"
         assert ToastContainer._infer_type(iv) == ToastType.ACTION
 
     def test_infer_type_reminder(self):
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
         iv = MagicMock()
         iv.type = MagicMock(value="reminder")
         iv.action = None
         assert ToastContainer._infer_type(iv) == ToastType.ACTION
 
     def test_infer_type_maintenance(self):
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
         iv = MagicMock()
         iv.type = MagicMock(value="maintenance")
         iv.action = None
         assert ToastContainer._infer_type(iv) == ToastType.WARNING
 
     def test_infer_type_unknown(self):
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
         iv = MagicMock()
         iv.type = MagicMock(value="some_other")
         iv.action = None
         assert ToastContainer._infer_type(iv) == ToastType.INFO
 
     def test_infer_type_no_type_attr(self):
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
         iv = MagicMock(spec=[])  # no 'type' attribute
         assert ToastContainer._infer_type(iv) == ToastType.INFO
 
     def test_infer_type_error_overrides_action(self):
         """error_alert type should always be ERROR even if action is set."""
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
         iv = MagicMock()
         iv.type = MagicMock(value="error_alert")
         iv.action = "some_action"
@@ -319,14 +319,14 @@ class TestAppToastIntegration:
     def test_compose_yields_toast_container(self):
         """BantzApp.compose() must yield ToastContainer(id='toast-container')."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp.compose)
         assert "toast-container" in src
         assert "ToastContainer" in src
 
     def test_toast_imports_in_app(self):
         """app.py must import toast components."""
-        import bantz.interface.tui.app as app_mod
+        import butler.interface.tui.app as app_mod
         assert hasattr(app_mod, "ToastContainer")
         assert hasattr(app_mod, "ToastType")
         assert hasattr(app_mod, "ToastData")
@@ -335,40 +335,40 @@ class TestAppToastIntegration:
         assert hasattr(app_mod, "ToastExpired")
 
     def test_push_toast_method_exists(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "push_toast")
         assert callable(getattr(BantzApp, "push_toast"))
 
     def test_on_toast_accepted_handler(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "on_toast_accepted")
         assert callable(getattr(BantzApp, "on_toast_accepted"))
 
     def test_on_toast_dismissed_handler(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "on_toast_dismissed")
         assert callable(getattr(BantzApp, "on_toast_dismissed"))
 
     def test_on_toast_expired_handler(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "on_toast_expired")
         assert callable(getattr(BantzApp, "on_toast_expired"))
 
     def test_wire_brain_toast_hook_method(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_wire_brain_toast_hook")
 
     def test_on_brain_toast_method(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_on_brain_toast")
 
     def test_remove_intervention_toast_method(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_remove_intervention_toast")
 
     def test_escape_binding_exists(self):
         """Escape should be bound to focus_input (which now also dismisses toasts)."""
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         from textual.binding import Binding
         escape_bindings = [
             b for b in BantzApp.BINDINGS
@@ -380,7 +380,7 @@ class TestAppToastIntegration:
     def test_action_focus_input_dismisses_toast_first(self):
         """action_focus_input should check for toasts before focusing input."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp.action_focus_input)
         assert "toast-container" in src or "has_toasts" in src
         assert "dismiss_top" in src
@@ -394,7 +394,7 @@ class TestProcessInterventionsToast:
     def test_process_interventions_uses_toast_container(self):
         """_process_interventions must push to ToastContainer, not ChatLog."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp._process_interventions)
         assert "toast-container" in src
         assert "push_toast" in src
@@ -407,7 +407,7 @@ class TestProcessInterventionsToast:
     def test_process_interventions_has_fallback(self):
         """_process_interventions should fallback to chat if toast container fails."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp._process_interventions)
         # Fallback should exist
         assert "Fallback" in src or "fallback" in src
@@ -421,13 +421,13 @@ class TestInterventionResponseToast:
     def test_handle_intervention_response_removes_toast(self):
         """Text-based intervention response should also remove the toast widget."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp._handle_intervention_response)
         assert "_remove_intervention_toast" in src
 
     def test_accept_removes_toast(self):
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp._handle_intervention_response)
         # "accept" branch should call _remove_intervention_toast
         lines = src.split("\n")
@@ -443,7 +443,7 @@ class TestInterventionResponseToast:
 
     def test_dismiss_removes_toast(self):
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp._handle_intervention_response)
         assert src.count("_remove_intervention_toast") >= 3  # accept, dismiss, never paths
 
@@ -455,17 +455,17 @@ class TestInterventionResponseToast:
 class TestBrainToastIntegration:
     def test_toast_callback_exists(self):
         """brain module should expose _toast_callback."""
-        from bantz.core import brain as brain_mod
+        from butler.core import brain as brain_mod
         assert hasattr(brain_mod, "_toast_callback")
 
     def test_notify_toast_exists(self):
         """brain module should expose _notify_toast function."""
-        from bantz.core import brain as brain_mod
+        from butler.core import brain as brain_mod
         assert hasattr(brain_mod, "_notify_toast")
         assert callable(brain_mod._notify_toast)
 
     def test_notify_toast_with_callback(self):
-        from bantz.core import brain as brain_mod
+        from butler.core import brain as brain_mod
         calls = []
         old_cb = brain_mod._toast_callback
         try:
@@ -477,7 +477,7 @@ class TestBrainToastIntegration:
             brain_mod._toast_callback = old_cb
 
     def test_notify_toast_without_callback_no_crash(self):
-        from bantz.core import brain as brain_mod
+        from butler.core import brain as brain_mod
         old_cb = brain_mod._toast_callback
         try:
             brain_mod._toast_callback = None
@@ -488,13 +488,13 @@ class TestBrainToastIntegration:
 
     def test_brain_push_toast_method(self):
         """Brain class should have _push_toast method."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         assert hasattr(Brain, "_push_toast")
 
     def test_brain_push_toast_delegates(self):
         """Brain._push_toast should delegate to notification_manager."""
-        from bantz.core.brain import Brain
-        from bantz.core import notification_manager as _notif_mod
+        from butler.core.brain import Brain
+        from butler.core import notification_manager as _notif_mod
         calls = []
         old_cb = _notif_mod.toast_callback
         try:
@@ -509,31 +509,31 @@ class TestBrainToastIntegration:
     def test_process_no_longer_pops_queue(self):
         """brain.process() should NOT call _check_intervention_queue anymore."""
         import inspect
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         src = inspect.getsource(Brain.process)
         assert "_check_intervention_queue" not in src
 
     def test_process_no_longer_prepends(self):
         """brain.process() should NOT call _prepend_intervention anymore."""
         import inspect
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         src = inspect.getsource(Brain.process)
         assert "_prepend_intervention" not in src
 
     def test_deprecated_check_intervention_queue(self):
         """_check_intervention_queue was removed in #225."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         assert not hasattr(Brain, "_check_intervention_queue")
 
     def test_deprecated_prepend_intervention(self):
         """_prepend_intervention was removed in #225."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         assert not hasattr(Brain, "_prepend_intervention")
 
     def test_note_about_toast_in_process(self):
         """process() should have a comment about toast system."""
         import inspect
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         src = inspect.getsource(Brain.process)
         assert "toast" in src.lower()
 
@@ -603,11 +603,11 @@ class TestToastStyles:
 
 class TestWidgetsInit:
     def test_widgets_package_importable(self):
-        import bantz.interface.tui.widgets
+        import butler.interface.tui.widgets
         assert bantz.interface.tui.widgets is not None
 
     def test_toast_module_importable(self):
-        from bantz.interface.tui.widgets import toast
+        from butler.interface.tui.widgets import toast
         assert toast is not None
 
 
@@ -618,8 +618,8 @@ class TestWidgetsInit:
 class TestInterventionToastMapping:
     def test_rl_suggestion_becomes_action(self):
         """RL suggestions have action field → ACTION toast."""
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
-        from bantz.agent.interventions import intervention_from_rl
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.agent.interventions import intervention_from_rl
         iv = intervention_from_rl(
             action_value="launch_docker",
             state_key="test_state",
@@ -629,8 +629,8 @@ class TestInterventionToastMapping:
 
     def test_observer_error_becomes_error(self):
         """Observer critical alerts → ERROR toast."""
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
-        from bantz.agent.interventions import intervention_from_observer
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.agent.interventions import intervention_from_observer
         iv = intervention_from_observer(
             raw_text="Segfault",
             severity="CRITICAL",
@@ -640,8 +640,8 @@ class TestInterventionToastMapping:
 
     def test_observer_warning_not_error(self):
         """Observer warnings → ACTION (has no action field → depends on type)."""
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
-        from bantz.agent.interventions import intervention_from_observer
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.agent.interventions import intervention_from_observer
         iv = intervention_from_observer(
             raw_text="deprecation warning",
             severity="WARNING",
@@ -652,15 +652,15 @@ class TestInterventionToastMapping:
 
     def test_reminder_becomes_action(self):
         """Reminders → ACTION toast (accept/dismiss)."""
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
-        from bantz.agent.interventions import intervention_from_reminder
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.agent.interventions import intervention_from_reminder
         iv = intervention_from_reminder(title="Call dentist", repeat="none")
         assert ToastContainer._infer_type(iv) == ToastType.ACTION
 
     def test_system_maintenance_becomes_warning(self):
         """System maintenance → WARNING toast."""
-        from bantz.interface.tui.widgets.toast import ToastContainer, ToastType
-        from bantz.agent.interventions import intervention_from_system
+        from butler.interface.tui.widgets.toast import ToastContainer, ToastType
+        from butler.agent.interventions import intervention_from_system
         iv = intervention_from_system(
             title="Docker prune",
             reason="Weekly cleanup",
@@ -674,11 +674,11 @@ class TestInterventionToastMapping:
 
 class TestCLI:
     def test_run_function_exists(self):
-        from bantz.interface.tui.app import run
+        from butler.interface.tui.app import run
         assert callable(run)
 
     def test_app_instantiation(self):
         """BantzApp can be instantiated without errors."""
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         app = BantzApp()
         assert app.title == "BANTZ v3"

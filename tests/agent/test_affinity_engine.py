@@ -18,7 +18,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from bantz.agent.affinity_engine import AffinityEngine, _PERSONA_TIERS
+from butler.agent.affinity_engine import AffinityEngine, _PERSONA_TIERS
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -29,7 +29,7 @@ from bantz.agent.affinity_engine import AffinityEngine, _PERSONA_TIERS
 @pytest.fixture()
 def engine(tmp_path: Path) -> AffinityEngine:
     """Fresh AffinityEngine wired to a temp DB."""
-    from bantz.data.connection_pool import SQLitePool
+    from butler.data.connection_pool import SQLitePool
     SQLitePool.reset()
     ae = AffinityEngine()
     ae.init(tmp_path / "test.db")
@@ -55,7 +55,7 @@ class TestLifecycle:
         assert engine.get_score() == 0.0
 
     def test_reinit_restores_persisted_score(self, tmp_path: Path):
-        from bantz.data.connection_pool import SQLitePool
+        from butler.data.connection_pool import SQLitePool
         SQLitePool.reset()
 
         ae = AffinityEngine()
@@ -197,7 +197,7 @@ class TestPersistence:
 
     def test_corrupted_kv_defaults_to_zero(self, tmp_path: Path):
         """If KV value is garbage, init defaults to 0.0."""
-        from bantz.data.connection_pool import SQLitePool
+        from butler.data.connection_pool import SQLitePool
         SQLitePool.reset()
 
         ae = AffinityEngine()

@@ -21,7 +21,7 @@ def _make_bridge(tmp_path):
     # Ensure onboarding doesn't trigger interactively
     (tmp_path / ".bantz_onboarding_done").write_text("skip")
 
-    from bantz.memory.bridge import MemPalaceBridge
+    from butler.memory.bridge import MemPalaceBridge
 
     bridge = MemPalaceBridge()
     return bridge
@@ -49,7 +49,7 @@ class TestKGExtraction:
         from mempalace.knowledge_graph import KnowledgeGraph
         from mempalace.entity_registry import EntityRegistry
         from mempalace.layers import MemoryStack
-        from bantz.memory.bridge import MemPalaceBridge
+        from butler.memory.bridge import MemPalaceBridge
 
         palace_path = str(tmp_path / "palace")
         self.kg_path = str(tmp_path / "kg.sqlite3")
@@ -206,7 +206,7 @@ class TestOnboarding:
 
     def test_seed_identity_writes_file(self):
         """Identity file is created with correct content."""
-        from bantz.memory.onboarding import seed_identity
+        from butler.memory.onboarding import seed_identity
 
         answers = self._sample_answers()
         seed_identity(answers, self.identity_path)
@@ -219,7 +219,7 @@ class TestOnboarding:
 
     def test_seed_kg_writes_triples(self):
         """KG should have name, profession, language, interests, tools triples."""
-        from bantz.memory.onboarding import seed_knowledge_graph
+        from butler.memory.onboarding import seed_knowledge_graph
 
         answers = self._sample_answers()
         count = seed_knowledge_graph(answers, self.kg)
@@ -236,7 +236,7 @@ class TestOnboarding:
 
     def test_seed_kg_entities_created(self):
         """User name should be an entity in KG."""
-        from bantz.memory.onboarding import seed_knowledge_graph
+        from butler.memory.onboarding import seed_knowledge_graph
 
         answers = self._sample_answers()
         seed_knowledge_graph(answers, self.kg)
@@ -247,7 +247,7 @@ class TestOnboarding:
 
     def test_seed_entity_registry(self):
         """EntityRegistry should know the user as a person."""
-        from bantz.memory.onboarding import seed_entity_registry
+        from butler.memory.onboarding import seed_entity_registry
 
         answers = self._sample_answers()
         seed_entity_registry(answers, self.registry)
@@ -258,7 +258,7 @@ class TestOnboarding:
 
     def test_flag_set_after_onboarding(self):
         """After onboarding completes, flag file should exist."""
-        from bantz.memory.onboarding import (
+        from butler.memory.onboarding import (
             is_onboarding_done,
             run_onboarding_noninteractive,
         )
@@ -277,7 +277,7 @@ class TestOnboarding:
 
     def test_flag_prevents_rerun(self):
         """Once flag is set, is_onboarding_done returns True."""
-        from bantz.memory.onboarding import (
+        from butler.memory.onboarding import (
             is_onboarding_done,
             run_onboarding_noninteractive,
         )
@@ -294,7 +294,7 @@ class TestOnboarding:
 
     def test_noninteractive_returns_triple_count(self):
         """run_onboarding_noninteractive returns the number of triples."""
-        from bantz.memory.onboarding import run_onboarding_noninteractive
+        from butler.memory.onboarding import run_onboarding_noninteractive
 
         count = run_onboarding_noninteractive(
             answers=self._sample_answers(),
@@ -307,7 +307,7 @@ class TestOnboarding:
 
     def test_empty_name_returns_zero(self):
         """If name is empty, onboarding should bail out."""
-        from bantz.memory.onboarding import run_onboarding_noninteractive
+        from butler.memory.onboarding import run_onboarding_noninteractive
 
         count = run_onboarding_noninteractive(
             answers={"profession": "dev"},
@@ -323,8 +323,8 @@ class TestOnboarding:
         from mempalace.knowledge_graph import KnowledgeGraph
         from mempalace.entity_registry import EntityRegistry
         from mempalace.layers import MemoryStack
-        from bantz.memory.bridge import MemPalaceBridge
-        from bantz.memory.onboarding import run_onboarding_noninteractive
+        from butler.memory.bridge import MemPalaceBridge
+        from butler.memory.onboarding import run_onboarding_noninteractive
 
         palace_path = str(self.tmp / "e2e_palace")
         kg_path = str(self.tmp / "e2e_kg.sqlite3")
@@ -379,42 +379,42 @@ class TestHeuristicExtraction:
     """Verify _extract_without_llm extracts structured data from natural responses."""
 
     def test_name_turkish_diyebilirsin(self):
-        from bantz.memory.onboarding import _extract_without_llm
+        from butler.memory.onboarding import _extract_without_llm
         assert _extract_without_llm("name", "İclal diyebilirsin") == "İclal"
 
     def test_name_english_call_me(self):
-        from bantz.memory.onboarding import _extract_without_llm
+        from butler.memory.onboarding import _extract_without_llm
         assert _extract_without_llm("name", "call me Bob") == "Bob"
 
     def test_name_english_im(self):
-        from bantz.memory.onboarding import _extract_without_llm
+        from butler.memory.onboarding import _extract_without_llm
         assert _extract_without_llm("name", "I'm Alice") == "Alice"
 
     def test_name_short_single_word(self):
-        from bantz.memory.onboarding import _extract_without_llm
+        from butler.memory.onboarding import _extract_without_llm
         assert _extract_without_llm("name", "Mehmet") == "Mehmet"
 
     def test_name_bana_pattern(self):
-        from bantz.memory.onboarding import _extract_without_llm
+        from butler.memory.onboarding import _extract_without_llm
         assert _extract_without_llm("name", "bana İclal de") == "İclal"
 
     def test_language_turkish(self):
-        from bantz.memory.onboarding import _extract_without_llm
+        from butler.memory.onboarding import _extract_without_llm
         assert _extract_without_llm("language", "Türkçe konuşalım") == "tr"
 
     def test_language_english(self):
-        from bantz.memory.onboarding import _extract_without_llm
+        from butler.memory.onboarding import _extract_without_llm
         assert _extract_without_llm("language", "English please") == "en"
 
     def test_language_code_direct(self):
-        from bantz.memory.onboarding import _extract_without_llm
+        from butler.memory.onboarding import _extract_without_llm
         assert _extract_without_llm("language", "tr") == "tr"
 
     def test_profession_passthrough(self):
-        from bantz.memory.onboarding import _extract_without_llm
+        from butler.memory.onboarding import _extract_without_llm
         assert _extract_without_llm("profession", "yazılımcıyım") == "yazılımcıyım"
 
     def test_empty_returns_empty(self):
-        from bantz.memory.onboarding import _extract_without_llm
+        from butler.memory.onboarding import _extract_without_llm
         assert _extract_without_llm("name", "") == ""
         assert _extract_without_llm("tools", "  ") == ""

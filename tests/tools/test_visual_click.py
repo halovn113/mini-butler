@@ -76,7 +76,7 @@ class TestVisualClickSuccess:
 
     @pytest.mark.asyncio
     async def test_click_success(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
         mock_click = AsyncMock()
@@ -86,7 +86,7 @@ class TestVisualClickSuccess:
             mock_config.input_control_enabled = True
             mock_nav.navigate_to = AsyncMock(return_value=_nav_found())
 
-            import bantz.tools.input_control as ic
+            import butler.tools.input_control as ic
             original_click = getattr(ic, 'click', None)
             ic.click = mock_click
             try:
@@ -103,7 +103,7 @@ class TestVisualClickSuccess:
 
     @pytest.mark.asyncio
     async def test_hover_uses_move_to(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
         mock_move = AsyncMock()
@@ -113,7 +113,7 @@ class TestVisualClickSuccess:
             mock_config.input_control_enabled = True
             mock_nav.navigate_to = AsyncMock(return_value=_nav_found(x=300, y=400))
 
-            import bantz.tools.input_control as ic
+            import butler.tools.input_control as ic
             original = getattr(ic, 'move_to', None)
             ic.move_to = mock_move
             try:
@@ -128,7 +128,7 @@ class TestVisualClickSuccess:
 
     @pytest.mark.asyncio
     async def test_double_click(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
         mock_dbl = AsyncMock()
@@ -138,7 +138,7 @@ class TestVisualClickSuccess:
             mock_config.input_control_enabled = True
             mock_nav.navigate_to = AsyncMock(return_value=_nav_found())
 
-            import bantz.tools.input_control as ic
+            import butler.tools.input_control as ic
             original = getattr(ic, 'double_click', None)
             ic.double_click = mock_dbl
             try:
@@ -152,7 +152,7 @@ class TestVisualClickSuccess:
 
     @pytest.mark.asyncio
     async def test_right_click(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
         mock_rc = AsyncMock()
@@ -162,7 +162,7 @@ class TestVisualClickSuccess:
             mock_config.input_control_enabled = True
             mock_nav.navigate_to = AsyncMock(return_value=_nav_found())
 
-            import bantz.tools.input_control as ic
+            import butler.tools.input_control as ic
             original = getattr(ic, 'right_click', None)
             ic.right_click = mock_rc
             try:
@@ -185,7 +185,7 @@ class TestVisualClickFailure:
 
     @pytest.mark.asyncio
     async def test_not_found_returns_butler_lore(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
 
@@ -202,7 +202,7 @@ class TestVisualClickFailure:
 
     @pytest.mark.asyncio
     async def test_not_found_includes_nav_data(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
 
@@ -226,7 +226,7 @@ class TestVisualClickGates:
 
     @pytest.mark.asyncio
     async def test_input_control_disabled(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
 
@@ -239,7 +239,7 @@ class TestVisualClickGates:
 
     @pytest.mark.asyncio
     async def test_missing_target(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
 
@@ -252,7 +252,7 @@ class TestVisualClickGates:
 
     @pytest.mark.asyncio
     async def test_unknown_action_rejected(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
 
@@ -275,7 +275,7 @@ class TestVisualClickActionError:
 
     @pytest.mark.asyncio
     async def test_action_exception_caught(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
 
@@ -284,7 +284,7 @@ class TestVisualClickActionError:
             mock_config.input_control_enabled = True
             mock_nav.navigate_to = AsyncMock(return_value=_nav_found())
 
-            import bantz.tools.input_control as ic
+            import butler.tools.input_control as ic
             original = getattr(ic, 'click', None)
             ic.click = AsyncMock(side_effect=OSError("Display not available"))
             try:
@@ -308,7 +308,7 @@ class TestVisualClickNavigatorError:
 
     @pytest.mark.asyncio
     async def test_navigator_exception_caught(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
 
@@ -329,7 +329,7 @@ class TestVisualClickNavigatorError:
     @pytest.mark.asyncio
     async def test_navigator_import_error_caught(self):
         """Even if the navigator module fails to import, tool reports cleanly."""
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
 
         tool = VisualClickTool()
 
@@ -351,14 +351,14 @@ class TestVisualClickRegistration:
     """Tool must be registered in the global registry."""
 
     def test_tool_is_registered(self):
-        from bantz.tools.visual_click import registry
+        from butler.tools.visual_click import registry
         tool = registry.get("visual_click")
         assert tool is not None
         assert tool.name == "visual_click"
         assert tool.risk_level == "moderate"
 
     def test_schema_has_description(self):
-        from bantz.tools.visual_click import registry
+        from butler.tools.visual_click import registry
         tool = registry.get("visual_click")
         schema = tool.schema()
         assert "click" in schema["description"].lower() or "locate" in schema["description"].lower()
@@ -373,7 +373,7 @@ class TestVisualClickNoQuickRoute:
     """visual_click must NOT be quick-routed — LLM picks it via tool-calling."""
 
     def _route(self, text: str) -> dict | None:
-        from bantz.core.routing_engine import quick_route
+        from butler.core.routing_engine import quick_route
         with patch("bantz.core.routing_engine.config") as mock_config:
             mock_config.input_control_enabled = True
             return quick_route(text, text)
@@ -404,22 +404,22 @@ class TestAntiPromptGuards:
     """Shell tool warns against UI use; visual_click has a few-shot example."""
 
     def test_shell_description_warns_against_clicking(self):
-        from bantz.tools.shell import ShellTool
+        from butler.tools.shell import ShellTool
         desc = ShellTool.description.lower()
         assert "do not use this tool" in desc and ("click" in desc or "gui" in desc)
 
     def test_shell_description_points_to_visual_click(self):
-        from bantz.tools.shell import ShellTool
+        from butler.tools.shell import ShellTool
         assert "visual_click" in ShellTool.description
 
     def test_visual_click_has_few_shot_example(self):
-        from bantz.tools.visual_click import VisualClickTool
+        from butler.tools.visual_click import VisualClickTool
         desc = VisualClickTool.description.lower()
         assert "example" in desc
         assert "click the terminal" in desc
 
     def test_authorization_has_few_shot_example(self):
-        from bantz.core.prompt_builder import COMPUTER_USE_AUTHORIZATION
+        from butler.core.prompt_builder import COMPUTER_USE_AUTHORIZATION
         assert "EXAMPLE" in COMPUTER_USE_AUTHORIZATION
         assert "visual_click" in COMPUTER_USE_AUTHORIZATION
         assert "WRONG action" in COMPUTER_USE_AUTHORIZATION

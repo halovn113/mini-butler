@@ -9,7 +9,7 @@ the merged PR.
 
 ## Issue #462 — `_WSLogHandler.emit()` crashes silently, desktop UI never receives logs
 
-**File:** `src/bantz/interface/ws_server.py` · **PR:** #467 · **Effort:** 1 line
+**File:** `src/butler/interface/ws_server.py` · **PR:** #467 · **Effort:** 1 line
 
 ### Problem
 The `WsBroadcastServer` owns a queue stored as `self._q`, but the inner
@@ -37,7 +37,7 @@ inside `emit()` — clear mismatch.
 
 ## Issue #465 — TUI service dots always show "Ollama" regardless of active provider
 
-**File:** `src/bantz/interface/live_ui.py` · **PR:** #470 · **Effort:** ~35 lines
+**File:** `src/butler/interface/live_ui.py` · **PR:** #470 · **Effort:** ~35 lines
 
 ### Problem
 `_services` was initialised with the hardcoded key `"Ollama"` and
@@ -112,7 +112,7 @@ else:
 
 ## Issue #460 — `finalizer.py` hardcodes Ollama, breaks Claude/OpenAI/Gemini users
 
-**File:** `src/bantz/core/finalizer.py` · **PR:** #468 · **Effort:** ~5 lines (×3 sites)
+**File:** `src/butler/core/finalizer.py` · **PR:** #468 · **Effort:** ~5 lines (×3 sites)
 
 ### Problem
 Three functions (`finalize()`, `finalize_stream()`, `synthesize_plan_response()`)
@@ -142,7 +142,7 @@ Copilot also added `get_llm = get_provider` as a convenience alias in
 
 ## Issue #461 — `summarizer.py` has Gemini-first / Ollama-fallback hardcode
 
-**File:** `src/bantz/tools/summarizer.py` · **PR:** #469 · **Effort:** ~8 lines
+**File:** `src/butler/tools/summarizer.py` · **PR:** #469 · **Effort:** ~8 lines
 
 ### Problem
 `SummarizerTool.execute()` tried Gemini first, fell back to Ollama, and
@@ -165,7 +165,7 @@ passed a `temperature=0.2` that Ollama's `.chat()` signature does not accept.
 
 ## Issue #464 — `_erase_prompt_line()` writes escape sequences while Live is running, duplicating the TUI
 
-**File:** `src/bantz/interface/live_ui.py` · **PR:** #471 · **Effort:** ~25 lines
+**File:** `src/butler/interface/live_ui.py` · **PR:** #471 · **Effort:** ~25 lines
 
 ### Problem
 After the user typed a message, `_erase_prompt_line()` used `os.write(1, …)`
@@ -214,7 +214,7 @@ def _render_prompt(self) -> Text:
 
 ## Issue #463 — `Live(screen=True)` opens alternate buffer, no scrollback
 
-**File:** `src/bantz/interface/live_ui.py` · **Status:** Already fixed (no PR needed)
+**File:** `src/butler/interface/live_ui.py` · **Status:** Already fixed (no PR needed)
 
 ### Finding
 Copilot searched for `screen=` in `live_ui.py` and confirmed the Live
@@ -236,8 +236,8 @@ Copilot closed the issue with an explanatory GitHub comment.
 
 ## Issue #422 — EN→TR translation adds 4–8 s after LLM inference (total 12–18 s)
 
-**Files:** `src/bantz/i18n/bridge.py`, `src/bantz/core/finalizer.py`,
-`src/bantz/interface/ws_server.py` · **PR:** #472 · **Effort:** ~50 lines
+**Files:** `src/butler/i18n/bridge.py`, `src/butler/core/finalizer.py`,
+`src/butler/interface/ws_server.py` · **PR:** #472 · **Effort:** ~50 lines
 
 ### Problem
 Two independent bottlenecks:

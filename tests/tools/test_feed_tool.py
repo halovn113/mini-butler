@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from bantz.tools.feed_tool import (
+from butler.tools.feed_tool import (
     FeedItem,
     FeedTool,
     FeedToolError,

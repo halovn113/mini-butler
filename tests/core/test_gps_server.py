@@ -34,7 +34,7 @@ def isolated_modules():
 def gps_server_module(isolated_modules):
     # Important: import module AFTER sys.modules is manipulated
     # to avoid ImportError and to load mocked module properly
-    import bantz.core.gps_server as mod
+    import butler.core.gps_server as mod
     return mod
 
 @pytest.fixture

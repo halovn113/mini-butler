@@ -42,7 +42,7 @@ class TestCotRouteBasic:
 
     @pytest.mark.asyncio
     async def test_routes_weather_request(self):
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         llm_response = json.dumps({
             "route": "tool",
@@ -67,7 +67,7 @@ class TestCotRouteBasic:
 
     @pytest.mark.asyncio
     async def test_chat_route_for_greeting(self):
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         llm_response = json.dumps({
             "route": "chat",
@@ -89,7 +89,7 @@ class TestCotRouteBasic:
 
     @pytest.mark.asyncio
     async def test_returns_none_on_refusal(self):
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         with patch("bantz.core.intent.ollama") as mock_llm, \
              patch("bantz.core.intent.bus") as mock_bus:
@@ -102,7 +102,7 @@ class TestCotRouteBasic:
 
     @pytest.mark.asyncio
     async def test_returns_none_on_low_confidence(self):
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         llm_response = json.dumps({
             "route": "tool",
@@ -125,7 +125,7 @@ class TestCotRouteBasic:
     @pytest.mark.asyncio
     async def test_handles_thinking_block(self):
         """LLM response with <thinking> block is stripped before JSON parse."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         llm_response = (
             '<thinking>The user wants weather info for London.</thinking>\n'
@@ -162,7 +162,7 @@ class TestCotRouteWithHistory:
     @pytest.mark.asyncio
     async def test_recent_history_injected_into_system_prompt(self):
         """When recent_history is provided, it appears in the system message."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         captured_messages: list = []
 
@@ -204,7 +204,7 @@ class TestCotRouteWithHistory:
     @pytest.mark.asyncio
     async def test_no_history_no_injection(self):
         """When recent_history is None, no RECENT CONVERSATION block."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         captured_messages: list = []
 
@@ -234,7 +234,7 @@ class TestCotRouteWithHistory:
     @pytest.mark.asyncio
     async def test_empty_history_no_injection(self):
         """Empty list → no RECENT CONVERSATION block."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         captured_messages: list = []
 
@@ -262,7 +262,7 @@ class TestCotRouteWithHistory:
     @pytest.mark.asyncio
     async def test_tool_context_injected_when_provided(self):
         """tool_context string is appended to system prompt (#275)."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         captured_messages: list = []
 
@@ -296,7 +296,7 @@ class TestCotRouteWithHistory:
     @pytest.mark.asyncio
     async def test_tool_context_empty_not_injected(self):
         """Empty tool_context does not add extra content (#275)."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         captured_messages: list = []
 
@@ -328,7 +328,7 @@ class TestFormatRecentHistory:
     """_format_recent_history formats conversation turns correctly."""
 
     def test_formats_turns(self):
-        from bantz.core.intent import _format_recent_history
+        from butler.core.intent import _format_recent_history
 
         history = [
             {"role": "user", "content": "Hello"},
@@ -339,7 +339,7 @@ class TestFormatRecentHistory:
         assert "assistant: Hi there!" in result
 
     def test_truncates_long_content(self):
-        from bantz.core.intent import _format_recent_history
+        from butler.core.intent import _format_recent_history
 
         history = [{"role": "user", "content": "x" * 300}]
         result = _format_recent_history(history)
@@ -347,7 +347,7 @@ class TestFormatRecentHistory:
         assert len(result.split("user: ")[1]) <= 200
 
     def test_limits_to_six_turns(self):
-        from bantz.core.intent import _format_recent_history
+        from butler.core.intent import _format_recent_history
 
         history = [{"role": "user", "content": f"msg {i}"} for i in range(10)]
         result = _format_recent_history(history)
@@ -357,11 +357,11 @@ class TestFormatRecentHistory:
         assert "msg 3" not in result
 
     def test_empty_returns_empty(self):
-        from bantz.core.intent import _format_recent_history
+        from butler.core.intent import _format_recent_history
         assert _format_recent_history([]) == ""
 
     def test_none_returns_empty(self):
-        from bantz.core.intent import _format_recent_history
+        from butler.core.intent import _format_recent_history
         assert _format_recent_history(None) == ""
 
 
@@ -372,26 +372,26 @@ class TestFormatRecentHistory:
 
 class TestHelpers:
     def test_is_refusal_positive(self):
-        from bantz.core.intent import _is_refusal
+        from butler.core.intent import _is_refusal
         assert _is_refusal("Sorry, I can't assist with that.") is True
 
     def test_is_refusal_negative(self):
-        from bantz.core.intent import _is_refusal
+        from butler.core.intent import _is_refusal
         assert _is_refusal('{"route": "chat"}') is False
 
     def test_extract_json_basic(self):
-        from bantz.core.intent import _extract_json
+        from butler.core.intent import _extract_json
         result = _extract_json('{"route": "chat"}')
         assert result["route"] == "chat"
 
     def test_extract_json_with_thinking(self):
-        from bantz.core.intent import _extract_json
+        from butler.core.intent import _extract_json
         text = '<thinking>think</thinking>\n{"route": "tool"}'
         result = _extract_json(text)
         assert result["route"] == "tool"
 
     def test_extract_json_with_markdown_fences(self):
-        from bantz.core.intent import _extract_json
+        from butler.core.intent import _extract_json
         text = '```json\n{"route": "tool"}\n```'
         result = _extract_json(text)
         assert result["route"] == "tool"
@@ -402,8 +402,8 @@ class TestHelpers:
     # eval/routing_eval_results.json).
 
     def test_planner_rescue_fires_for_known_tool(self):
-        import bantz.tools.system  # noqa: F401 — registers "system"
-        from bantz.core.intent import _extract_json
+        import butler.tools.system  # noqa: F401 — registers "system"
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "planner", "tool_name": "system", '
             '"tool_args": {"metric": "cpu"}, "confidence": 1.0}'
@@ -413,7 +413,7 @@ class TestHelpers:
         assert result["tool_args"] == {"metric": "cpu"}
 
     def test_planner_rescue_skips_unknown_tool(self):
-        from bantz.core.intent import _extract_json
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "planner", "tool_name": "frobnicator", '
             '"tool_args": {"x": 1}, "confidence": 1.0}'
@@ -421,7 +421,7 @@ class TestHelpers:
         assert result["route"] == "planner"
 
     def test_planner_rescue_skips_empty_or_missing_tool_name(self):
-        from bantz.core.intent import _extract_json
+        from butler.core.intent import _extract_json
         for payload in (
             '{"route": "planner", "tool_name": null, "tool_args": {"q": "x"}}',
             '{"route": "planner", "tool_name": "", "tool_args": {"q": "x"}}',
@@ -431,8 +431,8 @@ class TestHelpers:
             assert _extract_json(payload)["route"] == "planner"
 
     def test_planner_rescue_skips_empty_tool_args(self):
-        import bantz.tools.system  # noqa: F401
-        from bantz.core.intent import _extract_json
+        import butler.tools.system  # noqa: F401
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "planner", "tool_name": "system", "tool_args": {}}'
         )
@@ -441,7 +441,7 @@ class TestHelpers:
     def test_planner_rescue_skips_tool_name_list(self):
         # Genuine plans sometimes emit tool_name as a list of steps —
         # never rescue those.
-        from bantz.core.intent import _extract_json
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "planner", "tool_name": ["web_search", "summarizer"], '
             '"tool_args": {"topic": "x"}}'
@@ -451,8 +451,8 @@ class TestHelpers:
     def test_planner_rescue_skips_multistep_utterance(self):
         # "then"/"after that" marks a genuine multi-step request (pla02):
         # keep the planner verdict even when tool_name names a single tool.
-        import bantz.tools.gmail  # noqa: F401 — registers "gmail"
-        from bantz.core.intent import _extract_json
+        import butler.tools.gmail  # noqa: F401 — registers "gmail"
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "planner", "tool_name": "gmail", '
             '"tool_args": {"action": "summary"}}',
@@ -462,8 +462,8 @@ class TestHelpers:
 
     def test_planner_rescue_skips_play_music_utterance(self):
         # "play X on yt music" is deliberately a planner flow (pla03).
-        import bantz.tools.browser_control  # noqa: F401
-        from bantz.core.intent import _extract_json
+        import butler.tools.browser_control  # noqa: F401
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "planner", "tool_name": "browser_control", '
             '"tool_args": {"action": "open", "url": "https://music.youtube.com"}}',
@@ -474,8 +474,8 @@ class TestHelpers:
     def test_route_holds_tool_and_tool_name_holds_action(self):
         # Gemma4 shape: {"route": "screenshot", "tool_name": "capture"} —
         # route is the registered tool, tool_name is an action name.
-        import bantz.tools.screenshot_tool  # noqa: F401 — registers "screenshot"
-        from bantz.core.intent import _extract_json
+        import butler.tools.screenshot_tool  # noqa: F401 — registers "screenshot"
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "screenshot", "tool_name": "capture", '
             '"tool_args": {"action": "capture"}}'
@@ -486,8 +486,8 @@ class TestHelpers:
     def test_planner_rescue_never_demotes_delegate_task(self):
         # planner + delegate_task = genuine multi-step intent (pla01/pla04
         # on gemma4): keep the planner verdict.
-        import bantz.tools.delegate_task  # noqa: F401
-        from bantz.core.intent import _extract_json
+        import butler.tools.delegate_task  # noqa: F401
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "planner", "tool_name": "delegate_task", '
             '"tool_args": {"role": "researcher"}}'
@@ -495,7 +495,7 @@ class TestHelpers:
         assert result["route"] == "planner"
 
     def test_music_fast_path_matches_listen_wishes(self):
-        from bantz.core.intent import _MUSIC_FAST
+        from butler.core.intent import _MUSIC_FAST
         for utt in (
             "i want to listen acdc",
             "I wanna listen to some jazz",
@@ -506,7 +506,7 @@ class TestHelpers:
             assert _MUSIC_FAST.search(utt), utt
 
     def test_music_fast_path_skips_non_music(self):
-        from bantz.core.intent import _MUSIC_FAST
+        from butler.core.intent import _MUSIC_FAST
         for utt in (
             "play chess with me",
             "open youtube",
@@ -519,8 +519,8 @@ class TestHelpers:
         # Model copies hint verb phrases into tool names (doc01/doc03:
         # "read_and_summarize_document") — repair when exactly one
         # registered tool name is contained.
-        import bantz.tools.document  # noqa: F401 — registers "document"
-        from bantz.core.intent import _extract_json
+        import butler.tools.document  # noqa: F401 — registers "document"
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "tool", "tool_name": "read_and_summarize_document", '
             '"tool_args": {"path": "~/Desktop/report.pdf"}}'
@@ -529,9 +529,9 @@ class TestHelpers:
 
     def test_invented_tool_name_ambiguous_not_repaired(self):
         # Two registry names contained → ambiguous, leave untouched.
-        import bantz.tools.web_search  # noqa: F401
-        import bantz.tools.summarizer  # noqa: F401
-        from bantz.core.intent import _extract_json
+        import butler.tools.web_search  # noqa: F401
+        import butler.tools.summarizer  # noqa: F401
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "tool", "tool_name": "web_search_and_summarizer", '
             '"tool_args": {"q": "x"}}'
@@ -539,8 +539,8 @@ class TestHelpers:
         assert result["tool_name"] == "web_search_and_summarizer"
 
     def test_known_tool_name_untouched_by_repair(self):
-        import bantz.tools.system  # noqa: F401
-        from bantz.core.intent import _extract_json
+        import butler.tools.system  # noqa: F401
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "tool", "tool_name": "system", "tool_args": {"metric": "cpu"}}'
         )
@@ -549,8 +549,8 @@ class TestHelpers:
     def test_planner_rescue_survives_benign_and(self):
         # A bare "and" must NOT block the rescue (inp02: "move the mouse to
         # 500,300 and click" is a single input_control call).
-        import bantz.tools.input_control  # noqa: F401
-        from bantz.core.intent import _extract_json
+        import butler.tools.input_control  # noqa: F401
+        from butler.core.intent import _extract_json
         result = _extract_json(
             '{"route": "planner", "tool_name": "input_control", '
             '"tool_args": {"action": "move_click", "x": 500, "y": 300}}',
@@ -570,7 +570,7 @@ class TestBackwardCompat:
 
     @pytest.mark.asyncio
     async def test_old_signature_works(self):
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         llm_response = json.dumps({
             "route": "chat",
@@ -602,7 +602,7 @@ class TestPeoplePleaser:
     @pytest.mark.asyncio
     async def test_malformed_json_both_attempts_returns_error(self):
         """When both LLM attempts return garbage, (None, error_string) is returned."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         with patch("bantz.core.intent.ollama") as mock_llm, \
              patch("bantz.core.intent.bus") as mock_bus:
@@ -620,7 +620,7 @@ class TestPeoplePleaser:
     @pytest.mark.asyncio
     async def test_malformed_json_first_attempt_recovers(self):
         """When 1st attempt fails but 2nd returns valid JSON, success."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         call_count = 0
 
@@ -655,7 +655,7 @@ class TestPeoplePleaser:
     @pytest.mark.asyncio
     async def test_generic_exception_returns_error(self):
         """Non-JSON exceptions (e.g. network) return error string."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         async def error_stream(messages, **kwargs):
             raise ConnectionError("Ollama is down")
@@ -682,7 +682,7 @@ class TestPlannerRoute:
 
     @pytest.mark.asyncio
     async def test_planner_route_returned(self):
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         llm_response = json.dumps({
             "route": "planner",
@@ -712,7 +712,7 @@ class TestPlannerRoute:
     @pytest.mark.asyncio
     async def test_planner_route_with_reasoning_field(self):
         """Reasoning field is preserved in parsed output."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         llm_response = json.dumps({
             "route": "tool",
@@ -746,7 +746,7 @@ class TestStreamThinking:
     @pytest.mark.asyncio
     async def test_thinking_events_emitted(self):
         """Tokens inside <thinking> are emitted as thinking_token events."""
-        from bantz.core.intent import _stream_and_collect
+        from butler.core.intent import _stream_and_collect
 
         response = "<thinking>I should use the weather tool.</thinking>\n" + json.dumps({"route": "tool"})
 
@@ -775,7 +775,7 @@ class TestStreamThinking:
     @pytest.mark.asyncio
     async def test_no_thinking_events_when_disabled(self):
         """With emit_thinking=False, no events are emitted."""
-        from bantz.core.intent import _stream_and_collect
+        from butler.core.intent import _stream_and_collect
 
         response = "<thinking>secret</thinking>\n{}"
 
@@ -799,7 +799,7 @@ class TestStreamThinking:
     @pytest.mark.asyncio
     async def test_full_response_returned(self):
         """_stream_and_collect returns the raw full response string."""
-        from bantz.core.intent import _stream_and_collect
+        from butler.core.intent import _stream_and_collect
 
         response = "<thinking>think</thinking>\n{\"route\": \"chat\"}"
 
@@ -821,23 +821,23 @@ class TestCleanThinkingText:
     """_clean_thinking_text strips literal XML tags (#273 Critique 2)."""
 
     def test_strips_open_tag(self):
-        from bantz.core.intent import _clean_thinking_text
+        from butler.core.intent import _clean_thinking_text
         assert _clean_thinking_text("<thinking>hello") == "hello"
 
     def test_strips_close_tag(self):
-        from bantz.core.intent import _clean_thinking_text
+        from butler.core.intent import _clean_thinking_text
         assert _clean_thinking_text("world</thinking>") == "world"
 
     def test_strips_both_tags(self):
-        from bantz.core.intent import _clean_thinking_text
+        from butler.core.intent import _clean_thinking_text
         assert _clean_thinking_text("<thinking>content</thinking>") == "content"
 
     def test_empty_string(self):
-        from bantz.core.intent import _clean_thinking_text
+        from butler.core.intent import _clean_thinking_text
         assert _clean_thinking_text("") == ""
 
     def test_no_tags(self):
-        from bantz.core.intent import _clean_thinking_text
+        from butler.core.intent import _clean_thinking_text
         assert _clean_thinking_text("just text") == "just text"
 
 
@@ -845,18 +845,18 @@ class TestStripThinkingUnclosed:
     """strip_thinking handles unclosed tags (#273 Critique 2)."""
 
     def test_unclosed_thinking_stripped(self):
-        from bantz.core.intent import strip_thinking
+        from butler.core.intent import strip_thinking
         result = strip_thinking("<thinking>This never closes")
         assert result.strip() == ""
 
     def test_normal_thinking_stripped(self):
-        from bantz.core.intent import strip_thinking
+        from butler.core.intent import strip_thinking
         result = strip_thinking("<thinking>inner</thinking> after")
         assert "inner" not in result
         assert "after" in result
 
     def test_double_open_stripped(self):
-        from bantz.core.intent import strip_thinking
+        from butler.core.intent import strip_thinking
         result = strip_thinking("<thinking>first<thinking>second</thinking> after")
         assert "after" in result
 
@@ -871,7 +871,7 @@ class TestIsRefusalThinkingStrip:
 
     def test_sorry_in_thinking_not_refusal(self):
         """'sorry' inside thinking reasoning must NOT trigger refusal."""
-        from bantz.core.intent import _is_refusal
+        from butler.core.intent import _is_refusal
         raw = (
             '<thinking>I\'m sorry, I need to re-read the request carefully. '
             'The user wants to read emails.</thinking>'
@@ -880,19 +880,19 @@ class TestIsRefusalThinkingStrip:
         assert _is_refusal(raw) is False
 
     def test_bare_sorry_not_refusal(self):
-        from bantz.core.intent import _is_refusal
+        from butler.core.intent import _is_refusal
         assert _is_refusal("sorry") is False
         assert _is_refusal("I'm sorry, let me try again.") is False
 
     def test_real_refusal_detected(self):
-        from bantz.core.intent import _is_refusal
+        from butler.core.intent import _is_refusal
         assert _is_refusal("Sorry, I can't assist with that request.") is True
         assert _is_refusal("I cannot provide that information.") is True
         assert _is_refusal("That would be inappropriate.") is True
 
     def test_refusal_outside_thinking_detected(self):
         """Refusal in the JSON/response area (after thinking) must still trigger."""
-        from bantz.core.intent import _is_refusal
+        from butler.core.intent import _is_refusal
         raw = (
             '<thinking>The user asked something harmful.</thinking>'
             'Sorry, I cannot provide that information.'
@@ -902,7 +902,7 @@ class TestIsRefusalThinkingStrip:
     def test_cannot_alone_not_refusal(self):
         """Bare 'i cannot' should NOT trigger — too broad.
         Only specific refusal phrases like 'i cannot provide' or 'i cannot help'."""
-        from bantz.core.intent import _is_refusal
+        from butler.core.intent import _is_refusal
         assert _is_refusal("I cannot believe it's raining!") is False
 
 
@@ -917,7 +917,7 @@ class TestCotRouteNormalisation:
     @pytest.mark.asyncio
     async def test_route_is_tool_name_normalised(self):
         """If model returns route='gmail' instead of 'tool', it should be normalised."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         llm_response = json.dumps({
             "route": "gmail",
@@ -939,14 +939,14 @@ class TestCotRouteNormalisation:
         # The route is "gmail" — _extract_json now normalises this to "tool",
         # and the invented-name repair maps the unknown alias "email" onto
         # the registered "gmail" tool so the verdict is executable.
-        import bantz.tools.gmail  # noqa: F401 — ensure registry has "gmail"
+        import butler.tools.gmail  # noqa: F401 — ensure registry has "gmail"
         assert plan["route"] == "tool"
         assert plan["tool_name"] in ("email", "gmail")  # repaired when registry loaded
 
     @pytest.mark.asyncio
     async def test_thinking_with_sorry_still_routes(self):
         """Model that says 'sorry' in thinking should still return a valid plan."""
-        from bantz.core.intent import cot_route
+        from butler.core.intent import cot_route
 
         llm_response = (
             '<thinking>I\'m sorry, I initially thought this was chat. '

@@ -24,7 +24,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bantz.core.types import BrainResult
+from butler.core.types import BrainResult
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -39,18 +39,18 @@ async def _aiter(*items: str) -> AsyncIterator[str]:
 
 class TestBrainProcessSignature:
     def test_progress_cb_parameter_exists(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         sig = inspect.signature(Brain.process)
         assert "progress_cb" in sig.parameters
 
     def test_progress_cb_defaults_to_none(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         sig = inspect.signature(Brain.process)
         assert sig.parameters["progress_cb"].default is None
 
     def test_progress_cb_is_optional(self):
         """Calling process without progress_cb should not raise a TypeError."""
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         sig = inspect.signature(Brain.process)
         param = sig.parameters["progress_cb"]
         # Optional means it has a default value
@@ -63,7 +63,7 @@ class TestBrainProgressEmission:
     """Unit-test the progress hooks inside brain.process()."""
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain()
         # Suppress internal startup side effects
         b._memory_initialized = True
@@ -206,7 +206,7 @@ class TestOnceProgressToStderr:
 
     @pytest.mark.asyncio
     async def test_progress_goes_to_stderr_not_stdout(self):
-        from bantz.__main__ import _once
+        from butler.__main__ import _once
 
         stderr_buf = io.StringIO()
         stdout_buf = io.StringIO()
@@ -233,7 +233,7 @@ class TestOnceStreamDrain:
 
     @pytest.mark.asyncio
     async def test_drains_stream_and_prints_joined_response(self):
-        from bantz.__main__ import _once
+        from butler.__main__ import _once
 
         chunks = ["Good", " morning", ", ma'am."]
         stream = _aiter(*chunks)
@@ -252,7 +252,7 @@ class TestOnceStreamDrain:
 
     @pytest.mark.asyncio
     async def test_prints_direct_response_when_no_stream(self):
-        from bantz.__main__ import _once
+        from butler.__main__ import _once
 
         result = _make_brain_result(response="42 is the answer.", stream=None)
         stdout_buf = io.StringIO()
@@ -268,7 +268,7 @@ class TestOnceStreamDrain:
 
     @pytest.mark.asyncio
     async def test_empty_stream_produces_empty_output(self):
-        from bantz.__main__ import _once
+        from butler.__main__ import _once
 
         stream = _aiter()  # empty
         result = _make_brain_result(stream=stream)
@@ -290,7 +290,7 @@ class TestOnceTTS:
 
     @pytest.mark.asyncio
     async def test_tts_speak_called_when_enabled(self):
-        from bantz.__main__ import _once
+        from butler.__main__ import _once
 
         result = _make_brain_result(response="Very good, sir.")
         mock_tts = MagicMock()
@@ -310,7 +310,7 @@ class TestOnceTTS:
 
     @pytest.mark.asyncio
     async def test_tts_skipped_when_disabled(self):
-        from bantz.__main__ import _once
+        from butler.__main__ import _once
 
         result = _make_brain_result(response="Very good, sir.")
         mock_tts = MagicMock()
@@ -330,7 +330,7 @@ class TestOnceTTS:
     @pytest.mark.asyncio
     async def test_tts_skipped_for_tts_tool_result(self):
         """Don't double-speak when the tool itself was TTS."""
-        from bantz.__main__ import _once
+        from butler.__main__ import _once
 
         result = _make_brain_result(response="Speaking…", tool_used="tts")
         mock_tts = MagicMock()
@@ -361,25 +361,25 @@ class TestOnceSourceLevel:
         assert "progress_cb" in src
 
     def test_stream_drain_present(self):
-        from bantz.__main__ import _once
+        from butler.__main__ import _once
         src = inspect.getsource(_once)
         assert "result.stream" in src
         assert "async for" in src
 
     def test_stderr_used_for_progress(self):
-        from bantz.__main__ import _once
+        from butler.__main__ import _once
         src = inspect.getsource(_once)
         assert "stderr" in src
 
     def test_tts_speak_called_in_once(self):
-        from bantz.__main__ import _once
+        from butler.__main__ import _once
         src = inspect.getsource(_once)
         assert "tts_engine" in src
         assert "speak" in src
 
     def test_no_unconditional_loading_models_print(self):
         """The old 'Loading models…' printed to stdout unconditionally is gone."""
-        from bantz.__main__ import _once
+        from butler.__main__ import _once
         src = inspect.getsource(_once)
         # The old line was: print("Loading models…", flush=True)
         assert 'print("Loading models' not in src

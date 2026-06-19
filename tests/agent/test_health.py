@@ -29,14 +29,14 @@ class TestSessionTracker:
     """Ghost Session Trap fix: session_duration from OS idle, not uptime."""
 
     def test_initial_state(self):
-        from bantz.agent.health import SessionTracker
+        from butler.agent.health import SessionTracker
         st = SessionTracker(idle_threshold_s=900)
         assert st.active_hours == 0.0
         assert not st.had_recent_break
 
     def test_active_accumulation(self):
         """Active time should accumulate when user is present."""
-        from bantz.agent.health import SessionTracker
+        from butler.agent.health import SessionTracker
         st = SessionTracker(idle_threshold_s=900)
 
         # Simulate get_idle_ms returning 0 (user active)
@@ -51,7 +51,7 @@ class TestSessionTracker:
 
     def test_idle_pauses_session(self):
         """Session clock should NOT run during idle periods (Ghost Session fix)."""
-        from bantz.agent.health import SessionTracker
+        from butler.agent.health import SessionTracker
         st = SessionTracker(idle_threshold_s=900)
 
         with patch("bantz.agent.health.get_idle_ms", return_value=1_000_000), \
@@ -63,7 +63,7 @@ class TestSessionTracker:
 
     def test_screen_lock_resets_session(self):
         """Screen lock → genuine break → reset session."""
-        from bantz.agent.health import SessionTracker
+        from butler.agent.health import SessionTracker
         st = SessionTracker(idle_threshold_s=900)
         st._active_seconds = 7200  # 2h
 
@@ -76,7 +76,7 @@ class TestSessionTracker:
 
     def test_consume_break_flag_one_shot(self):
         """Break flag is consumed once — single RL reward."""
-        from bantz.agent.health import SessionTracker
+        from butler.agent.health import SessionTracker
         st = SessionTracker()
         st._break_detected = True
         assert st.consume_break_flag() is True
@@ -84,7 +84,7 @@ class TestSessionTracker:
 
     def test_15min_idle_resets(self):
         """Coming back from 15min+ idle counts as break."""
-        from bantz.agent.health import SessionTracker
+        from butler.agent.health import SessionTracker
         st = SessionTracker(idle_threshold_s=900)
         st._active_seconds = 7200
 
@@ -103,7 +103,7 @@ class TestSessionTracker:
             assert st.active_hours == 0.0
 
     def test_reset(self):
-        from bantz.agent.health import SessionTracker
+        from butler.agent.health import SessionTracker
         st = SessionTracker()
         st._active_seconds = 7200
         st._break_detected = True
@@ -121,13 +121,13 @@ class TestThermalHistory:
 
     def test_single_spike_no_fire(self):
         """One spike should NOT trigger thermal stress."""
-        from bantz.agent.health import ThermalHistory
+        from butler.agent.health import ThermalHistory
         th = ThermalHistory(required_count=3)
         assert th.record(90, 60, 85, 80) is False  # 1st above
         assert th.cpu_streak == 1
 
     def test_two_spikes_no_fire(self):
-        from bantz.agent.health import ThermalHistory
+        from butler.agent.health import ThermalHistory
         th = ThermalHistory(required_count=3)
         th.record(90, 60, 85, 80)
         assert th.record(88, 60, 85, 80) is False  # 2nd
@@ -135,7 +135,7 @@ class TestThermalHistory:
 
     def test_three_consecutive_fires(self):
         """3 consecutive above-threshold readings → fire."""
-        from bantz.agent.health import ThermalHistory
+        from butler.agent.health import ThermalHistory
         th = ThermalHistory(required_count=3)
         th.record(90, 60, 85, 80)
         th.record(88, 60, 85, 80)
@@ -144,7 +144,7 @@ class TestThermalHistory:
 
     def test_spike_then_drop_resets(self):
         """Drop below threshold resets streak."""
-        from bantz.agent.health import ThermalHistory
+        from butler.agent.health import ThermalHistory
         th = ThermalHistory(required_count=3)
         th.record(90, 60, 85, 80)
         th.record(88, 60, 85, 80)
@@ -154,7 +154,7 @@ class TestThermalHistory:
 
     def test_gpu_sustained(self):
         """GPU streak also works independently."""
-        from bantz.agent.health import ThermalHistory
+        from butler.agent.health import ThermalHistory
         th = ThermalHistory(required_count=3)
         th.record(60, 85, 85, 80)
         th.record(60, 82, 85, 80)
@@ -163,7 +163,7 @@ class TestThermalHistory:
         assert th.cpu_streak == 0
 
     def test_reset(self):
-        from bantz.agent.health import ThermalHistory
+        from butler.agent.health import ThermalHistory
         th = ThermalHistory(required_count=3)
         th.record(90, 85, 85, 80)
         th.reset()
@@ -177,19 +177,19 @@ class TestThermalHistory:
 
 class TestIdleDetection:
     def test_get_idle_ms_xprintidle(self):
-        from bantz.agent.health import get_idle_ms
+        from butler.agent.health import get_idle_ms
         with patch("shutil.which", side_effect=lambda cmd: "/usr/bin/xprintidle" if cmd == "xprintidle" else None), \
              patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout="42000\n")
             assert get_idle_ms() == 42000
 
     def test_get_idle_ms_fallback_returns_zero(self):
-        from bantz.agent.health import get_idle_ms
+        from butler.agent.health import get_idle_ms
         with patch("shutil.which", return_value=None):
             assert get_idle_ms() == 0
 
     def test_is_screen_locked_true(self):
-        from bantz.agent.health import is_screen_locked
+        from butler.agent.health import is_screen_locked
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0, stdout="LockedHint=yes\n",
@@ -197,7 +197,7 @@ class TestIdleDetection:
             assert is_screen_locked() is True
 
     def test_is_screen_locked_false(self):
-        from bantz.agent.health import is_screen_locked
+        from butler.agent.health import is_screen_locked
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0, stdout="LockedHint=no\n",
@@ -205,7 +205,7 @@ class TestIdleDetection:
             assert is_screen_locked() is False
 
     def test_is_screen_locked_error(self):
-        from bantz.agent.health import is_screen_locked
+        from butler.agent.health import is_screen_locked
         with patch("subprocess.run", side_effect=FileNotFoundError):
             assert is_screen_locked() is False
 
@@ -216,7 +216,7 @@ class TestIdleDetection:
 
 def _make_engine():
     """Create a fresh evaluator with mocked dependencies."""
-    from bantz.agent.health import HealthRuleEvaluator
+    from butler.agent.health import HealthRuleEvaluator
     engine = HealthRuleEvaluator()
     engine.init()
     return engine
@@ -456,7 +456,7 @@ class TestCooldowns:
             assert r2[0].fired is False
 
     def test_cooldown_remaining(self):
-        from bantz.agent.health import RuleID
+        from butler.agent.health import RuleID
         engine = _make_engine()
         # Not yet fired → remaining should be 0
         assert engine.cooldown_remaining(RuleID.LATE_NIGHT_LOAD) == 0.0
@@ -496,7 +496,7 @@ class TestBreakReward:
 
 class TestConfigDisabled:
     def test_not_initialized_returns_empty(self):
-        from bantz.agent.health import HealthRuleEvaluator
+        from butler.agent.health import HealthRuleEvaluator
         engine = HealthRuleEvaluator()
         # Not initialized → should return empty
         assert engine.evaluate_all() == []
@@ -508,21 +508,21 @@ class TestConfigDisabled:
 
 class TestIntegration:
     def test_intervention_type_health(self):
-        from bantz.agent.interventions import InterventionType
+        from butler.agent.interventions import InterventionType
         assert InterventionType.HEALTH == "health"
 
     def test_action_health_break(self):
-        from bantz.agent.interventions import ACTION_LABELS
+        from butler.agent.interventions import ACTION_LABELS
         assert "health_break" in ACTION_LABELS
 
     def test_action_labels_has_health_break(self):
-        from bantz.agent.interventions import ACTION_LABELS
+        from butler.agent.interventions import ACTION_LABELS
         assert "health_break" in ACTION_LABELS
         emoji, label = ACTION_LABELS["health_break"]
         assert "🏥" in emoji
 
     def test_config_fields(self):
-        from bantz.config import config
+        from butler.config import config
         assert hasattr(config, "health_enabled")
         assert hasattr(config, "health_check_interval")
         assert hasattr(config, "health_late_hour")
@@ -532,7 +532,7 @@ class TestIntegration:
         assert hasattr(config, "health_eye_strain_hours")
 
     def test_config_defaults(self):
-        from bantz.config import config
+        from butler.config import config
         assert isinstance(config.health_enabled, bool)
         assert config.health_check_interval == 300
         assert config.health_late_hour == 2
@@ -603,7 +603,7 @@ class TestStatus:
 
 class TestRuleResult:
     def test_fields(self):
-        from bantz.agent.health import RuleResult, RuleID
+        from butler.agent.health import RuleResult, RuleID
         r = RuleResult(
             rule_id=RuleID.LATE_NIGHT_LOAD,
             fired=True,
@@ -615,7 +615,7 @@ class TestRuleResult:
         assert r.data["key"] == "value"
 
     def test_rule_id_enum(self):
-        from bantz.agent.health import RuleID
+        from butler.agent.health import RuleID
         assert len(RuleID) == 5
         assert RuleID.LATE_NIGHT_LOAD.value == "late_night_load"
         assert RuleID.MARATHON_SESSION.value == "marathon_session"
@@ -631,7 +631,7 @@ class TestRuleResult:
 class TestPushIntervention:
     def test_push_succeeds(self):
         engine = _make_engine()
-        from bantz.agent.health import RuleResult, RuleID
+        from butler.agent.health import RuleResult, RuleID
         r = RuleResult(
             rule_id=RuleID.LATE_NIGHT_LOAD,
             fired=True,
@@ -644,7 +644,7 @@ class TestPushIntervention:
 
     def test_push_handles_error(self):
         engine = _make_engine()
-        from bantz.agent.health import RuleResult, RuleID
+        from butler.agent.health import RuleResult, RuleID
         r = RuleResult(
             rule_id=RuleID.LATE_NIGHT_LOAD,
             fired=True,
@@ -663,8 +663,8 @@ class TestPushIntervention:
 class TestJobHealthCheck:
     @pytest.mark.asyncio
     async def test_job_runs_evaluation(self):
-        from bantz.agent.job_scheduler import _job_health_check
-        from bantz.agent.health import health_engine
+        from butler.agent.job_scheduler import _job_health_check
+        from butler.agent.health import health_engine
 
         health_engine.init()
         ctx = _mock_gather(hour=10, cpu_pct=30)
@@ -676,7 +676,7 @@ class TestJobHealthCheck:
 
     @pytest.mark.asyncio
     async def test_job_skips_uninitialized(self):
-        from bantz.agent.job_scheduler import _job_health_check
+        from butler.agent.job_scheduler import _job_health_check
 
         with patch("bantz.agent.health.health_engine") as mock_engine:
             mock_engine.initialized = False
@@ -720,7 +720,7 @@ class TestHealthEventBus:
 
     def test_telemetry_cache_via_bus(self):
         """_on_telemetry updates the internal cache from bus events."""
-        from bantz.core.event_bus import Event
+        from butler.core.event_bus import Event
         engine = _make_engine()
         event = Event(name="telemetry_update", data={
             "cpu_pct": 87.5, "cpu_temp": 72.0, "gpu_temp": 65.0,
@@ -731,10 +731,10 @@ class TestHealthEventBus:
         assert engine._telemetry["gpu_temp"] == 65.0
 
     def test_no_tui_telemetry_import(self):
-        """health.py must NOT import from bantz.interface.tui."""
+        """health.py must NOT import from butler.interface.tui."""
         import ast
         import inspect
-        from bantz.agent import health
+        from butler.agent import health
         tree = ast.parse(inspect.getsource(health))
         imports = [n for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)]
         for imp in imports:
@@ -743,10 +743,10 @@ class TestHealthEventBus:
                     f"Forbidden TUI import: {imp.module}"
 
     def test_no_brain_import(self):
-        """health.py must NOT import from bantz.core.brain."""
+        """health.py must NOT import from butler.core.brain."""
         import ast
         import inspect
-        from bantz.agent import health
+        from butler.agent import health
         tree = ast.parse(inspect.getsource(health))
         imports = [n for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)]
         for imp in imports:
@@ -771,7 +771,7 @@ class TestHealthEventBus:
     def test_init_subscribes_to_telemetry(self):
         """init() should register _on_telemetry on the bus."""
         with patch("bantz.agent.health.bus") as mock_bus:
-            from bantz.agent.health import HealthRuleEvaluator
+            from butler.agent.health import HealthRuleEvaluator
             engine = HealthRuleEvaluator()
             engine.init()
             mock_bus.on.assert_called_once_with(

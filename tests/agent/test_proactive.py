@@ -23,7 +23,7 @@ import pytest
 def _reset_pool():
     """Reset the connection pool after tests that use it."""
     yield
-    from bantz.data.connection_pool import SQLitePool
+    from butler.data.connection_pool import SQLitePool
     SQLitePool.reset()
 
 
@@ -44,32 +44,32 @@ class TestProactiveConfig:
     """Verify proactive config fields have correct defaults."""
 
     def test_proactive_enabled_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None)
         assert c.proactive_enabled is False
 
     def test_proactive_interval_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None)
         assert c.proactive_interval_hours == 3.0
 
     def test_proactive_jitter_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None)
         assert c.proactive_jitter_minutes == 30
 
     def test_proactive_max_daily_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None)
         assert c.proactive_max_daily == 1
 
     def test_proactive_away_timeout_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None)
         assert c.proactive_away_timeout == 1800
 
     def test_proactive_max_daily_custom(self):
-        from bantz.config import Config
+        from butler.config import Config
         c = Config(_env_file=None, BANTZ_PROACTIVE_MAX_DAILY="2")
         assert c.proactive_max_daily == 2
 
@@ -82,32 +82,32 @@ class TestAdaptiveDailyLimit:
     """RL-adaptive max daily computation."""
 
     def test_low_reward_stays_at_base(self):
-        from bantz.agent.proactive import _compute_adaptive_max
+        from butler.agent.proactive import _compute_adaptive_max
         assert _compute_adaptive_max(1, 0.0) == 1
 
     def test_negative_reward_stays_at_base(self):
-        from bantz.agent.proactive import _compute_adaptive_max
+        from butler.agent.proactive import _compute_adaptive_max
         assert _compute_adaptive_max(1, -0.5) == 1
 
     def test_medium_reward_allows_two(self):
-        from bantz.agent.proactive import _compute_adaptive_max
+        from butler.agent.proactive import _compute_adaptive_max
         assert _compute_adaptive_max(1, 0.35) == 2
 
     def test_high_reward_allows_three(self):
-        from bantz.agent.proactive import _compute_adaptive_max
+        from butler.agent.proactive import _compute_adaptive_max
         assert _compute_adaptive_max(1, 0.7) == 3
 
     def test_base_max_respected(self):
         """If configured max is already 3, should not go below."""
-        from bantz.agent.proactive import _compute_adaptive_max
+        from butler.agent.proactive import _compute_adaptive_max
         assert _compute_adaptive_max(3, 0.0) == 3
 
     def test_threshold_boundary_2(self):
-        from bantz.agent.proactive import _compute_adaptive_max
+        from butler.agent.proactive import _compute_adaptive_max
         assert _compute_adaptive_max(1, 0.3) == 2
 
     def test_threshold_boundary_3(self):
-        from bantz.agent.proactive import _compute_adaptive_max
+        from butler.agent.proactive import _compute_adaptive_max
         assert _compute_adaptive_max(1, 0.6) == 3
 
 
@@ -119,7 +119,7 @@ class TestPromptConstruction:
     """Ambient-aware LLM prompt building."""
 
     def test_noisy_prompt_instructs_brief(self):
-        from bantz.agent.proactive import _build_prompt, ProactiveContext
+        from butler.agent.proactive import _build_prompt, ProactiveContext
         ctx = ProactiveContext(
             ambient_label="noisy",
             activity="idle",
@@ -131,7 +131,7 @@ class TestPromptConstruction:
         assert "text-only" in system
 
     def test_quiet_prompt_more_conversational(self):
-        from bantz.agent.proactive import _build_prompt, ProactiveContext
+        from butler.agent.proactive import _build_prompt, ProactiveContext
         ctx = ProactiveContext(
             ambient_label="silence",
             activity="idle",
@@ -142,13 +142,13 @@ class TestPromptConstruction:
         assert "conversational" in system.lower()
 
     def test_speech_ambient_treated_as_noisy(self):
-        from bantz.agent.proactive import _build_prompt, ProactiveContext
+        from butler.agent.proactive import _build_prompt, ProactiveContext
         ctx = ProactiveContext(ambient_label="speech")
         msgs = _build_prompt(ctx)
         assert "EXTREMELY brief" in msgs[0]["content"]
 
     def test_interests_included_in_prompt(self):
-        from bantz.agent.proactive import _build_prompt, ProactiveContext
+        from butler.agent.proactive import _build_prompt, ProactiveContext
         ctx = ProactiveContext(
             interests=[{"content": "Gargantua animatronic project"}],
         )
@@ -156,7 +156,7 @@ class TestPromptConstruction:
         assert "Gargantua animatronic" in msgs[0]["content"]
 
     def test_fresh_data_included(self):
-        from bantz.agent.proactive import _build_prompt, ProactiveContext
+        from butler.agent.proactive import _build_prompt, ProactiveContext
         ctx = ProactiveContext(
             fresh_data={"overnight_emails": "3 new emails from Dr. Yılmaz"},
         )
@@ -172,7 +172,7 @@ class TestProactiveGuards:
     """Engine run() should abort with correct reason for each guard."""
 
     def test_aborts_when_disabled(self):
-        from bantz.agent.proactive import ProactiveEngine
+        from butler.agent.proactive import ProactiveEngine
         engine = ProactiveEngine()
         engine.init()
         with patch("bantz.agent.proactive.config") as cfg:
@@ -182,7 +182,7 @@ class TestProactiveGuards:
         assert "disabled" in result.reason
 
     def test_aborts_when_not_initialized(self):
-        from bantz.agent.proactive import ProactiveEngine
+        from butler.agent.proactive import ProactiveEngine
         engine = ProactiveEngine()
         with patch("bantz.agent.proactive.config") as cfg:
             cfg.proactive_enabled = True
@@ -191,8 +191,8 @@ class TestProactiveGuards:
         assert "not initialized" in result.reason
 
     def test_aborts_during_coding(self):
-        from bantz.agent.proactive import ProactiveEngine
-        from bantz.agent.app_detector import Activity
+        from butler.agent.proactive import ProactiveEngine
+        from butler.agent.app_detector import Activity
         engine = ProactiveEngine()
         engine.init()
 
@@ -224,7 +224,7 @@ class TestProactiveGuards:
         assert "coding" in result.reason.lower()
 
     def test_aborts_in_focus_mode(self):
-        from bantz.agent.proactive import ProactiveEngine
+        from butler.agent.proactive import ProactiveEngine
         engine = ProactiveEngine()
         engine.init()
 
@@ -257,7 +257,7 @@ class TestProactiveGuards:
         assert "focus" in result.reason.lower()
 
     def test_aborts_when_daily_limit_reached(self):
-        from bantz.agent.proactive import ProactiveEngine
+        from butler.agent.proactive import ProactiveEngine
         engine = ProactiveEngine()
         engine.init()
 
@@ -291,11 +291,11 @@ class TestProactiveGuards:
 
 class TestInterventionTypeProactive:
     def test_proactive_type_exists(self):
-        from bantz.agent.interventions import InterventionType
+        from butler.agent.interventions import InterventionType
         assert InterventionType.PROACTIVE == "proactive"
 
     def test_proactive_action_label_exists(self):
-        from bantz.agent.interventions import ACTION_LABELS
+        from butler.agent.interventions import ACTION_LABELS
         assert "proactive_chat" in ACTION_LABELS
 
 
@@ -305,7 +305,7 @@ class TestInterventionTypeProactive:
 
 class TestProactiveChatAction:
     def test_action_label_exists(self):
-        from bantz.agent.interventions import ACTION_LABELS
+        from butler.agent.interventions import ACTION_LABELS
         assert "proactive_chat" in ACTION_LABELS
 
 
@@ -329,7 +329,7 @@ class TestProactiveBrainRoutes:
     """_quick_route must match proactive status queries."""
 
     def _route(self, text):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         return b._quick_route(text, text.lower())
 
@@ -361,7 +361,7 @@ class TestProactiveBrainHandler:
     """process() handler for _proactive_status."""
 
     def _make_brain(self):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         b = Brain.__new__(Brain)
         b._bridge = False
         b._memory_ready = True
@@ -429,12 +429,12 @@ class TestJobSchedulerProactive:
     """_job_proactive_engagement function exists and is callable."""
 
     def test_job_function_exists(self):
-        from bantz.agent.job_scheduler import _job_proactive_engagement
+        from butler.agent.job_scheduler import _job_proactive_engagement
         assert callable(_job_proactive_engagement)
 
     def test_job_runs_proactive_engine(self):
-        from bantz.agent.job_scheduler import _job_proactive_engagement
-        from bantz.agent.proactive import ProactiveResult
+        from butler.agent.job_scheduler import _job_proactive_engagement
+        from butler.agent.proactive import ProactiveResult
 
         mock_result = ProactiveResult(success=False, reason="disabled")
         mock_engine = MagicMock()

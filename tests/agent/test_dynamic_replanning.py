@@ -4,8 +4,8 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, patch
 
-from bantz.agent.executor import PlanExecutor, PlanExecutionResult
-from bantz.agent.planner import PlanStep
+from butler.agent.executor import PlanExecutor, PlanExecutionResult
+from butler.agent.planner import PlanStep
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -15,12 +15,12 @@ def make_step(num: int, tool: str, **params) -> PlanStep:
 
 
 def ok_tool_result(output: str = "ok"):
-    from bantz.tools import ToolResult
+    from butler.tools import ToolResult
     return ToolResult(success=True, output=output)
 
 
 def fail_tool_result(error: str = "HTTP 403 Forbidden"):
-    from bantz.tools import ToolResult
+    from butler.tools import ToolResult
     return ToolResult(success=False, output="", error=error)
 
 

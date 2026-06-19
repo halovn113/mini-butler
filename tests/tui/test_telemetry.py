@@ -25,7 +25,7 @@ class TestTelemetryCollector:
     """Core telemetry collector tests."""
 
     def _make(self, history_len: int = 60):
-        from bantz.interface.tui.telemetry import TelemetryCollector
+        from butler.interface.tui.telemetry import TelemetryCollector
         return TelemetryCollector(history_len=history_len)
 
     # ── Ring buffer ─────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ class TestTelemetryCollector:
     # ── Collect ─────────────────────────────────────────────────────────
 
     def test_collect_returns_snapshot(self):
-        from bantz.interface.tui.telemetry import TelemetrySnapshot
+        from butler.interface.tui.telemetry import TelemetrySnapshot
         tc = self._make()
         tc.start()
         snap = tc.collect()
@@ -286,7 +286,7 @@ class TestTelemetryCollector:
 
 class TestTelemetrySnapshot:
     def test_defaults(self):
-        from bantz.interface.tui.telemetry import TelemetrySnapshot
+        from butler.interface.tui.telemetry import TelemetrySnapshot
         s = TelemetrySnapshot()
         assert s.cpu_pct == 0.0
         assert s.ram_pct == 0.0
@@ -294,7 +294,7 @@ class TestTelemetrySnapshot:
         assert s.timestamp == 0.0
 
     def test_custom_values(self):
-        from bantz.interface.tui.telemetry import TelemetrySnapshot
+        from butler.interface.tui.telemetry import TelemetrySnapshot
         s = TelemetrySnapshot(cpu_pct=42.0, thermal_alert=True)
         assert s.cpu_pct == 42.0
         assert s.thermal_alert is True
@@ -306,7 +306,7 @@ class TestTelemetrySnapshot:
 
 class TestGPUMonitor:
     def _make(self):
-        from bantz.interface.tui.telemetry import _GPUMonitor
+        from butler.interface.tui.telemetry import _GPUMonitor
         return _GPUMonitor()
 
     def test_not_available_before_init(self):
@@ -380,8 +380,8 @@ class TestGPUMonitor:
 
 class TestModuleSingleton:
     def test_singleton_exists(self):
-        from bantz.interface.tui.telemetry import telemetry
-        from bantz.interface.tui.telemetry import TelemetryCollector
+        from butler.interface.tui.telemetry import telemetry
+        from butler.interface.tui.telemetry import TelemetryCollector
         assert isinstance(telemetry, TelemetryCollector)
 
 
@@ -391,7 +391,7 @@ class TestModuleSingleton:
 
 class TestMetricRow:
     def test_render_green(self):
-        from bantz.interface.tui.panels.system import MetricRow
+        from butler.interface.tui.panels.system import MetricRow
         row = MetricRow("CPU", "%")
         row.value = 30.0
         text = row.render()
@@ -399,21 +399,21 @@ class TestMetricRow:
         assert "30%" in text
 
     def test_render_yellow(self):
-        from bantz.interface.tui.panels.system import MetricRow
+        from butler.interface.tui.panels.system import MetricRow
         row = MetricRow("CPU", "%")
         row.value = 75.0
         text = row.render()
         assert "yellow" in text
 
     def test_render_red(self):
-        from bantz.interface.tui.panels.system import MetricRow
+        from butler.interface.tui.panels.system import MetricRow
         row = MetricRow("CPU", "%")
         row.value = 90.0
         text = row.render()
         assert "red" in text
 
     def test_render_mbps_unit(self):
-        from bantz.interface.tui.panels.system import MetricRow
+        from butler.interface.tui.panels.system import MetricRow
         row = MetricRow("↑ TX", " MB/s", max_value=10.0)
         row.value = 3.14
         text = row.render()
@@ -421,7 +421,7 @@ class TestMetricRow:
         assert "3.1" in text
 
     def test_clamps_at_100_percent(self):
-        from bantz.interface.tui.panels.system import MetricRow
+        from butler.interface.tui.panels.system import MetricRow
         row = MetricRow("CPU", "%")
         row.value = 150.0  # over 100
         text = row.render()
@@ -429,7 +429,7 @@ class TestMetricRow:
         assert "150%" in text
 
     def test_zero_max_value(self):
-        from bantz.interface.tui.panels.system import MetricRow
+        from butler.interface.tui.panels.system import MetricRow
         row = MetricRow("X", "%", max_value=0)
         row.value = 50.0
         text = row.render()
@@ -443,13 +443,13 @@ class TestMetricRow:
 
 class TestVRAMPct:
     def test_vram_pct_with_data(self):
-        from bantz.interface.tui.telemetry import TelemetryCollector, TelemetrySnapshot
+        from butler.interface.tui.telemetry import TelemetryCollector, TelemetrySnapshot
         tc = TelemetryCollector()
         tc.latest = TelemetrySnapshot(vram_used_mb=2048, vram_total_mb=8192)
         assert abs(tc.vram_pct() - 25.0) < 0.1
 
     def test_vram_pct_zero_total(self):
-        from bantz.interface.tui.telemetry import TelemetryCollector, TelemetrySnapshot
+        from butler.interface.tui.telemetry import TelemetryCollector, TelemetrySnapshot
         tc = TelemetryCollector()
         tc.latest = TelemetrySnapshot(vram_used_mb=0, vram_total_mb=0)
         assert tc.vram_pct() == 0.0
@@ -461,7 +461,7 @@ class TestVRAMPct:
 
 class TestDiskResilience:
     def test_disk_returns_zero_on_error(self):
-        from bantz.interface.tui.telemetry import TelemetryCollector
+        from butler.interface.tui.telemetry import TelemetryCollector
         tc = TelemetryCollector()
         tc.start()
         with patch("psutil.disk_usage", side_effect=PermissionError("denied")):
@@ -478,7 +478,7 @@ class TestPeakTracking:
     """Session peak values should track the highest seen reading."""
 
     def _make(self, history_len=60):
-        from bantz.interface.tui.telemetry import TelemetryCollector
+        from butler.interface.tui.telemetry import TelemetryCollector
         return TelemetryCollector(history_len=history_len)
 
     def test_peaks_start_at_zero(self):
@@ -563,7 +563,7 @@ class TestPeakTracking:
 
 class TestMetricRowPeakLabel:
     def test_render_shows_peak_when_different(self):
-        from bantz.interface.tui.panels.system import MetricRow
+        from butler.interface.tui.panels.system import MetricRow
         row = MetricRow("CPU", "%")
         row.value = 30.0
         row.peak = 85.0
@@ -571,7 +571,7 @@ class TestMetricRowPeakLabel:
         assert "↑85" in text  # peak label present
 
     def test_render_hides_peak_when_same_as_current(self):
-        from bantz.interface.tui.panels.system import MetricRow
+        from butler.interface.tui.panels.system import MetricRow
         row = MetricRow("CPU", "%")
         row.value = 50.0
         row.peak = 50.0
@@ -579,7 +579,7 @@ class TestMetricRowPeakLabel:
         assert "↑" not in text  # no peak when equal
 
     def test_render_hides_peak_when_zero(self):
-        from bantz.interface.tui.panels.system import MetricRow
+        from butler.interface.tui.panels.system import MetricRow
         row = MetricRow("CPU", "%")
         row.value = 30.0
         row.peak = 0.0
@@ -587,7 +587,7 @@ class TestMetricRowPeakLabel:
         assert "↑" not in text  # no peak label for zero
 
     def test_render_peak_mbps_unit(self):
-        from bantz.interface.tui.panels.system import MetricRow
+        from butler.interface.tui.panels.system import MetricRow
         row = MetricRow("↑ TX", " MB/s", max_value=10.0)
         row.value = 1.5
         row.peak = 8.3
@@ -595,7 +595,7 @@ class TestMetricRowPeakLabel:
         assert "↑8.3" in text  # decimal for MB/s
 
     def test_update_data_sets_peak(self):
-        from bantz.interface.tui.panels.system import MetricRow
+        from butler.interface.tui.panels.system import MetricRow
         row = MetricRow("CPU", "%")
         # Can't call update_data without DOM, but test reactive directly
         row.peak = 92.0
@@ -609,13 +609,13 @@ class TestMetricRowPeakLabel:
 class TestSidebarToggle:
     def test_toggle_sidebar_binding_exists(self):
         """Verify Ctrl+S binding is registered in BantzApp."""
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         bindings = [b for b in BantzApp.BINDINGS if hasattr(b, 'key')]
         keys = [b.key for b in bindings]
         assert "ctrl+s" in keys
 
     def test_toggle_sidebar_action_defined(self):
         """Verify action_toggle_sidebar method exists."""
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "action_toggle_sidebar")
         assert callable(BantzApp.action_toggle_sidebar)

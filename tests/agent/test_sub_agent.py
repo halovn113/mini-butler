@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bantz.agent.sub_agent import (
+from butler.agent.sub_agent import (
     AGENT_ROLES,
     ROLE_ALIASES,
     DeveloperAgent,

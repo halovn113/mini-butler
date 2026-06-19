@@ -17,7 +17,7 @@ import pytest
 # ── Minimal BantzContext stand-in for isolation ──────────────────────
 # We import the real one but keep a fallback so the test file is self-contained.
 try:
-    from bantz.core.context import BantzContext
+    from butler.core.context import BantzContext
 except ImportError:
 
     @dataclass
@@ -34,7 +34,7 @@ except ImportError:
         feedback_hint: str = ""
 
 
-from bantz.core.memory_injector import (
+from butler.core.memory_injector import (
     style_hint,
     persona_hint,
     formality_hint,
@@ -239,7 +239,7 @@ class TestInject:
         mock_profile.get = lambda k, d="": d
         mock_profile.prompt_hint.return_value = "User: TestUser"
 
-        from bantz.memory.omni_memory import MemoryRecallResult
+        from butler.memory.omni_memory import MemoryRecallResult
         mock_recall = MemoryRecallResult(
             graph_context="graph data",
             vector_context="vector data",
@@ -280,7 +280,7 @@ class TestInject:
         mock_profile.get = lambda k, d="": d
         mock_profile.prompt_hint.return_value = ""
 
-        from bantz.memory.omni_memory import MemoryRecallResult
+        from butler.memory.omni_memory import MemoryRecallResult
         # Return partial result (graph failed inside OmniMemory)
         mock_recall = MemoryRecallResult(
             graph_context="",
@@ -315,7 +315,7 @@ class TestInject:
         This test verifies inject() correctly delegates to omni_memory.recall()
         and populates both individual fields and memory_combined.
         """
-        from bantz.memory.omni_memory import MemoryRecallResult
+        from butler.memory.omni_memory import MemoryRecallResult
 
         mock_recall = MemoryRecallResult(
             graph_context="g",

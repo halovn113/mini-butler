@@ -18,7 +18,7 @@ import json
 import pytest
 from unittest.mock import AsyncMock, patch
 
-from bantz.tools.contact_resolver import UnifiedContactResolver
+from butler.tools.contact_resolver import UnifiedContactResolver
 
 
 @pytest.fixture

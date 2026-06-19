@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Bantz v2 — Quick setup
+# Butler v2 — Quick setup
 set -e
 
-echo "🔧 Bantz v2 setup..."
+echo "🔧 Butler v2 setup..."
 
 python3 -c "import sys; assert sys.version_info >= (3,11), 'Python 3.11+ required'" \
   || { echo "❌ Python 3.11+ required"; exit 1; }
@@ -24,8 +24,8 @@ if [[ "$yn" =~ ^[Yy]$ ]]; then
   echo "✓ MarianMT installed"
   # Update .env
   if [ -f .env ]; then
-    sed -i 's/BANTZ_TRANSLATION_ENABLED=false/BANTZ_TRANSLATION_ENABLED=true/' .env
-    echo "✓ .env updated: BANTZ_TRANSLATION_ENABLED=true"
+    sed -i 's/BUTLER_TRANSLATION_ENABLED=false/BUTLER_TRANSLATION_ENABLED=true/' .env
+    echo "✓ .env updated: BUTLER_TRANSLATION_ENABLED=true"
   fi
 fi
 
@@ -47,5 +47,5 @@ echo "✅ Done!"
 echo ""
 echo "Next:"
 echo "  source .venv/bin/activate"
-echo "  python -m bantz --doctor"
-echo "  python -m bantz"
+echo "  python -m butler --doctor"
+echo "  python -m butler"

@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from bantz.data.connection_pool import SQLitePool, get_pool
-from bantz.data.async_executor import run_read, run_write, run_in_db, shutdown
+from butler.data.connection_pool import SQLitePool, get_pool
+from butler.data.async_executor import run_read, run_write, run_in_db, shutdown
 
 
 # ── fixtures ──────────────────────────────────────────────────────────

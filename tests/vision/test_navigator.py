@@ -15,7 +15,7 @@ from pathlib import Path
 from unittest import IsolatedAsyncioTestCase, TestCase
 from unittest.mock import MagicMock, patch
 
-from bantz.vision.navigator import (
+from butler.vision.navigator import (
     ActionResult,
     NavResult,
     NavigationAnalytics,
@@ -300,7 +300,7 @@ class TestQuickRouteGUI(TestCase):
 
     @staticmethod
     def _route(text: str):
-        from bantz.core.brain import Brain
+        from butler.core.brain import Brain
         return Brain._quick_route(text, text)
 
     def test_click_element_not_quick_routed(self):

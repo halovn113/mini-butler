@@ -29,49 +29,49 @@ class TestGhostLoopConfig:
     """Verify all Ghost Loop / STT config fields exist with correct defaults."""
 
     def test_ghost_loop_enabled_field(self):
-        from bantz.config import Config
+        from butler.config import Config
         field = Config.model_fields["ghost_loop_enabled"]
         assert field.default is False
         assert field.alias == "BANTZ_GHOST_LOOP_ENABLED"
 
     def test_stt_enabled_field(self):
-        from bantz.config import Config
+        from butler.config import Config
         field = Config.model_fields["stt_enabled"]
         assert field.default is False
         assert field.alias == "BANTZ_STT_ENABLED"
 
     def test_stt_model_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         field = Config.model_fields["stt_model"]
         assert field.default == "tiny"
         assert field.alias == "BANTZ_STT_MODEL"
 
     def test_stt_language_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         field = Config.model_fields["stt_language"]
         assert field.default == "en"
         assert field.alias == "BANTZ_STT_LANGUAGE"
 
     def test_stt_device_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         field = Config.model_fields["stt_device"]
         assert field.default == "cpu"
         assert field.alias == "BANTZ_STT_DEVICE"
 
     def test_vad_silence_ms_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         field = Config.model_fields["vad_silence_ms"]
         assert field.default == 800
         assert field.alias == "BANTZ_VAD_SILENCE_MS"
 
     def test_vad_aggressiveness_default(self):
-        from bantz.config import Config
+        from butler.config import Config
         field = Config.model_fields["vad_aggressiveness"]
         assert field.default == 2
         assert field.alias == "BANTZ_VAD_AGGRESSIVENESS"
 
     def test_all_ghost_fields_exist(self):
-        from bantz.config import Config
+        from butler.config import Config
         expected = [
             "ghost_loop_enabled", "stt_enabled", "stt_model",
             "stt_language", "stt_device", "vad_silence_ms",
@@ -90,20 +90,20 @@ class TestVoiceCaptureConstants:
     """Verify audio constants match WebRTC VAD requirements."""
 
     def test_sample_rate(self):
-        from bantz.agent.voice_capture import SAMPLE_RATE
+        from butler.agent.voice_capture import SAMPLE_RATE
         assert SAMPLE_RATE == 16000
 
     def test_frame_duration(self):
-        from bantz.agent.voice_capture import FRAME_DURATION_MS
+        from butler.agent.voice_capture import FRAME_DURATION_MS
         assert FRAME_DURATION_MS in (10, 20, 30)
 
     def test_frame_size_matches(self):
-        from bantz.agent.voice_capture import SAMPLE_RATE, FRAME_DURATION_MS, FRAME_SIZE
+        from butler.agent.voice_capture import SAMPLE_RATE, FRAME_DURATION_MS, FRAME_SIZE
         expected = int(SAMPLE_RATE * FRAME_DURATION_MS / 1000)
         assert FRAME_SIZE == expected
 
     def test_max_record_seconds(self):
-        from bantz.agent.voice_capture import MAX_RECORD_SECONDS
+        from butler.agent.voice_capture import MAX_RECORD_SECONDS
         assert MAX_RECORD_SECONDS > 0
         assert MAX_RECORD_SECONDS <= 60
 
@@ -112,14 +112,14 @@ class TestVoiceCaptureInit:
     """Test VoiceCapture lazy initialization."""
 
     def test_init_without_webrtcvad(self):
-        from bantz.agent.voice_capture import VoiceCapture
+        from butler.agent.voice_capture import VoiceCapture
         vc = VoiceCapture()
         with patch.dict("sys.modules", {"webrtcvad": None}):
             with patch("builtins.__import__", side_effect=ImportError("no webrtcvad")):
                 assert vc._ensure_init() is False
 
     def test_init_with_webrtcvad(self):
-        from bantz.agent.voice_capture import VoiceCapture
+        from butler.agent.voice_capture import VoiceCapture
         mock_vad = MagicMock()
         mock_webrtcvad = MagicMock()
         mock_webrtcvad.Vad.return_value = mock_vad
@@ -131,13 +131,13 @@ class TestVoiceCaptureInit:
                 assert vc._ensure_init() is True
 
     def test_capture_returns_none_without_deps(self):
-        from bantz.agent.voice_capture import VoiceCapture
+        from butler.agent.voice_capture import VoiceCapture
         vc = VoiceCapture()
         with patch.object(vc, "_ensure_init", return_value=False):
             assert vc.capture() is None
 
     def test_capture_returns_none_without_pyaudio(self):
-        from bantz.agent.voice_capture import VoiceCapture
+        from butler.agent.voice_capture import VoiceCapture
         vc = VoiceCapture()
         vc._vad = MagicMock()  # VAD is "ready"
         with patch.dict("sys.modules", {"pyaudio": None}):
@@ -150,14 +150,14 @@ class TestVoiceCaptureDiagnose:
     """Test VoiceCapture.diagnose() output."""
 
     def test_diagnose_keys(self):
-        from bantz.agent.voice_capture import VoiceCapture
+        from butler.agent.voice_capture import VoiceCapture
         vc = VoiceCapture()
         diag = vc.diagnose()
         assert "webrtcvad_available" in diag
         assert "pyaudio_available" in diag
 
     def test_diagnose_without_deps(self):
-        from bantz.agent.voice_capture import VoiceCapture
+        from butler.agent.voice_capture import VoiceCapture
         vc = VoiceCapture()
         # When neither is installed, both should be False
         # (actual result depends on env, so just check structure)
@@ -175,13 +175,13 @@ class TestSTTEngineInit:
     """Test STTEngine initialization and model loading."""
 
     def test_init_defaults(self):
-        from bantz.agent.stt import STTEngine
+        from butler.agent.stt import STTEngine
         engine = STTEngine()
         assert engine._model is None
         assert engine._available is None
 
     def test_available_without_faster_whisper(self):
-        from bantz.agent.stt import STTEngine
+        from butler.agent.stt import STTEngine
         engine = STTEngine()
         with patch.dict("sys.modules", {"faster_whisper": None}):
             with patch("builtins.__import__", side_effect=ImportError):
@@ -190,13 +190,13 @@ class TestSTTEngineInit:
                 assert engine._available is False
 
     def test_transcribe_returns_none_for_empty(self):
-        from bantz.agent.stt import STTEngine
+        from butler.agent.stt import STTEngine
         engine = STTEngine()
         assert engine.transcribe(b"") is None
         assert engine.transcribe(None) is None
 
     def test_transcribe_returns_none_without_model(self):
-        from bantz.agent.stt import STTEngine
+        from butler.agent.stt import STTEngine
         engine = STTEngine()
         engine._available = False
         assert engine.transcribe(b"\x00" * 1000) is None
@@ -206,7 +206,7 @@ class TestSTTEngineDiagnose:
     """Test STTEngine.diagnose() output."""
 
     def test_diagnose_keys(self):
-        from bantz.agent.stt import STTEngine
+        from butler.agent.stt import STTEngine
         engine = STTEngine()
         diag = engine.diagnose()
         assert "faster_whisper_available" in diag
@@ -216,7 +216,7 @@ class TestSTTEngineDiagnose:
         assert "language" in diag
 
     def test_diagnose_model_not_loaded(self):
-        from bantz.agent.stt import STTEngine
+        from butler.agent.stt import STTEngine
         engine = STTEngine()
         diag = engine.diagnose()
         assert diag["model"] == "(not loaded)"
@@ -226,7 +226,7 @@ class TestSTTEngineTranscribe:
     """Test transcription pipeline with mocked model."""
 
     def test_transcribe_with_mock_model(self):
-        from bantz.agent.stt import STTEngine
+        from butler.agent.stt import STTEngine
         engine = STTEngine()
 
         # Mock the model
@@ -251,7 +251,7 @@ class TestSTTEngineTranscribe:
         mock_model.transcribe.assert_called_once()
 
     def test_transcribe_empty_result(self):
-        from bantz.agent.stt import STTEngine
+        from butler.agent.stt import STTEngine
         engine = STTEngine()
 
         mock_segment = MagicMock()
@@ -282,14 +282,14 @@ class TestGhostLoopInit:
     """Test GhostLoop initialization."""
 
     def test_init_defaults(self):
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         gl = GhostLoop()
         assert gl.running is False
         assert gl.busy is False
         assert gl._total_transcriptions == 0
 
     def test_stats(self):
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         gl = GhostLoop()
         stats = gl.stats()
         assert stats["running"] is False
@@ -302,7 +302,7 @@ class TestGhostLoopStartStop:
     """Test GhostLoop start/stop lifecycle."""
 
     def test_start_disabled_by_config(self):
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         gl = GhostLoop()
         mock_cfg = MagicMock()
         mock_cfg.ghost_loop_enabled = False
@@ -313,7 +313,7 @@ class TestGhostLoopStartStop:
                 assert gl.running is False
 
     def test_start_enabled(self):
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         gl = GhostLoop()
         mock_cfg = MagicMock()
         mock_cfg.ghost_loop_enabled = True
@@ -328,7 +328,7 @@ class TestGhostLoopStartStop:
                 )
 
     def test_stop(self):
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         gl = GhostLoop()
         gl._running = True
         mock_bus = MagicMock()
@@ -338,7 +338,7 @@ class TestGhostLoopStartStop:
             mock_bus.off.assert_called_once()
 
     def test_start_idempotent(self):
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         gl = GhostLoop()
         gl._running = True
         assert gl.start() is True
@@ -348,8 +348,8 @@ class TestGhostLoopWakeEvent:
     """Test wake event handling in Ghost Loop."""
 
     def test_ignores_when_busy(self):
-        from bantz.agent.ghost_loop import GhostLoop
-        from bantz.core.event_bus import Event
+        from butler.agent.ghost_loop import GhostLoop
+        from butler.core.event_bus import Event
         gl = GhostLoop()
         gl._busy = True
         # Should not spawn a thread
@@ -358,8 +358,8 @@ class TestGhostLoopWakeEvent:
             mock_thread.assert_not_called()
 
     def test_spawns_thread_when_idle(self):
-        from bantz.agent.ghost_loop import GhostLoop
-        from bantz.core.event_bus import Event
+        from butler.agent.ghost_loop import GhostLoop
+        from butler.core.event_bus import Event
         gl = GhostLoop()
         gl._busy = False
         with patch("bantz.agent.ghost_loop.threading.Thread") as mock_thread_cls:
@@ -374,7 +374,7 @@ class TestGhostLoopPipeline:
     """Test the capture → transcribe → dispatch pipeline."""
 
     def test_pipeline_no_audio(self):
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         gl = GhostLoop()
         mock_vc = MagicMock()
         mock_vc.capture.return_value = None
@@ -394,7 +394,7 @@ class TestGhostLoopPipeline:
         assert no_speech[0][1]["reason"] == "no_audio"
 
     def test_pipeline_successful_transcription(self):
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         gl = GhostLoop()
         mock_vc = MagicMock()
         mock_vc.capture.return_value = b"\x00" * 16000
@@ -414,7 +414,7 @@ class TestGhostLoopPipeline:
         assert voice_call[0][1]["text"] == "Turn off the lights"
 
     def test_pipeline_stt_returns_none(self):
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         gl = GhostLoop()
         mock_vc = MagicMock()
         mock_vc.capture.return_value = b"\x00" * 16000
@@ -436,7 +436,7 @@ class TestGhostLoopPipeline:
 
     def test_pipeline_exception_emits_voice_no_speech(self):
         """Pipeline exceptions should emit voice_no_speech with error info."""
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         gl = GhostLoop()
         mock_vc = MagicMock()
         mock_vc.capture.side_effect = RuntimeError("mic exploded")
@@ -454,7 +454,7 @@ class TestGhostLoopPipeline:
     def test_pipeline_alsa_release_sleep(self):
         """Pipeline should sleep ≥0.25s after pausing wake word for ALSA."""
         import inspect
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         src = inspect.getsource(GhostLoop._capture_and_transcribe)
         # Mic release sleep was increased from 0.30 to 0.50 for better ALSA reliability
         assert any(f"time.sleep({v})" in src for v in ("0.30", "0.3", "0.50", "0.5"))
@@ -464,7 +464,7 @@ class TestGhostLoopDiagnose:
     """Test GhostLoop.diagnose() output."""
 
     def test_diagnose_structure(self):
-        from bantz.agent.ghost_loop import GhostLoop
+        from butler.agent.ghost_loop import GhostLoop
         gl = GhostLoop()
         with patch("bantz.agent.voice_capture.voice_capture") as mock_vc:
             with patch("bantz.agent.stt.stt_engine") as mock_stt:
@@ -487,7 +487,7 @@ class TestTUIEventSubscriptions:
     def test_subscribe_has_voice_events(self):
         """_subscribe_event_bus must subscribe to ghost loop events."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp._subscribe_event_bus)
         assert 'bus.on("voice_input"' in src
         assert 'bus.on("ghost_loop_listening"' in src
@@ -501,7 +501,7 @@ class TestTUIEventSubscriptions:
     def test_unsubscribe_has_voice_events(self):
         """_unsubscribe_event_bus must unsubscribe from ghost loop events."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp._unsubscribe_event_bus)
         assert 'bus.off("voice_input"' in src
         assert 'bus.off("ghost_loop_listening"' in src
@@ -515,7 +515,7 @@ class TestTUIEventSubscriptions:
     def test_event_dispatch_has_voice_input(self):
         """on_bantz_event_message must dispatch voice_input events."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp.on_bantz_event_message)
         assert '"voice_input"' in src
         assert '"ghost_loop_listening"' in src
@@ -525,65 +525,65 @@ class TestTUIEventSubscriptions:
 
     def test_voice_input_handler_exists(self):
         """BantzApp must have _on_bus_voice_input method."""
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_on_bus_voice_input")
         assert callable(getattr(BantzApp, "_on_bus_voice_input"))
 
     def test_ghost_listening_handler_exists(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_on_bus_ghost_listening")
 
     def test_ghost_transcribing_handler_exists(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_on_bus_ghost_transcribing")
 
     def test_voice_no_speech_handler_exists(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_on_bus_voice_no_speech")
         assert callable(getattr(BantzApp, "_on_bus_voice_no_speech"))
 
     def test_stt_model_loading_handler_exists(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_on_bus_stt_model_loading")
         assert callable(getattr(BantzApp, "_on_bus_stt_model_loading"))
 
     def test_stt_model_ready_handler_exists(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_on_bus_stt_model_ready")
         assert callable(getattr(BantzApp, "_on_bus_stt_model_ready"))
 
     def test_stt_model_failed_handler_exists(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_on_bus_stt_model_failed")
         assert callable(getattr(BantzApp, "_on_bus_stt_model_failed"))
 
     def test_voice_input_handler_has_busy_guard(self):
         """_on_bus_voice_input must check _busy before processing."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp._on_bus_voice_input)
         assert "_busy" in src
 
     def test_legacy_wake_word_message_removed(self):
         """The dead WakeWordDetected message class should no longer exist."""
-        from bantz.interface.tui import app as tui_app
+        from butler.interface.tui import app as tui_app
         assert not hasattr(tui_app, "WakeWordDetected")
 
     def test_start_ghost_loop_method_exists(self):
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         assert hasattr(BantzApp, "_start_ghost_loop")
 
     def test_on_mount_calls_start_ghost_loop(self):
         """on_mount must call _start_ghost_loop."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp.on_mount)
         assert "_start_ghost_loop" in src
 
     def test_action_quit_stops_ghost_loop(self):
         """action_quit must stop the ghost loop."""
         import inspect
-        from bantz.interface.tui.app import BantzApp
+        from butler.interface.tui.app import BantzApp
         src = inspect.getsource(BantzApp.action_quit)
         assert "ghost_loop" in src
 
@@ -598,7 +598,7 @@ class TestDoctorGhostLoop:
 
     def test_doctor_has_ghost_loop_check(self):
         import inspect
-        from bantz.cli.setup import _doctor
+        from butler.cli.setup import _doctor
         src = inspect.getsource(_doctor)
         assert "Ghost Loop" in src
         assert "ghost_loop_enabled" in src
@@ -616,7 +616,7 @@ class TestDoctorMemPalaceFix:
     def test_doctor_awaits_palace_init(self):
         """_doctor() must call await palace_bridge.init() before checking .enabled."""
         import inspect
-        from bantz.cli.setup import _doctor
+        from butler.cli.setup import _doctor
         src = inspect.getsource(_doctor)
         assert "await palace_bridge.init()" in src, (
             "_doctor() must await palace_bridge.init() to avoid false-negative enabled check"
@@ -625,7 +625,7 @@ class TestDoctorMemPalaceFix:
     def test_doctor_palace_init_before_enabled(self):
         """await palace_bridge.init() must appear before palace_bridge.enabled check."""
         import inspect
-        from bantz.cli.setup import _doctor
+        from butler.cli.setup import _doctor
         src = inspect.getsource(_doctor)
         init_pos = src.find("await palace_bridge.init()")
         enabled_pos = src.find("palace_bridge.enabled")
@@ -638,16 +638,16 @@ class TestDoctorMemPalaceFix:
     def test_doctor_loads_tool_modules(self):
         """_doctor() must import tool modules so registry.all_schemas() is non-empty."""
         import inspect
-        from bantz.cli.setup import _doctor
+        from butler.cli.setup import _doctor
         src = inspect.getsource(_doctor)
-        assert "bantz.tools.shell" in src, "_doctor() must import bantz.tools.shell to populate registry"
-        assert "bantz.tools.system" in src, "_doctor() must import bantz.tools.system to populate registry"
+        assert "bantz.tools.shell" in src, "_doctor() must import butler.tools.shell to populate registry"
+        assert "bantz.tools.system" in src, "_doctor() must import butler.tools.system to populate registry"
         assert "registry.all_schemas()" in src, "_doctor() must call registry.all_schemas()"
 
     def test_doctor_voice_tracks_pip_missing(self):
         """_doctor() must collect missing pip packages for consolidated voice fix output (#432)."""
         import inspect
-        from bantz.cli.setup import _doctor
+        from butler.cli.setup import _doctor
         src = inspect.getsource(_doctor)
         assert "_voice_pip_missing" in src, (
             "_doctor() must track missing voice pip packages for consolidated fix command"
@@ -688,13 +688,13 @@ class TestModuleSingletons:
     """Verify module-level singletons are importable."""
 
     def test_voice_capture_singleton(self):
-        from bantz.agent.voice_capture import voice_capture
+        from butler.agent.voice_capture import voice_capture
         assert voice_capture is not None
 
     def test_stt_engine_singleton(self):
-        from bantz.agent.stt import stt_engine
+        from butler.agent.stt import stt_engine
         assert stt_engine is not None
 
     def test_ghost_loop_singleton(self):
-        from bantz.agent.ghost_loop import ghost_loop
+        from butler.agent.ghost_loop import ghost_loop
         assert ghost_loop is not None

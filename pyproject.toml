@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "bantz"
+name = "butler"
 version = "2.1.0"
 description = "Local-first AI assistant — your terminal, your host."
 requires-python = ">=3.11"
@@ -68,10 +68,10 @@ google = [
 ]
 
 [project.scripts]
-bantz = "bantz.__main__:main"
+butler = "butler.__main__:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/bantz"]
+packages = ["src/butler"]
 
 [tool.ruff]
 line-length = 100
@@ -82,20 +82,20 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [tool.coverage.run]
-source = ["bantz"]
+source = ["butler"]
 omit = [
-    "src/bantz/__main__.py",
-    "src/bantz/tools/gmail.py",
-    "src/bantz/tools/calendar.py",
-    "src/bantz/tools/classroom.py",
-    "src/bantz/tools/document.py",
-    "src/bantz/tools/news.py",
-    "src/bantz/tools/weather.py",
-    "src/bantz/tools/web_search.py",
-    "src/bantz/tools/reminder.py",
-    "src/bantz/tools/filesystem.py",
-    "src/bantz/tools/system.py",
-    "src/bantz/auth/*",
+    "src/butler/__main__.py",
+    "src/butler/tools/gmail.py",
+    "src/butler/tools/calendar.py",
+    "src/butler/tools/classroom.py",
+    "src/butler/tools/document.py",
+    "src/butler/tools/news.py",
+    "src/butler/tools/weather.py",
+    "src/butler/tools/web_search.py",
+    "src/butler/tools/reminder.py",
+    "src/butler/tools/filesystem.py",
+    "src/butler/tools/system.py",
+    "src/butler/auth/*",
 ]
 
 [tool.coverage.report]

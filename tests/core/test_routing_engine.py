@@ -31,7 +31,7 @@ class TestQuickRoute:
 
     @pytest.fixture(autouse=True)
     def _import(self):
-        from bantz.core.routing_engine import quick_route
+        from butler.core.routing_engine import quick_route
         self.qr = quick_route
 
     # ── TTS stop ──────────────────────────────────────────────────────
@@ -134,7 +134,7 @@ class TestQuickRouteTurkishSystem:
 
     @pytest.fixture(autouse=True)
     def _import(self):
-        from bantz.core.routing_engine import quick_route
+        from butler.core.routing_engine import quick_route
         self.qr = quick_route
 
     @pytest.mark.parametrize("orig,en,expected_metric", [
@@ -188,7 +188,7 @@ class TestDispatchInternal:
 
     @pytest.fixture(autouse=True)
     def _import(self):
-        from bantz.core.routing_engine import dispatch_internal
+        from butler.core.routing_engine import dispatch_internal
         self.dispatch = dispatch_internal
 
     def test_tts_stop_speaking(self):
@@ -256,14 +256,14 @@ class TestGenerateCommand:
     def test_strips_backticks(self):
         with patch("bantz.core.routing_engine.ollama") as mock_ollama:
             mock_ollama.chat = AsyncMock(return_value="```ls -la```")
-            from bantz.core.routing_engine import generate_command
+            from butler.core.routing_engine import generate_command
             result = _run(generate_command("list files", "list files"))
         assert result == "ls -la"
 
     def test_plain_command(self):
         with patch("bantz.core.routing_engine.ollama") as mock_ollama:
             mock_ollama.chat = AsyncMock(return_value="df -h\n")
-            from bantz.core.routing_engine import generate_command
+            from butler.core.routing_engine import generate_command
             result = _run(generate_command("disk space", "disk space"))
         assert result == "df -h"
 
@@ -280,7 +280,7 @@ class TestExecutePlan:
             mock_reg.names.return_value = ["shell", "weather"]
             mock_planner.decompose = AsyncMock(return_value=[])  # no steps
             mock_dl.conversations.add = MagicMock()
-            from bantz.core.routing_engine import execute_plan
+            from butler.core.routing_engine import execute_plan
             result = _run(execute_plan("hello", "hello", {}))
         assert result is not None
         assert result.tool_used == "planner"
@@ -308,7 +308,7 @@ class TestExecutePlan:
             dl.conversations = MagicMock()
             mock_ollama.chat = AsyncMock(return_value="ok")
 
-            from bantz.core.routing_engine import execute_plan
+            from butler.core.routing_engine import execute_plan
             result = _run(execute_plan("complex task", "complex task", {}))
 
         assert result is not None
@@ -328,7 +328,7 @@ class TestExecutePlan:
                 {"role": "user", "content": "Who is John?"},
                 {"role": "assistant", "content": "John is your colleague."},
             ]
-            from bantz.core.routing_engine import execute_plan
+            from butler.core.routing_engine import execute_plan
             _run(execute_plan("send him the file", "send him the file", {},
                               recent_history=history))
 
@@ -346,7 +346,7 @@ class TestExecutePlan:
             mock_planner.decompose = AsyncMock(return_value=[])
             dl.conversations = MagicMock()
 
-            from bantz.core.routing_engine import execute_plan
+            from butler.core.routing_engine import execute_plan
             result = _run(execute_plan("hello", "hello", {}))
 
         assert result is not None
@@ -366,14 +366,14 @@ class TestWorkflowHandlers:
         report.summary.return_value = "Maintenance complete."
         with patch("bantz.agent.workflows.maintenance.run_maintenance",
                    new_callable=AsyncMock, return_value=report):
-            from bantz.core.routing_engine import handle_maintenance
+            from butler.core.routing_engine import handle_maintenance
             result = _run(handle_maintenance())
         assert "Maintenance complete" in result
 
     def test_handle_maintenance_error(self):
         with patch("bantz.agent.workflows.maintenance.run_maintenance",
                    new_callable=AsyncMock, side_effect=RuntimeError("boom")):
-            from bantz.core.routing_engine import handle_maintenance
+            from butler.core.routing_engine import handle_maintenance
             result = _run(handle_maintenance())
         assert "❌" in result
         assert "boom" in result
@@ -381,7 +381,7 @@ class TestWorkflowHandlers:
     def test_handle_list_reflections_empty(self):
         with patch("bantz.agent.workflows.reflection.list_reflections",
                    return_value=[]):
-            from bantz.core.routing_engine import handle_list_reflections
+            from butler.core.routing_engine import handle_list_reflections
             result = handle_list_reflections()
         assert "No reflections" in result
 
@@ -389,7 +389,7 @@ class TestWorkflowHandlers:
         items = [{"date": "2025-07-14", "summary": "Good day", "sessions": 3}]
         with patch("bantz.agent.workflows.reflection.list_reflections",
                    return_value=items):
-            from bantz.core.routing_engine import handle_list_reflections
+            from butler.core.routing_engine import handle_list_reflections
             result = handle_list_reflections()
         assert "2025-07-14" in result
         assert "3 sessions" in result
@@ -399,14 +399,14 @@ class TestWorkflowHandlers:
         ref_result.summary_line.return_value = "Reflected."
         with patch("bantz.agent.workflows.reflection.run_reflection",
                    new_callable=AsyncMock, return_value=ref_result):
-            from bantz.core.routing_engine import handle_run_reflection
+            from butler.core.routing_engine import handle_run_reflection
             result = _run(handle_run_reflection())
         assert "Reflected" in result
 
     def test_handle_run_reflection_error(self):
         with patch("bantz.agent.workflows.reflection.run_reflection",
                    new_callable=AsyncMock, side_effect=RuntimeError("fail")):
-            from bantz.core.routing_engine import handle_run_reflection
+            from butler.core.routing_engine import handle_run_reflection
             result = _run(handle_run_reflection())
         assert "❌" in result
         assert "fail" in result
@@ -420,14 +420,14 @@ class TestRoutingHintsTurkishSystem:
     """_ROUTING_HINTS for system tool must include Turkish keywords (#433)."""
 
     def test_system_hint_has_turkish_keywords(self):
-        from bantz.core.intent import _ROUTING_HINTS
+        from butler.core.intent import _ROUTING_HINTS
         hint = _ROUTING_HINTS["system"]
         assert "cpu kullanımı" in hint.lower() or "cpu kullanımı" in hint
         assert "ram kullanımı" in hint.lower() or "ram kullanımı" in hint
         assert "işlemci" in hint
 
     def test_system_hint_has_marian_artifact_note(self):
-        from bantz.core.intent import _ROUTING_HINTS
+        from butler.core.intent import _ROUTING_HINTS
         hint = _ROUTING_HINTS["system"]
         assert "what is the use of" in hint.lower()
         assert "web_search" in hint

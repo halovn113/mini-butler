@@ -33,7 +33,7 @@ class TestDesktopContext:
             "bantz.tools.classroom": MagicMock(),
             "bantz.tools.reminder": MagicMock(),
         }):
-            from bantz.core.brain import Brain
+            from butler.core.brain import Brain
             return Brain()
 
     def test_desktop_context_not_initialized(self):
@@ -109,12 +109,12 @@ class TestDesktopContext:
 
     def test_chat_system_has_desktop_hint_placeholder(self):
         """CHAT_SYSTEM template includes {desktop_hint}."""
-        from bantz.core.brain import CHAT_SYSTEM
+        from butler.core.brain import CHAT_SYSTEM
         assert "{desktop_hint}" in CHAT_SYSTEM
 
     def test_chat_system_has_anti_hallucination_rule(self):
         """CHAT_SYSTEM tells LLM to use Desktop Context only."""
-        from bantz.core.brain import CHAT_SYSTEM
+        from butler.core.brain import CHAT_SYSTEM
         assert "Desktop Context" in CHAT_SYSTEM
 
 
@@ -139,7 +139,7 @@ class TestStickyContextFix:
             "bantz.tools.classroom": MagicMock(),
             "bantz.tools.reminder": MagicMock(),
         }):
-            from bantz.core.brain import Brain
+            from butler.core.brain import Brain
             b = Brain()
             # Simulate having recent email messages
             b._last_messages = [
@@ -265,7 +265,7 @@ class TestExtractCity:
     """Test _extract_city with English and Turkish patterns."""
 
     def _extract(self, text: str) -> str:
-        from bantz.core.brain import _extract_city
+        from butler.core.brain import _extract_city
         return _extract_city(text)
 
     # ── English patterns ──────────────────────────────────────────────
@@ -379,34 +379,34 @@ class TestMarkdownURLPromptRules:
 
     def test_chat_system_has_raw_url_rule(self):
         """CHAT_SYSTEM must tell LLM to use raw URLs."""
-        from bantz.core.brain import CHAT_SYSTEM
+        from butler.core.brain import CHAT_SYSTEM
         lower = CHAT_SYSTEM.lower()
         assert "raw" in lower and "url" in lower
 
     def test_chat_system_forbids_markdown_links(self):
         """CHAT_SYSTEM must explicitly forbid [Text](URL) syntax."""
-        from bantz.core.brain import CHAT_SYSTEM
+        from butler.core.brain import CHAT_SYSTEM
         assert "[Text](URL)" in CHAT_SYSTEM or "no [Text]" in CHAT_SYSTEM
 
     def test_chat_system_forbids_bracket_urls(self):
         """CHAT_SYSTEM must forbid [URL] bracket wrapping."""
-        from bantz.core.brain import CHAT_SYSTEM
+        from butler.core.brain import CHAT_SYSTEM
         assert "no [URL]" in CHAT_SYSTEM or "[URL]" in CHAT_SYSTEM
 
     def test_finalizer_has_raw_url_rule(self):
         """FINALIZER_SYSTEM must tell LLM to use raw URLs."""
-        from bantz.core.finalizer import FINALIZER_SYSTEM
+        from butler.core.finalizer import FINALIZER_SYSTEM
         lower = FINALIZER_SYSTEM.lower()
         assert "raw" in lower and "url" in lower
 
     def test_finalizer_forbids_markdown_links(self):
         """FINALIZER_SYSTEM must explicitly forbid [Text](URL) syntax."""
-        from bantz.core.finalizer import FINALIZER_SYSTEM
+        from butler.core.finalizer import FINALIZER_SYSTEM
         assert "[Text](URL)" in FINALIZER_SYSTEM or "no [Text]" in FINALIZER_SYSTEM
 
     def test_finalizer_forbids_bracket_urls(self):
         """FINALIZER_SYSTEM must forbid [URL] bracket wrapping."""
-        from bantz.core.finalizer import FINALIZER_SYSTEM
+        from butler.core.finalizer import FINALIZER_SYSTEM
         assert "no [URL]" in FINALIZER_SYSTEM or "[URL]" in FINALIZER_SYSTEM
 
 
@@ -415,7 +415,7 @@ class TestStripMarkdownLinks:
 
     def test_markdown_link_to_bare_url(self):
         """[Click Here](https://example.com) → https://example.com"""
-        from bantz.core.finalizer import strip_markdown
+        from butler.core.finalizer import strip_markdown
         text = "Check this: [Click Here](https://example.com) for details."
         result = strip_markdown(text)
         urls = re.findall(r"https?://[^\s\)\]]+", result)
@@ -425,7 +425,7 @@ class TestStripMarkdownLinks:
 
     def test_bracket_url_to_bare(self):
         """[https://example.com] → https://example.com"""
-        from bantz.core.finalizer import strip_markdown
+        from butler.core.finalizer import strip_markdown
         text = "Telegraph Reference: [https://en.wikipedia.org/wiki/Edith]"
         result = strip_markdown(text)
         urls = re.findall(r"https?://[^\s\)\]]+", result)
@@ -434,7 +434,7 @@ class TestStripMarkdownLinks:
 
     def test_url_with_parens_in_markdown(self):
         """Links with parentheses in URL still convert correctly."""
-        from bantz.core.finalizer import strip_markdown
+        from butler.core.finalizer import strip_markdown
         text = "[Article](https://en.wikipedia.org/wiki/Edith_(name))"
         result = strip_markdown(text)
         # Should extract the URL (may truncate at inner paren, which is OK)
@@ -443,7 +443,7 @@ class TestStripMarkdownLinks:
 
     def test_multiple_markdown_links(self):
         """Multiple links in one response all get stripped."""
-        from bantz.core.finalizer import strip_markdown
+        from butler.core.finalizer import strip_markdown
         text = "[A](https://a.com) and [B](https://b.com)"
         result = strip_markdown(text)
         urls = re.findall(r"https?://[^\s\)\]]+", result)
@@ -454,14 +454,14 @@ class TestStripMarkdownLinks:
 
     def test_bare_url_unchanged(self):
         """Already-bare URLs pass through unmodified."""
-        from bantz.core.finalizer import strip_markdown
+        from butler.core.finalizer import strip_markdown
         text = "See https://example.com for info."
         result = strip_markdown(text)
         assert result == text
 
     def test_non_url_brackets_unchanged(self):
         """Regular brackets without URLs are left alone."""
-        from bantz.core.finalizer import strip_markdown
+        from butler.core.finalizer import strip_markdown
         text = "The answer is [option A]."
         result = strip_markdown(text)
         assert "[option A]" in result
@@ -472,7 +472,7 @@ class TestStripInternal:
 
     def test_strips_context_block(self):
         """The [CONTEXT:{...}] block embedded for follow-ups never reaches the user."""
-        from bantz.core.finalizer import strip_internal
+        from butler.core.finalizer import strip_internal
         text = (
             "Event added ✓\n  Dinner  2026-06-14 19:00 (60 min)\n"
             '[CONTEXT: {"event_id": "abc123"}]'
@@ -484,12 +484,12 @@ class TestStripInternal:
         assert result == "Event added ✓\n  Dinner  2026-06-14 19:00 (60 min)"
 
     def test_strips_thinking_block(self):
-        from bantz.core.finalizer import strip_internal
+        from butler.core.finalizer import strip_internal
         text = "<thinking>plan the answer</thinking>Done. ✓"
         assert strip_internal(text) == "Done. ✓"
 
     def test_preserves_plain_text(self):
         """No internal markers → unchanged (aside from surrounding whitespace)."""
-        from bantz.core.finalizer import strip_internal
+        from butler.core.finalizer import strip_internal
         text = "3 unread, 2 events today"
         assert strip_internal(text) == text

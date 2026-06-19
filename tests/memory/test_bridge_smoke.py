@@ -63,7 +63,7 @@ def mock_config(tmp_palace):
 def bridge(mock_config):
     """Create and initialize a MemPalaceBridge with test config."""
     with patch("bantz.memory.bridge._get_config", return_value=mock_config):
-        from bantz.memory.bridge import MemPalaceBridge
+        from butler.memory.bridge import MemPalaceBridge
         b = MemPalaceBridge()
         asyncio.run(b.init())
         yield b
@@ -94,7 +94,7 @@ class TestBridgeInit:
         mock_cfg = MagicMock()
         mock_cfg.mempalace_enabled = False
         with patch("bantz.memory.bridge._get_config", return_value=mock_cfg):
-            from bantz.memory.bridge import MemPalaceBridge
+            from butler.memory.bridge import MemPalaceBridge
             b = MemPalaceBridge()
             asyncio.run(b.init())
             assert b.enabled is False
@@ -108,7 +108,7 @@ class TestContextRetrieval:
     def test_wake_up_returns_identity(self, bridge):
         """wake_up_context() should include L0 identity text."""
         ctx = bridge.wake_up_context()
-        assert "Bantz" in ctx or "identity" in ctx.lower() or "L0" in ctx or "L1" in ctx
+        assert "Butler" in ctx or "identity" in ctx.lower() or "L0" in ctx or "L1" in ctx
 
     def test_vector_context_empty_palace(self, bridge):
         """vector_context() returns something even on empty palace."""
@@ -320,7 +320,7 @@ class TestSpontaneousProbe:
 
     def test_rate_limiting(self):
         """Probe should only fire every N calls."""
-        from bantz.memory.bridge import SpontaneousProbe
+        from butler.memory.bridge import SpontaneousProbe
         probe = SpontaneousProbe(rate_every_n=3)
         mock_l3 = MagicMock()
         mock_l3.search_raw.return_value = []
@@ -342,7 +342,7 @@ class TestSpontaneousProbe:
 
     def test_dedup_prevents_repeats(self):
         """Same memory shouldn't surface twice within TTL."""
-        from bantz.memory.bridge import SpontaneousProbe
+        from butler.memory.bridge import SpontaneousProbe
         probe = SpontaneousProbe(rate_every_n=1, dedup_ttl_seconds=600)
         mock_l3 = MagicMock()
         mock_l3.search_raw.return_value = [
@@ -363,7 +363,7 @@ class TestSpontaneousProbe:
 
     def test_disabled_returns_empty(self):
         """When deep_memory_enabled=False, probe returns empty."""
-        from bantz.memory.bridge import SpontaneousProbe
+        from butler.memory.bridge import SpontaneousProbe
         probe = SpontaneousProbe(rate_every_n=1)
 
         with patch("bantz.memory.bridge._get_config") as mock_cfg:

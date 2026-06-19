@@ -19,13 +19,13 @@ from pathlib import Path
 
 import pytest
 
-from bantz.data.sqlite_store import (
+from butler.data.sqlite_store import (
     SQLitePlaceStore,
     SQLiteProfileStore,
     SQLiteScheduleStore,
     SQLiteSessionStore,
 )
-from bantz.data.migration import migrate_to_sqlite
+from butler.data.migration import migrate_to_sqlite
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ class TestSQLiteSessionStore:
 
 class TestSessionTrackerBindStore:
     def test_bind_store_and_save(self, db_path: Path):
-        from bantz.core.session import SessionTracker
+        from butler.core.session import SessionTracker
         store = SQLiteSessionStore(db_path)
         tracker = SessionTracker()
         tracker.bind_store(store)
@@ -272,7 +272,7 @@ class TestSessionTrackerBindStore:
         assert "last_seen" in loaded
 
     def test_sequential_launches(self, db_path: Path):
-        from bantz.core.session import SessionTracker
+        from butler.core.session import SessionTracker
         store = SQLiteSessionStore(db_path)
         tracker = SessionTracker()
         tracker.bind_store(store)
@@ -283,7 +283,7 @@ class TestSessionTrackerBindStore:
         assert result["is_first"] is False
 
     def test_path_from_store(self, db_path: Path):
-        from bantz.core.session import SessionTracker
+        from butler.core.session import SessionTracker
         store = SQLiteSessionStore(db_path)
         tracker = SessionTracker()
         tracker.bind_store(store)
@@ -291,7 +291,7 @@ class TestSessionTrackerBindStore:
 
     def test_json_fallback(self, tmp_dir: Path):
         """Without bind_store, uses JSON fallback."""
-        from bantz.core.session import SessionTracker
+        from butler.core.session import SessionTracker
         tracker = SessionTracker()
         # No store bound — should not crash
         data = tracker._load()
@@ -303,7 +303,7 @@ class TestProfileBindStore:
         store = SQLiteProfileStore(db_path)
         store.save({"name": "Iclal", "tone": "casual"})
 
-        from bantz.core.profile import Profile
+        from butler.core.profile import Profile
         p = Profile()
         p.bind_store(store)
 
@@ -313,7 +313,7 @@ class TestProfileBindStore:
     def test_save_through_profile(self, db_path: Path):
         store = SQLiteProfileStore(db_path)
 
-        from bantz.core.profile import Profile
+        from butler.core.profile import Profile
         p = Profile()
         p.bind_store(store)
         p.save({"name": "Alice", "university": "MIT"})
@@ -327,7 +327,7 @@ class TestProfileBindStore:
     def test_is_configured(self, db_path: Path):
         store = SQLiteProfileStore(db_path)
 
-        from bantz.core.profile import Profile
+        from butler.core.profile import Profile
         p = Profile()
         p.bind_store(store)
         assert not p.is_configured()
@@ -343,7 +343,7 @@ class TestPlaceServiceBindStore:
             "dorm": {"label": "Yurt", "lat": 41.0, "lon": 36.0, "radius": 100},
         })
 
-        from bantz.core.places import PlaceService
+        from butler.core.places import PlaceService
         ps = PlaceService()
         ps.bind_store(store)
 
@@ -354,7 +354,7 @@ class TestPlaceServiceBindStore:
     def test_save_through_service(self, db_path: Path):
         store = SQLitePlaceStore(db_path)
 
-        from bantz.core.places import PlaceService
+        from butler.core.places import PlaceService
         ps = PlaceService()
         ps.bind_store(store)
         ps.save({"lib": {"label": "Library", "lat": 1.0, "lon": 2.0}})
@@ -369,7 +369,7 @@ class TestPlaceServiceBindStore:
             "b": {"label": "B", "lat": 0, "lon": 0, "radius": 100},
         })
 
-        from bantz.core.places import PlaceService
+        from butler.core.places import PlaceService
         ps = PlaceService()
         ps.bind_store(store)
 
@@ -381,7 +381,7 @@ class TestPlaceServiceBindStore:
     def test_is_configured(self, db_path: Path):
         store = SQLitePlaceStore(db_path)
 
-        from bantz.core.places import PlaceService
+        from butler.core.places import PlaceService
         ps = PlaceService()
         ps.bind_store(store)
         assert not ps.is_configured()
@@ -399,7 +399,7 @@ class TestScheduleBindStore:
             ],
         })
 
-        from bantz.core.schedule import Schedule
+        from butler.core.schedule import Schedule
         s = Schedule()
         s.bind_store(store)
 
@@ -411,7 +411,7 @@ class TestScheduleBindStore:
     def test_is_configured(self, db_path: Path):
         store = SQLiteScheduleStore(db_path)
 
-        from bantz.core.schedule import Schedule
+        from butler.core.schedule import Schedule
         s = Schedule()
         s.bind_store(store)
         assert not s.is_configured()

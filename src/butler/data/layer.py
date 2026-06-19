@@ -1,0 +1,328 @@
+"""
+Bantz v3 — Data Access Layer (Singleton)
+
+Composes all stores behind a single entry point.
+Initialized once during app startup — replaces scattered init() calls.
+
+    from butler.data import data_layer
+
+    data_layer.init(config)
+    data_layer.conversations.add("user", "hello")
+
+At runtime the DataLayer wires the existing ``Memory`` and ``Scheduler``
+singletons (which now inherit from the ABCs) so that every module in the
+codebase — old or new — shares the same connections and session.
+
+Profile, places, schedule, and session now go through SQLite stores
+(migrated from JSON on first launch).
+"""
+from __future__ import annotations
+
+import json
+import logging
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
+
+from butler.data.store import (
+    ConversationStore,
+    GraphStore,
+    PlaceStore,
+    ProfileStore,
+    ReminderStore,
+    ScheduleStore,
+    SessionStore,
+)
+from butler.data.sqlite_store import (
+    SQLitePlaceStore,
+    SQLiteProfileStore,
+    SQLiteScheduleStore,
+    SQLiteSessionStore,
+)
+
+if TYPE_CHECKING:
+    from butler.config import Config
+
+log = logging.getLogger("butler.data")
+
+
+class DataLayer:
+    """Unified data access — the one-stop shop for all persistence.
+
+    Attributes:
+        conversations — messages & sessions      (SQLite via Memory)
+        reminders     — scheduled reminders      (SQLite via Scheduler)
+        profile       — user identity/prefs      (SQLite, auto-migrated from JSON)
+        places        — named GPS locations      (SQLite, auto-migrated from JSON)
+        schedule      — weekly timetable         (SQLite, auto-migrated from JSON)
+        session       — launch tracking          (SQLite, auto-migrated from JSON)
+        graph         — knowledge graph          (MemPalace KG)
+    """
+
+    def __init__(self) -> None:
+        self.conversations: ConversationStore = None  # type: ignore[assignment]
+        self.reminders: ReminderStore = None  # type: ignore[assignment]
+        self.profile: ProfileStore = None  # type: ignore[assignment]
+        self.places: PlaceStore = None  # type: ignore[assignment]
+        self.schedule: ScheduleStore = None  # type: ignore[assignment]
+        self.session: SessionStore = None  # type: ignore[assignment]
+        self.graph: Optional[GraphStore] = None
+        self.kv = None  # SQLiteKVStore — initialized in init()
+        self._initialized = False
+
+    # ── initialization ────────────────────────────────────────────────────
+
+    def init(self, cfg: "Config") -> None:
+        """Initialize all stores.  Call once at app startup.
+
+        Wires the existing ``Memory`` and ``Scheduler`` singletons so that
+        they serve double duty as the DAL conversation/reminder stores.
+        SQLite stores are created for profile, places, schedule, session,
+        with automatic migration from JSON on first run.
+        """
+        if self._initialized:
+            return
+
+        # Import legacy singletons
+        from butler.core.memory import memory
+        from butler.core.scheduler import scheduler
+
+        cfg.ensure_dirs()
+
+        # ── SQLite stores (via legacy singletons) ────────────────────────
+        memory.init(cfg.db_path)
+        memory.new_session()
+        scheduler.init(cfg.db_path)
+
+        self.conversations = memory  # Memory IS-A ConversationStore
+        self.reminders = scheduler  # Scheduler IS-A ReminderStore
+
+        # ── SQLite stores for profile / places / schedule / session ──────
+        self.profile = SQLiteProfileStore(cfg.db_path)
+        self.places = SQLitePlaceStore(cfg.db_path)
+        self.schedule = SQLiteScheduleStore(cfg.db_path)
+        self.session = SQLiteSessionStore(cfg.db_path)
+
+        # ── Key-value store (#128) ───────────────────────────────────────
+        from butler.data.sqlite_store import SQLiteKVStore
+        self.kv = SQLiteKVStore(cfg.db_path)
+
+        # ── Spatial cache for UI element coordinates (#121) ──────────────
+        try:
+            from butler.vision.spatial_cache import spatial_db
+            spatial_db.init(cfg.db_path)
+            log.debug("Spatial cache initialized")
+        except Exception as exc:
+            log.debug("Spatial cache init skipped: %s", exc)
+
+        # ── Navigation pipeline (#123) ───────────────────────────────────
+        try:
+            from butler.vision.navigator import navigator
+            navigator.init(cfg.db_path)
+            log.debug("Navigator pipeline initialized")
+        except Exception as exc:
+            log.debug("Navigator init skipped: %s", exc)
+
+        # ── Affinity engine (#221) ────────────────────────────────────────
+        if cfg.rl_enabled:
+            try:
+                from butler.agent.affinity_engine import affinity_engine
+                affinity_engine.init(cfg.db_path)
+                log.debug("Affinity engine initialized")
+            except Exception as exc:
+                log.debug("Affinity engine init skipped: %s", exc)
+
+        # ── Intervention queue (#126) ────────────────────────────────────
+        if cfg.rl_enabled:
+            try:
+                from butler.agent.interventions import intervention_queue
+                intervention_queue.init(
+                    cfg.db_path,
+                    rate_limit=cfg.intervention_rate_limit,
+                    default_ttl=cfg.intervention_toast_ttl,
+                )
+                if cfg.intervention_quiet_mode:
+                    intervention_queue.set_quiet(True)
+                if cfg.intervention_focus_mode:
+                    intervention_queue.set_focus(True)
+                log.debug("Intervention queue initialized")
+            except Exception as exc:
+                log.debug("Intervention queue init skipped: %s", exc)
+
+        # ── App detector (#127) ──────────────────────────────────────────
+        if cfg.app_detector_enabled:
+            try:
+                from butler.agent.app_detector import app_detector
+                app_detector.init(
+                    cache_ttl=cfg.app_detector_cache_ttl,
+                    polling_interval=cfg.app_detector_polling_interval,
+                )
+                log.debug("App detector initialized")
+            except Exception as exc:
+                log.debug("App detector init skipped: %s", exc)
+
+        # ── Desktop notifier (#153) ──────────────────────────────────────
+        if cfg.desktop_notifications:
+            try:
+                from butler.agent.notifier import notifier
+                notifier.init(
+                    enabled=cfg.desktop_notifications,
+                    icon=cfg.notification_icon,
+                    sound=cfg.notification_sound,
+                )
+                log.debug("Desktop notifier initialized")
+            except Exception as exc:
+                log.debug("Desktop notifier init skipped: %s", exc)
+
+        # ── Job scheduler — APScheduler (#128) ───────────────────────────
+        # NOTE: job_scheduler.start() is async and must be called separately
+        # from the daemon. Here we only log that the config is ready.
+        if cfg.job_scheduler_enabled:
+            log.debug("Job scheduler enabled — will start in daemon mode")
+
+        # ── Auto-migrate JSON → SQLite if tables are empty ───────────────
+        base_dir = (
+            Path(cfg.data_dir)
+            if cfg.data_dir
+            else Path.home() / ".local" / "share" / "butler"
+        )
+        self._auto_migrate_json(base_dir)
+
+        # ── Bind stores to core singletons ───────────────────────────────
+        from butler.core.session import session_tracker
+        from butler.core.profile import profile
+        from butler.core.places import places
+        from butler.core.schedule import schedule
+
+        session_tracker.bind_store(self.session)
+        profile.bind_store(self.profile)
+        places.bind_store(self.places)
+        schedule.bind_store(self.schedule)
+
+        self._initialized = True
+        log.info("DataLayer initialized  db=%s  data=%s", cfg.db_path, base_dir)
+
+    def _auto_migrate_json(self, base_dir: Path) -> None:
+        """Silently import JSON data into SQLite if tables are empty.
+
+        Ensures seamless upgrade for existing v2 users.
+        """
+        migrated = []
+
+        # ── profile.json → user_profile table ────────────────────────────
+        if not self.profile.exists():
+            pf = base_dir / "profile.json"
+            if pf.exists():
+                try:
+                    data = json.loads(pf.read_text("utf-8"))
+                    if data:
+                        self.profile.save(data)
+                        migrated.append("profile")
+                except Exception as exc:
+                    log.warning("Auto-migrate profile.json failed: %s", exc)
+
+        # ── places.json → places table ───────────────────────────────────
+        if not self.places.exists():
+            pf = base_dir / "places.json"
+            if pf.exists():
+                try:
+                    data = json.loads(pf.read_text("utf-8"))
+                    if data:
+                        self.places.save_all(data)
+                        migrated.append("places")
+                except Exception as exc:
+                    log.warning("Auto-migrate places.json failed: %s", exc)
+
+        # ── schedule.json → schedule_entries table ───────────────────────
+        if not self.schedule.exists():
+            pf = base_dir / "schedule.json"
+            if pf.exists():
+                try:
+                    data = json.loads(pf.read_text("utf-8"))
+                    if data:
+                        self.schedule.save(data)
+                        migrated.append("schedule")
+                except Exception as exc:
+                    log.warning("Auto-migrate schedule.json failed: %s", exc)
+
+        # ── session.json → session_state table ───────────────────────────
+        sess_data = self.session.load()
+        if not sess_data:
+            pf = base_dir / "session.json"
+            if pf.exists():
+                try:
+                    data = json.loads(pf.read_text("utf-8"))
+                    if data:
+                        self.session.save(data)
+                        migrated.append("session")
+                except Exception as exc:
+                    log.warning("Auto-migrate session.json failed: %s", exc)
+
+        if migrated:
+            log.info("Auto-migrated JSON → SQLite: %s", ", ".join(migrated))
+
+    async def init_graph(self) -> None:
+        """Initialize the MemPalace bridge (replaces Neo4j graph).
+
+        Safe to call even if MemPalace is disabled or not installed.
+        """
+        try:
+            from butler.memory.bridge import palace_bridge
+
+            if await palace_bridge.init():
+                self.graph = palace_bridge  # type: ignore[assignment]
+        except ImportError:
+            log.debug("mempalace not installed — memory bridge off")
+
+    # ── properties ────────────────────────────────────────────────────────
+
+    @property
+    def initialized(self) -> bool:
+        return self._initialized
+
+    # ── teardown ──────────────────────────────────────────────────────────
+
+    def close(self) -> None:
+        """Shut down all stores cleanly."""
+        if self.conversations is not None:
+            self.conversations.close()
+        # Close spatial cache (#121)
+        try:
+            from butler.vision.spatial_cache import spatial_db
+            spatial_db.close()
+        except Exception:
+            pass
+        # Close navigator (#123)
+        try:
+            from butler.vision.navigator import navigator
+            navigator.close()
+        except Exception:
+            pass
+        # Stop observer daemon (#124)
+        try:
+            from butler.agent.observer import observer
+            observer.stop()
+        except Exception:
+            pass
+        # Close affinity engine (#221)
+        try:
+            from butler.agent.affinity_engine import affinity_engine
+            affinity_engine.close()
+        except Exception:
+            pass
+        # Close intervention queue (#126)
+        try:
+            from butler.agent.interventions import intervention_queue
+            intervention_queue.close()
+        except Exception:
+            pass
+        if self.graph is not None:
+            try:
+                self.graph.close()
+            except Exception:
+                pass
+        self._initialized = False
+        log.info("DataLayer closed")
+
+
+# Singleton — import this everywhere
+data_layer = DataLayer()

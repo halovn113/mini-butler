@@ -31,7 +31,7 @@ def _make_chatlog():
     so we patch ``lines`` to a plain list and ``write`` to append + return self.
     ``scroll_end`` is also stubbed out.
     """
-    from bantz.interface.tui.panels.chat import ChatLog
+    from butler.interface.tui.panels.chat import ChatLog
 
     cl = ChatLog(max_lines=1000)
     cl.lines = []  # override — Textual's Strip-based list needs a running app
@@ -205,7 +205,7 @@ class TestStreamEdgeCases:
     def test_full_text_matches_all_tokens(self):
         cl = _make_chatlog()
         cl.stream_start()
-        tokens = ["Merhaba", "\n", "Ben ", "Bantz", "\n", "Nasılsın?"]
+        tokens = ["Merhaba", "\n", "Ben ", "Butler", "\n", "Nasılsın?"]
         for t in tokens:
             cl.stream_token(t)
         assert cl.stream_end() == "Merhaba\nBen Bantz\nNasılsın?"

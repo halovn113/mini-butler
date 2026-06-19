@@ -1,0 +1,16 @@
+[Unit]
+Description=Butler Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/butler
+EnvironmentFile=/home/%i/butler/.env
+ExecStart=/home/%i/butler/.venv/bin/python -m butler.integrations.telegram_bot
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
