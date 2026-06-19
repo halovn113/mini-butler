@@ -127,15 +127,79 @@ class RecordMacroTool(BaseTool):
         except Exception as exc:
             return ToolResult(success=False, output=f"Recording failed: {exc}")
 
-
 def _record_steps() -> list[MacroStep]:
-    """Simple interactive recording — reads lines from stdin."""
+    """Record macro steps via pynput event capture.
+
+    Listens for keyboard and mouse events until F12 is pressed.
+    """
+    try:
+        from pynput import keyboard, mouse
+    except ImportError:
+        return _record_steps_stdin()
+
+    import threading
+    import queue
+
+    steps: list[MacroStep] = []
+    stop_flag = threading.Event()
+    ev_queue: queue.Queue = queue.Queue()
+
+    print("🎙 Recording macro. F12 to stop.")
+    print("  (keystrokes, mouse clicks, scrolls are captured)")
+
+    def on_press(key):
+        try:
+            if hasattr(keyboard, "Key"):
+                if key == keyboard.Key.f12:
+                    stop_flag.set()
+                    return False
+                try:
+                    ev_queue.put(MacroStep(
+                        action="key",
+                        params={"key": key.char if hasattr(key, "char") else str(key)},
+                    ))
+                except AttributeError:
+                    ev_queue.put(MacroStep(action="key", params={"key": str(key)}))
+        except Exception:
+            pass
+
+    def on_click(x, y, button, pressed):
+        if pressed:
+            ev_queue.put(MacroStep(
+                action="click",
+                params={"button": str(button), "x": x, "y": y},
+            ))
+
+    def on_scroll(x, y, dx, dy):
+        ev_queue.put(MacroStep(action="scroll", params={"dx": dx, "dy": dy}))
+
+    listener_kbd = keyboard.Listener(on_press=on_press)
+    listener_mouse = mouse.Listener(on_click=on_click, on_scroll=on_scroll)
+    listener_kbd.start()
+    listener_mouse.start()
+
+    stop_flag.wait()
+    listener_kbd.stop()
+    listener_mouse.stop()
+
+    # Drain queue
+    while not ev_queue.empty():
+        try:
+            steps.append(ev_queue.get_nowait())
+        except queue.Empty:
+            break
+
+    return steps
+
+
+def _record_steps_stdin() -> list[MacroStep]:
+    """Fallback: read macro steps as text from stdin."""
     import sys
     steps: list[MacroStep] = []
     print("Recording macro. Enter one action per line:")
     print("  key:<key_name>    type:<text>    click    scroll:<dx>,<dy>")
     print("  wait:<seconds>    shell:<cmd>")
-    print("  (Ctrl+D or empty line to stop)")
+    print("  (empty line to stop)")
     for line in sys.stdin:
         line = line.strip()
         if not line:

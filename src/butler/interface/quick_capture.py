@@ -40,10 +40,35 @@ def _capture_sync() -> None:
 
 
 def _prompt_user() -> Optional[str]:
-    """Show a terminal prompt for input.
+    """Show a tkinter input dialog for quick capture.
 
-    Uses console input fallback when the TUI is not available.
+    Falls back to console input if tkinter is unavailable.
     """
+    try:
+        import tkinter
+        from tkinter import simpledialog
+    except ImportError:
+        return _console_prompt()
+
+    root = tkinter.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    try:
+        result = simpledialog.askstring(
+            "Butler Quick Capture",
+            "📝 Note / reminder / query:",
+            parent=root,
+        )
+        return result
+    finally:
+        try:
+            root.destroy()
+        except Exception:
+            pass
+
+
+def _console_prompt() -> Optional[str]:
+    """Fallback terminal prompt."""
     try:
         result = input("\n📝 Quick capture (Ctrl+D to cancel): ")
         return result

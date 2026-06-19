@@ -292,8 +292,17 @@ def _windows_timezone() -> str:
         )
         tz = result.stdout.strip()
         if tz:
-            # Windows names like "Turkey Standard Time" → pytz might handle
             return tz
+    except Exception:
+        pass
+    # Fallback: tzlocal
+    try:
+        from tzlocal import get_localzone
+        tz = str(get_localzone())
+        if tz:
+            return tz
+    except ImportError:
+        pass
     except Exception:
         pass
     return os.environ.get("TZ", "UTC")
