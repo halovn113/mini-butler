@@ -20,6 +20,7 @@ import logging
 import os
 import re
 import shlex
+from butler.platform.paths import log_dir
 import shutil
 import subprocess
 import time
@@ -64,7 +65,7 @@ GLOBAL_DENYLIST: list[re.Pattern] = [
 ]
 
 # ── Audit log ─────────────────────────────────────────────────────────────────
-_AUDIT_LOG: Path = Path.home() / ".butler" / "logs" / "system_audit.log"
+_AUDIT_LOG: Path = log_dir() / "system_audit.log"
 
 
 # ── Data classes ──────────────────────────────────────────────────────────────

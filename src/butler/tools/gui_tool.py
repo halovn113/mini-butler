@@ -24,6 +24,7 @@ import subprocess
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from butler.platform.paths import cache_dir
 from typing import Any
 
 import pyautogui
@@ -36,7 +37,7 @@ pyautogui.PAUSE = 0
 
 logger = logging.getLogger(__name__)
 
-CACHE_DIR = Path.home() / ".butler" / "cache"
+CACHE_DIR = cache_dir()
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 

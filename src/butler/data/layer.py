@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+from butler.platform.paths import data_dir
 from typing import TYPE_CHECKING, Optional
 
 from butler.data.store import (
@@ -183,7 +184,7 @@ class DataLayer:
         base_dir = (
             Path(cfg.data_dir)
             if cfg.data_dir
-            else Path.home() / ".local" / "share" / "butler"
+            else data_dir()
         )
         self._auto_migrate_json(base_dir)
 

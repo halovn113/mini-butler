@@ -17,10 +17,11 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from butler.platform.paths import data_dir
 
 log = logging.getLogger("butler.data.migration")
 
-DEFAULT_DATA_DIR = Path.home() / ".local" / "share" / "butler"
+DEFAULT_DATA_DIR = data_dir()
 
 _JSON_FILES = {
     "profile": "profile.json",

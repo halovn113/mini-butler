@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from butler.platform.paths import data_dir, env_file_path
 from typing import Self
 
 from pydantic import Field, field_validator, model_validator
@@ -317,11 +318,7 @@ class Config(BaseSettings):
 
     @property
     def db_path(self) -> Path:
-        base = (
-            Path(self.data_dir)
-            if self.data_dir
-            else Path.home() / ".local" / "share" / "butler"
-        )
+        base = Path(self.data_dir) if self.data_dir else data_dir()
         new = base / "butler.db"
         # One-time migration: store.db → butler.db
         if not new.exists():
@@ -352,12 +349,13 @@ class Config(BaseSettings):
         return str(Path.home() / ".mempalace" / "identity.txt")
 
     def ensure_dirs(self) -> None:
+        data_dir().mkdir(parents=True, exist_ok=True)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
     model_config = {
         # Check the wizard-written .env first, then CWD .env (dev override wins).
         "env_file": [
-            str(Path.home() / ".local" / "share" / "butler" / ".env"),
+            str(env_file_path()),
             ".env",
         ],
         "env_file_encoding": "utf-8",

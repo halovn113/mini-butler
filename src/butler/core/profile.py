@@ -23,7 +23,7 @@ Schema:
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from butler.platform.paths import data_dir
 from typing import TYPE_CHECKING, Any
 
 from butler.core.secure_io import secure_write_text
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from butler.data.store import ProfileStore as _ProfileStore
 
 
-_PROFILE_PATH = Path.home() / ".local" / "share" / "butler" / "profile.json"
+_PROFILE_PATH = data_dir() / "profile.json"
 
 _DEFAULT_PREFERENCES: dict[str, Any] = {
     "briefing_sections": ["schedule", "weather", "mail", "calendar", "classroom"],

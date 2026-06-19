@@ -32,6 +32,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from butler.platform.paths import cache_dir
 
 
 import httpx
@@ -241,7 +242,7 @@ async def _step_temp_cleanup(dry_run: bool) -> StepResult:
     targets = [
         (Path("/tmp"), "butler*"),
         (Path("/tmp"), "bantz_*"),
-        (Path.home() / ".cache" / "butler" / "old-logs", "*"),
+        (cache_dir() / "old-logs", "*"),
     ]
 
     for base, pattern in targets:

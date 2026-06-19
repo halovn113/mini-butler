@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from pathlib import Path
+from butler.platform.paths import data_dir
 from typing import TYPE_CHECKING, Any
 
 from butler.core.secure_io import secure_write_text
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from butler.data.store import SessionStore
 
 
-_SESSION_PATH = Path.home() / ".local" / "share" / "butler" / "session.json"
+_SESSION_PATH = data_dir() / "session.json"
 
 
 class SessionTracker:

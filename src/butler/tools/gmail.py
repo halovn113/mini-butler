@@ -29,6 +29,7 @@ Actions:
   remove_label — remove label from message(s)
   contacts     — manage contact aliases
 """
+from butler.platform.paths import data_dir
 from __future__ import annotations
 
 import asyncio
@@ -116,7 +117,7 @@ def _summarize_mail_body(body: str) -> str:
         return ""
 
 MAX_EMAILS = 10
-CONTACTS_PATH = Path.home() / ".local" / "share" / "butler" / "contacts.json"
+CONTACTS_PATH = data_dir() / "contacts.json"
 
 GMAIL_SUMMARY_PROMPT = """\
 You are Bantz. Summarize these unread emails.

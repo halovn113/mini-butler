@@ -31,13 +31,15 @@ from pathlib import Path
 from typing import Optional
 
 from butler.core.secure_io import secure_write_text
+from butler.platform.paths import data_dir
+
 
 log = logging.getLogger("butler.gps")
 
 GPS_PORT = 9777
 NTFY_BASE = "https://ntfy.sh"
-LOCATION_FILE = Path.home() / ".local" / "share" / "butler" / "live_location.json"
-TOKEN_FILE = Path.home() / ".local" / "share" / "butler" / "gps_relay_token"
+LOCATION_FILE = data_dir() / "live_location.json"
+TOKEN_FILE = data_dir() / "gps_relay_token"
 TTL_SECONDS = 1800  # 30 minutes
 
 

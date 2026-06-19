@@ -9,8 +9,7 @@ Actions:
   sync       — refresh local cache from Google
 
 Uses People API with contacts.readonly scope.
-Local cache in ~/.local/share/butler/google_contacts_cache.json
-for fast offline lookup. Cache refreshes every 24h or on-demand.
+Local cache in data_dir() / "google_contacts_cache.json"
 
 Usage by other tools:
     from butler.tools.contacts import contacts_tool
@@ -30,7 +29,7 @@ from butler.tools import BaseTool, ToolResult, registry
 
 logger = logging.getLogger(__name__)
 
-CACHE_PATH = Path.home() / ".local" / "share" / "butler" / "google_contacts_cache.json"
+CACHE_PATH = data_dir() / "google_contacts_cache.json"
 CACHE_TTL = 86400  # 24 hours
 
 

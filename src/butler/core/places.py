@@ -22,7 +22,7 @@ import json
 import logging
 import math
 import time as _time
-from pathlib import Path
+from butler.platform.paths import data_dir
 from typing import TYPE_CHECKING, Optional
 
 from butler.core.location import location_service
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("butler.places")
 
-PLACES_PATH = Path.home() / ".local" / "share" / "butler" / "places.json"
+PLACES_PATH = data_dir() / "places.json"
 
 # Radius in metres — if within this range, consider "at" the place
 MATCH_RADIUS_M = 100          # tightened from 500 → 100 for actual geofencing

@@ -7,7 +7,7 @@ maintained separate, incompatible resolution paths.
 
 Resolution cascade:
   1. Contains '@' → already an email, keep as-is.
-  2. Local alias file (~/.local/share/butler/contacts.json).
+  2. Local alias file (data_dir() / "contacts.json").
   3. Google People API (via ContactsTool cache / live fetch).
   4. If found via Google, cache back to contacts.json for next time.
 
@@ -15,12 +15,12 @@ Supports comma-separated lists ("iclal, hocam@uni.edu").
 
 Usage:
     from butler.tools.contact_resolver import contact_resolver
-
     resolved, err = await contact_resolver.resolve_addresses("iclal, hocam")
     if err:
         return ToolResult(success=False, output=err)
     # resolved == "iclaldgn@gmail.com, prof@uni.edu"
 """
+from butler.platform.paths import data_dir
 from __future__ import annotations
 
 import json
@@ -29,7 +29,7 @@ from pathlib import Path
 
 log = logging.getLogger("butler.contact_resolver")
 
-CONTACTS_PATH = Path.home() / ".local" / "share" / "butler" / "contacts.json"
+CONTACTS_PATH = data_dir() / "contacts.json"
 
 
 class UnifiedContactResolver:

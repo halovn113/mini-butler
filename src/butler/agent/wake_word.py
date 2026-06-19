@@ -38,6 +38,7 @@ import struct
 import threading
 import time
 from pathlib import Path
+from butler.platform.paths import data_dir
 from typing import Callable, Optional
 
 from butler.core.event_bus import bus
@@ -378,7 +379,7 @@ class WakeWordListener:
         """Look for a custom Bantz .ppn wake word model.
 
         Search order:
-          1. Data dir (~/.local/share/butler/ or BUTLER_DATA_DIR)
+          1. Data dir (data_dir() or BUTLER_DATA_DIR)
           2. Project / working directory
 
         Patterns: hey-bantz*.ppn, hey_bantz*.ppn, Bantz*.ppn, bantz*.ppn
@@ -391,12 +392,12 @@ class WakeWordListener:
         )
         try:
             from butler.config import config
-            data_dir = (
+            base_dir = (
                 Path(config.data_dir) if config.data_dir
-                else Path.home() / ".local" / "share" / "butler"
+                else data_dir()
             )
             # Search data dir first, then project root (cwd)
-            search_dirs = [data_dir, Path.cwd()]
+            search_dirs = [base_dir, Path.cwd()]
             # Also check the package root (two levels up from this file)
             pkg_root = Path(__file__).resolve().parent.parent.parent.parent
             if pkg_root not in search_dirs:

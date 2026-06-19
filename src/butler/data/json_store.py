@@ -5,7 +5,7 @@ Backward-compatible JSON adapters for profile, places, schedule, and session.
 These read/write the same files as v2, ensuring seamless migration.
 
     store = JSONProfileStore(base_dir)
-    data  = store.load()           # reads ~/.local/share/butler/profile.json
+    data  = store.load()           # reads data_dir/profile.json
     store.save({"name": "Iclal"})  # writes it back
 """
 from __future__ import annotations
@@ -18,6 +18,7 @@ from typing import Any
 from butler.data.store import PlaceStore, ProfileStore, ScheduleStore, SessionStore
 import os
 
+from butler.platform.paths import data_dir
 log = logging.getLogger("butler.data.json")
 
 
@@ -49,10 +50,10 @@ def _write_json(path: Path, data: dict | list) -> None:
 
 
 class JSONProfileStore(ProfileStore):
-    """Reads / writes ``~/.local/share/butler/profile.json``."""
+    """Reads / writes ``data_dir/profile.json``."""
 
     def __init__(self, base_dir: Path | None = None) -> None:
-        self._base = base_dir or (Path.home() / ".local" / "share" / "butler")
+        self._base = base_dir or data_dir()
         self._path = self._base / "profile.json"
 
     def load(self) -> dict[str, Any]:
@@ -73,10 +74,10 @@ class JSONProfileStore(ProfileStore):
 
 
 class JSONPlaceStore(PlaceStore):
-    """Reads / writes ``~/.local/share/butler/places.json``."""
+    """Reads / writes ``data_dir/places.json``."""
 
     def __init__(self, base_dir: Path | None = None) -> None:
-        self._base = base_dir or (Path.home() / ".local" / "share" / "butler")
+        self._base = base_dir or data_dir()
         self._path = self._base / "places.json"
 
     def load_all(self) -> dict[str, dict]:
@@ -97,10 +98,10 @@ class JSONPlaceStore(PlaceStore):
 
 
 class JSONScheduleStore(ScheduleStore):
-    """Reads / writes ``~/.local/share/butler/schedule.json``."""
+    """Reads / writes ``data_dir/schedule.json``."""
 
     def __init__(self, base_dir: Path | None = None) -> None:
-        self._base = base_dir or (Path.home() / ".local" / "share" / "butler")
+        self._base = base_dir or data_dir()
         self._path = self._base / "schedule.json"
 
     def load(self) -> dict[str, list[dict]]:
@@ -121,10 +122,10 @@ class JSONScheduleStore(ScheduleStore):
 
 
 class JSONSessionStore(SessionStore):
-    """Reads / writes ``~/.local/share/butler/session.json``."""
+    """Reads / writes ``data_dir/session.json``."""
 
     def __init__(self, base_dir: Path | None = None) -> None:
-        self._base = base_dir or (Path.home() / ".local" / "share" / "butler")
+        self._base = base_dir or data_dir()
         self._path = self._base / "session.json"
 
     def load(self) -> dict:

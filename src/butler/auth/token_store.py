@@ -52,10 +52,7 @@ SERVICE_SCOPES: dict[str, list[str]] = {
 
 class TokenStore:
     def __init__(self) -> None:
-        self._dir = Path.home() / ".local" / "share" / "butler" / "tokens"
-        # Enforce strict 0o700 permissions to prevent unauthorized access
-        # mkdir(mode=...) sets permissions securely at creation time.
-        self._dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        from butler.platform.paths import token_dir; self._dir = token_dir()
         # chmod(0o700) ensures existing directories have their permissions corrected.
         self._dir.chmod(0o700)
 

@@ -6,6 +6,7 @@ live here so __main__.py stays focused on running Bantz.
 """
 from __future__ import annotations
 
+from butler.platform.paths import env_file_path
 import asyncio
 
 
@@ -166,10 +167,8 @@ def _setup_telegram() -> None:
 
 
 def _env_path():
-    """Return the .env file path — prefers ~/.local/share/butler/.env, falls back to CWD."""
-    from pathlib import Path
-    data_env = Path.home() / ".local" / "share" / "butler" / ".env"
-    return data_env if data_env.exists() else Path.cwd() / ".env"
+    """Return the .env file path — prefers data_dir/.env, falls back to CWD."""
+    return env_file_path()
 
 
 def _write_env(updates: dict[str, str], *, prefix_strip: list[str] | None = None) -> None:

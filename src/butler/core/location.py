@@ -26,10 +26,10 @@ import json as _json_mod
 import logging
 import subprocess
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional
 
 import httpx
+from butler.platform.paths import data_dir
 
 from butler.config import config
 from butler.core.secure_io import secure_write_text
@@ -52,7 +52,7 @@ TIMEOUT = 5.0
 
 # Persisted reverse-geocoded phone-GPS city — lets the correct city survive the
 # 30-min live-GPS TTL so it doesn't decay back to a wrong GeoIP guess.
-GPS_CITY_CACHE = Path.home() / ".local" / "share" / "butler" / "gps_city.json"
+GPS_CITY_CACHE = data_dir() / "gps_city.json"
 GPS_CACHE_MAX_AGE = 7 * 24 * 3600  # 7 days — stale enough is still better than IP
 
 
@@ -183,9 +183,7 @@ class LocationService:
     def _from_places(self) -> Optional[Location]:
         """Read primary location from places.json (set via --setup places)."""
         import json
-        from pathlib import Path
-
-        places_path = Path.home() / ".local" / "share" / "butler" / "places.json"
+        places_path = data_dir() / "places.json"
         if not places_path.exists():
             return None
         try:
@@ -413,7 +411,7 @@ class LocationService:
         if not ssid:
             return None
 
-        places_path = Path.home() / ".local" / "share" / "butler" / "places.json"
+        places_path = data_dir() / "places.json"
         if not places_path.exists():
             return None
         try:

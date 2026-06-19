@@ -21,14 +21,14 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta
-from pathlib import Path
+from butler.platform.paths import data_dir
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from butler.data.store import ScheduleStore
 
 
-SCHEDULE_PATH = Path.home() / ".local" / "share" / "butler" / "schedule.json"
+SCHEDULE_PATH = data_dir() / "schedule.json"
 
 DAYS_TR = {
     "monday":    "Monday",

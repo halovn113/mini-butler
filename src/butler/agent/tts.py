@@ -27,7 +27,7 @@ Key design:
   - Model-agnostic: supports any Piper voice (Turkish: tr_TR-dfki-medium)
 
 Voice model search order (BUTLER_TTS_MODEL_PATH overrides all):
-  ~/.local/share/butler/
+  data_dir() /
   ~/.local/share/piper-voices/
   ~/.local/share/piper/voices/
   ~/.local/share/piper/
@@ -41,6 +41,7 @@ import re
 import shutil
 import signal
 from pathlib import Path
+from butler.platform.paths import data_dir
 
 log = logging.getLogger(__name__)
 
@@ -343,7 +344,7 @@ class TTSEngine:
             # Auto-discover: check common voice model locations
             model_name = config.tts_model
             search_dirs = [
-                Path.home() / ".local" / "share" / "butler",
+                data_dir(),
                 Path.home() / ".local" / "share" / "piper-voices",
                 Path.home() / ".local" / "share" / "piper" / "voices",
                 Path.home() / ".local" / "share" / "piper",

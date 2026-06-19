@@ -5,7 +5,7 @@ Downloads images (with content-hash deduplication), renders them as ANSI
 art in the terminal via ``chafa``, and provides raw bytes for Telegram's
 ``send_photo``.
 
-Cache: ``~/.bantz/cache/images/`` with 24h TTL, purged on startup.
+Cache: ``cache_dir() / "images"`` with 24h TTL, purged on startup.
 
 Usage:
     from butler.tools.image_tool import image_tool
@@ -18,6 +18,7 @@ import logging
 import subprocess
 import time
 from pathlib import Path
+from butler.platform.paths import cache_dir
 from typing import Any
 
 import httpx
@@ -28,7 +29,7 @@ log = logging.getLogger("butler.tool.image")
 
 # ── Cache config ──────────────────────────────────────────────────────────────
 
-CACHE_DIR = Path.home() / ".butler" / "cache" / "images"
+CACHE_DIR = cache_dir() / "images"
 CACHE_TTL = 86400  # 24 hours in seconds
 
 
