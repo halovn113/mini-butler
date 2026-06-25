@@ -22,7 +22,6 @@ def _get_store() -> ProjectStore | None:
         return None
 
 
-@registry.register
 class ListProjectsTool(BaseTool):
     name = "list_projects"
     description = "List all saved workspace projects."
@@ -44,7 +43,6 @@ class ListProjectsTool(BaseTool):
         return ToolResult(success=True, output="Projects:\n" + "\n".join(lines))
 
 
-@registry.register
 class OpenProjectTool(BaseTool):
     name = "open_project"
     description = "Open a project: cd to its path, run setup commands, and launch the configured editor."
@@ -97,7 +95,6 @@ class OpenProjectTool(BaseTool):
         )
 
 
-@registry.register
 class AddProjectTool(BaseTool):
     name = "add_project"
     description = "Add or update a workspace project."
@@ -132,7 +129,6 @@ class AddProjectTool(BaseTool):
         return ToolResult(success=False, output=f"Failed to save project '{name}'.")
 
 
-@registry.register
 class RemoveProjectTool(BaseTool):
     name = "remove_project"
     description = "Remove a saved project."
@@ -151,3 +147,9 @@ class RemoveProjectTool(BaseTool):
         if ok:
             return ToolResult(success=True, output=f"Removed project '{name}'.")
         return ToolResult(success=False, output=f"Failed to remove project '{name}'.")
+
+
+registry.register(ListProjectsTool())
+registry.register(OpenProjectTool())
+registry.register(AddProjectTool())
+registry.register(RemoveProjectTool())

@@ -21,7 +21,6 @@ def _get_store() -> ClipboardStore | None:
         return None
 
 
-@registry.register
 class ClipHistoryTool(BaseTool):
     name = "clip_history"
     description = "List recent clipboard history entries. Returns the N most recent items."
@@ -47,7 +46,6 @@ class ClipHistoryTool(BaseTool):
         )
 
 
-@registry.register
 class ClipGetTool(BaseTool):
     name = "clip_get"
     description = "Get a clipboard entry by 1-based index (1 = newest)."
@@ -69,7 +67,6 @@ class ClipGetTool(BaseTool):
         )
 
 
-@registry.register
 class ClipClearTool(BaseTool):
     name = "clip_clear"
     description = "Clear all clipboard history entries."
@@ -82,3 +79,8 @@ class ClipClearTool(BaseTool):
 
         store.clear()
         return ToolResult(success=True, output="Clipboard history cleared.")
+
+
+registry.register(ClipHistoryTool())
+registry.register(ClipGetTool())
+registry.register(ClipClearTool())

@@ -5,7 +5,12 @@ import logging
 import threading
 import time
 
-import pyperclip
+try:
+    import pyperclip as _pyperclip
+    _PYPERCLIP_AVAILABLE = True
+except ImportError:
+    _pyperclip = None  # type: ignore[assignment]
+    _PYPERCLIP_AVAILABLE = False
 
 from butler.data.clipboard_store import ClipboardStore
 
@@ -24,8 +29,11 @@ class ClipboardMonitor:
 
     def start(self, store: ClipboardStore) -> None:
         """Begin polling on a daemon thread."""
+        if not _PYPERCLIP_AVAILABLE:
+            log.warning("pyperclip not installed — clipboard monitoring disabled")
+            return
         self._store = store
-        self._last = pyperclip.paste()
+        self._last = _pyperclip.paste()
         self._thread = threading.Thread(target=self._poll, daemon=True)
         self._thread.start()
 
@@ -36,7 +44,7 @@ class ClipboardMonitor:
     def _poll(self) -> None:
         while not self._stop.wait(_POLL_INTERVAL):
             try:
-                text = pyperclip.paste()
+                text = _pyperclip.paste()
                 if text and text != self._last:
                     self._store.add(text)
                     self._last = text

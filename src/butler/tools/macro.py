@@ -29,7 +29,6 @@ def _get_store() -> MacroStore | None:
         return None
 
 
-@registry.register
 class ListMacrosTool(BaseTool):
     name = "list_macros"
     description = "List all saved automation macros."
@@ -45,7 +44,6 @@ class ListMacrosTool(BaseTool):
         return ToolResult(success=True, output="Saved macros:\n" + "\n".join(lines))
 
 
-@registry.register
 class RunMacroTool(BaseTool):
     name = "run_macro"
     description = "Execute a saved macro by name. Params: name (str)."
@@ -62,7 +60,6 @@ class RunMacroTool(BaseTool):
         return await _execute_macro(macro)
 
 
-@registry.register
 class CreateMacroTool(BaseTool):
     name = "create_macro"
     description = "Create or update a macro with a sequence of steps. Params: name (str), description (str, optional), steps (list of dicts), tags (list of str, optional). Each step: {action: 'key'|'type'|'click'|'scroll'|'wait'|'shell', params: {}}."
@@ -89,7 +86,6 @@ class CreateMacroTool(BaseTool):
         return ToolResult(success=False, output=f"Failed to save macro '{name}'.")
 
 
-@registry.register
 class DeleteMacroTool(BaseTool):
     name = "delete_macro"
     description = "Delete a saved macro by name. Params: name (str)."
@@ -106,7 +102,6 @@ class DeleteMacroTool(BaseTool):
         return ToolResult(success=False, output=f"Macro '{name}' not found.")
 
 
-@registry.register
 class RecordMacroTool(BaseTool):
     name = "record_macro"
     description = "Interactively record a new macro. Params: name (str). Records keystrokes until Ctrl+C or Ctrl+D."
@@ -280,3 +275,10 @@ async def _async_sleep(seconds: float) -> None:
     """Async sleep."""
     import asyncio
     await asyncio.sleep(seconds)
+
+
+registry.register(ListMacrosTool())
+registry.register(RunMacroTool())
+registry.register(CreateMacroTool())
+registry.register(DeleteMacroTool())
+registry.register(RecordMacroTool())
